@@ -25,6 +25,12 @@ const seedData = async () => {
       password: 'password123',
       phone: '+1234567890',
       role: 'driver',
+      emergencyName1: 'Jane Driver',
+      emergencyPhone1: '+1234567894',
+      emergencyName2: 'Bob Driver',
+      emergencyPhone2: '+1234567895',
+      emergencyName3: 'Alice Driver',
+      emergencyPhone3: '+1234567896',
     });
 
     const driver2 = await User.create({
@@ -33,6 +39,12 @@ const seedData = async () => {
       password: 'password123',
       phone: '+1234567891',
       role: 'driver',
+      emergencyName1: 'Tom Driver',
+      emergencyPhone1: '+1234567897',
+      emergencyName2: 'Lisa Driver',
+      emergencyPhone2: '+1234567898',
+      emergencyName3: 'Mark Driver',
+      emergencyPhone3: '+1234567899',
     });
 
     // Create demo riders
@@ -43,6 +55,12 @@ const seedData = async () => {
       password: 'password123',
       phone: '+1234567892',
       role: 'rider',
+      emergencyName1: 'Priya Verma',
+      emergencyPhone1: '+1 (555) 123-4567',
+      emergencyName2: 'Michael Chen',
+      emergencyPhone2: '+1 (555) 987-6543',
+      emergencyName3: 'David Lee',
+      emergencyPhone3: '+1 (555) 222-8899',
     });
 
     const rider2 = await User.create({
@@ -51,6 +69,12 @@ const seedData = async () => {
       password: 'password123',
       phone: '+1234567893',
       role: 'rider',
+      emergencyName1: 'John Smith',
+      emergencyPhone1: '+1 (555) 111-2222',
+      emergencyName2: 'Sarah Johnson',
+      emergencyPhone2: '+1 (555) 333-4444',
+      emergencyName3: 'Chris Brown',
+      emergencyPhone3: '+1 (555) 555-6666',
     });
 
     // Create demo rides

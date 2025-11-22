@@ -6,7 +6,7 @@ import Input from '../components/Input';
 import { authApi } from '../services/auth';
 
 export default function Signup() {
-  const { navigateTo, setAuthToken, setRole, setUserName, setUserEmail, setUserPhone } = useApp();
+  const { navigateTo, setAuthToken, setRole, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,12 +56,17 @@ export default function Signup() {
 
     setLoading(true);
     try {
+      // Extract emergency contact names and phones from the emergency contact strings
+      // For now, we'll just store the phone numbers. Names can be added later in profile.
       const response = await authApi.register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password,
         role: selectedRole,
+        emergencyPhone1: emergency1.trim() || '',
+        emergencyPhone2: emergency2.trim() || '',
+        emergencyPhone3: emergency3.trim() || '',
       });
 
       // Store auth data
@@ -70,6 +75,28 @@ export default function Signup() {
       setUserName(response.user.name);
       setUserEmail(response.user.email);
       setUserPhone(response.user.phone);
+
+      // Load emergency contacts from user data
+      const emergencyContacts = [];
+      if (response.user.emergencyName1 && response.user.emergencyPhone1) {
+        emergencyContacts.push({
+          name: response.user.emergencyName1,
+          phone: response.user.emergencyPhone1,
+        });
+      }
+      if (response.user.emergencyName2 && response.user.emergencyPhone2) {
+        emergencyContacts.push({
+          name: response.user.emergencyName2,
+          phone: response.user.emergencyPhone2,
+        });
+      }
+      if (response.user.emergencyName3 && response.user.emergencyPhone3) {
+        emergencyContacts.push({
+          name: response.user.emergencyName3,
+          phone: response.user.emergencyPhone3,
+        });
+      }
+      setEmergencyContacts(emergencyContacts);
 
       // Navigate to dashboard
       navigateTo('dashboard');

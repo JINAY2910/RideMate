@@ -14,7 +14,19 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, phone, role } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      phone, 
+      role,
+      emergencyName1,
+      emergencyPhone1,
+      emergencyName2,
+      emergencyPhone2,
+      emergencyName3,
+      emergencyPhone3,
+    } = req.body;
 
     // Validation
     if (!name || !email || !password || !role) {
@@ -61,6 +73,12 @@ const register = async (req, res, next) => {
       password,
       phone: phone || '',
       role,
+      emergencyName1: emergencyName1 || '',
+      emergencyPhone1: emergencyPhone1 || '',
+      emergencyName2: emergencyName2 || '',
+      emergencyPhone2: emergencyPhone2 || '',
+      emergencyName3: emergencyName3 || '',
+      emergencyPhone3: emergencyPhone3 || '',
     });
 
     // Generate token
@@ -75,6 +93,12 @@ const register = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        emergencyName1: user.emergencyName1,
+        emergencyPhone1: user.emergencyPhone1,
+        emergencyName2: user.emergencyName2,
+        emergencyPhone2: user.emergencyPhone2,
+        emergencyName3: user.emergencyName3,
+        emergencyPhone3: user.emergencyPhone3,
       },
     });
   } catch (error) {
@@ -129,6 +153,12 @@ const login = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
+        emergencyName1: user.emergencyName1,
+        emergencyPhone1: user.emergencyPhone1,
+        emergencyName2: user.emergencyName2,
+        emergencyPhone2: user.emergencyPhone2,
+        emergencyName3: user.emergencyName3,
+        emergencyPhone3: user.emergencyPhone3,
       },
     });
   } catch (error) {
@@ -152,6 +182,71 @@ const getMe = async (req, res, next) => {
         phone: user.phone,
         role: user.role,
         createdAt: user.createdAt,
+        emergencyName1: user.emergencyName1,
+        emergencyPhone1: user.emergencyPhone1,
+        emergencyName2: user.emergencyName2,
+        emergencyPhone2: user.emergencyPhone2,
+        emergencyName3: user.emergencyName3,
+        emergencyPhone3: user.emergencyPhone3,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res, next) => {
+  try {
+    const {
+      name,
+      phone,
+      emergencyName1,
+      emergencyPhone1,
+      emergencyName2,
+      emergencyPhone2,
+      emergencyName3,
+      emergencyPhone3,
+    } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Update fields if provided
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined) user.phone = phone;
+    if (emergencyName1 !== undefined) user.emergencyName1 = emergencyName1;
+    if (emergencyPhone1 !== undefined) user.emergencyPhone1 = emergencyPhone1;
+    if (emergencyName2 !== undefined) user.emergencyName2 = emergencyName2;
+    if (emergencyPhone2 !== undefined) user.emergencyPhone2 = emergencyPhone2;
+    if (emergencyName3 !== undefined) user.emergencyName3 = emergencyName3;
+    if (emergencyPhone3 !== undefined) user.emergencyPhone3 = emergencyPhone3;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        createdAt: user.createdAt,
+        emergencyName1: user.emergencyName1,
+        emergencyPhone1: user.emergencyPhone1,
+        emergencyName2: user.emergencyName2,
+        emergencyPhone2: user.emergencyPhone2,
+        emergencyName3: user.emergencyName3,
+        emergencyPhone3: user.emergencyPhone3,
       },
     });
   } catch (error) {
@@ -163,5 +258,6 @@ module.exports = {
   register,
   login,
   getMe,
+  updateProfile,
 };
 

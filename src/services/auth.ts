@@ -50,6 +50,12 @@ export type User = {
   phone: string;
   role: 'driver' | 'rider';
   createdAt?: string;
+  emergencyName1?: string;
+  emergencyPhone1?: string;
+  emergencyName2?: string;
+  emergencyPhone2?: string;
+  emergencyName3?: string;
+  emergencyPhone3?: string;
 };
 
 export type AuthResponse = {
@@ -69,6 +75,12 @@ export type RegisterPayload = {
   password: string;
   phone: string;
   role: 'driver' | 'rider';
+  emergencyName1?: string;
+  emergencyPhone1?: string;
+  emergencyName2?: string;
+  emergencyPhone2?: string;
+  emergencyName3?: string;
+  emergencyPhone3?: string;
 };
 
 export const authApi = {
@@ -151,6 +163,40 @@ export const authApi = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+      });
+      return handleResponse<{ success: boolean; user: User }>(response);
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Unable to connect to the server. Please check if the server is running.');
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update user profile (requires token)
+   */
+  async updateProfile(
+    token: string,
+    updates: {
+      name?: string;
+      phone?: string;
+      emergencyName1?: string;
+      emergencyPhone1?: string;
+      emergencyName2?: string;
+      emergencyPhone2?: string;
+      emergencyName3?: string;
+      emergencyPhone3?: string;
+    }
+  ): Promise<{ success: boolean; user: User }> {
+    try {
+      const response = await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
       });
       return handleResponse<{ success: boolean; user: User }>(response);
     } catch (error) {

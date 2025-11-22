@@ -25,6 +25,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    emergencyName1: {
+      type: String,
+      trim: true,
+    },
+    emergencyPhone1: {
+      type: String,
+      trim: true,
+    },
+    emergencyName2: {
+      type: String,
+      trim: true,
+    },
+    emergencyPhone2: {
+      type: String,
+      trim: true,
+    },
+    emergencyName3: {
+      type: String,
+      trim: true,
+    },
+    emergencyPhone3: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
       enum: ['driver', 'rider'],

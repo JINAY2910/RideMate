@@ -3,26 +3,57 @@ import { ArrowLeft, User as UserIcon, Star, Shield } from 'lucide-react';
 import { EmergencyContact, useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { authApi } from '../services/auth';
 
 export default function Profile() {
-  const { navigateTo, userName, setUserName, userRole, emergencyContacts, setEmergencyContacts } = useApp();
+  const { navigateTo, userName, setUserName, userRole, authToken, setEmergencyContacts } = useApp();
   const [name, setName] = useState(userName);
   const [gender, setGender] = useState('male');
-  const initialContacts = useMemo(() => {
-    if (emergencyContacts.length >= 3) {
-      return emergencyContacts.slice(0, 3);
-    }
-    const placeholders: EmergencyContact[] = Array.from({ length: 3 - emergencyContacts.length }, () => ({
-      name: '',
-      phone: '',
-    }));
-    return [...emergencyContacts, ...placeholders];
-  }, [emergencyContacts]);
-  const [contacts, setContacts] = useState<EmergencyContact[]>(initialContacts);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<EmergencyContact[]>([
+    { name: '', phone: '' },
+    { name: '', phone: '' },
+    { name: '', phone: '' },
+  ]);
 
+  // Fetch user data including emergency contacts on mount
   useEffect(() => {
-    setContacts(initialContacts);
-  }, [initialContacts]);
+    const fetchUserData = async () => {
+      if (!authToken) return;
+      
+      try {
+        const response = await authApi.getMe(authToken);
+        const user = response.user;
+        
+        setName(user.name);
+        
+        // Load emergency contacts from database
+        const dbContacts: EmergencyContact[] = [
+          { 
+            name: user.emergencyName1 || '', 
+            phone: user.emergencyPhone1 || '' 
+          },
+          { 
+            name: user.emergencyName2 || '', 
+            phone: user.emergencyPhone2 || '' 
+          },
+          { 
+            name: user.emergencyName3 || '', 
+            phone: user.emergencyPhone3 || '' 
+          },
+        ];
+        
+        setContacts(dbContacts);
+        setEmergencyContacts(dbContacts.filter(c => c.name && c.phone));
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        // Don't show error on initial load, just use defaults
+      }
+    };
+
+    fetchUserData();
+  }, [authToken, setEmergencyContacts]);
 
   const handleContactChange = (index: number, field: keyof EmergencyContact, value: string) => {
     setContacts((prev) =>
@@ -30,15 +61,46 @@ export default function Profile() {
     );
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUserName(name);
-    const normalizedContacts = contacts.map((contact) => ({
-      name: contact.name.trim(),
-      phone: contact.phone.trim(),
-    }));
-    setEmergencyContacts(normalizedContacts);
-    navigateTo('dashboard');
+    setError(null);
+    setLoading(true);
+
+    if (!authToken) {
+      setError('You must be logged in to update your profile');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const normalizedContacts = contacts.map((contact) => ({
+        name: contact.name.trim(),
+        phone: contact.phone.trim(),
+      }));
+
+      // Update profile in database
+      const response = await authApi.updateProfile(authToken, {
+        name: name.trim(),
+        emergencyName1: normalizedContacts[0].name,
+        emergencyPhone1: normalizedContacts[0].phone,
+        emergencyName2: normalizedContacts[1].name,
+        emergencyPhone2: normalizedContacts[1].phone,
+        emergencyName3: normalizedContacts[2].name,
+        emergencyPhone3: normalizedContacts[2].phone,
+      });
+
+      // Update local state
+      setUserName(response.user.name);
+      setEmergencyContacts(normalizedContacts.filter(c => c.name && c.phone));
+      
+      navigateTo('dashboard');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,12 +142,19 @@ export default function Profile() {
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
+          {error && (
+            <div className="rounded-lg border-2 border-red-500 bg-red-50 p-4 text-red-700 font-semibold text-sm">
+              {error}
+            </div>
+          )}
+
           <Input
             label="Full Name"
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            disabled={loading}
           />
 
           <div className="mb-1">
@@ -94,6 +163,7 @@ export default function Profile() {
               value={gender}
               onChange={(e) => setGender(e.target.value)}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+              disabled={loading}
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -129,7 +199,7 @@ export default function Profile() {
                       placeholder="e.g., Priya Verma"
                       value={contact.name}
                       onChange={(e) => handleContactChange(index, 'name', e.target.value)}
-                      required
+                      disabled={loading}
                     />
                     <Input
                       label="Phone Number"
@@ -137,7 +207,7 @@ export default function Profile() {
                       placeholder="e.g., +1 (555) 123-4567"
                       value={contact.phone}
                       onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
-                      required
+                      disabled={loading}
                     />
                   </div>
                 </div>
@@ -146,10 +216,16 @@ export default function Profile() {
           </div>
 
           <div className="flex gap-3 pt-6">
-            <Button type="submit" fullWidth size="lg">
-              Save Changes
+            <Button type="submit" fullWidth size="lg" disabled={loading}>
+              {loading ? 'Saving...' : 'Save Changes'}
             </Button>
-            <Button type="button" variant="secondary" size="lg" onClick={() => navigateTo('dashboard')}>
+            <Button 
+              type="button" 
+              variant="secondary" 
+              size="lg" 
+              onClick={() => navigateTo('dashboard')}
+              disabled={loading}
+            >
               Cancel
             </Button>
           </div>
