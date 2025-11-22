@@ -117,6 +117,26 @@ export default function CreateRide() {
         alert(`Weekly schedule created for ${selectedDays.length} day(s) of the week!`);
         navigateTo('dashboard');
       } else {
+        // Get driver's current location
+        let driverLocation: { lat: number; lng: number } | undefined = undefined;
+        if (userRole === 'driver' && typeof navigator !== 'undefined' && navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 5000,
+                maximumAge: 60000, // Use cached location if less than 1 minute old
+              });
+            });
+            driverLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+          } catch (err) {
+            console.warn('Could not get driver location:', err);
+            // Continue without location - it's optional
+          }
+        }
+
         const newRide = await rideApi.create({
           driverName: userName || 'RideMate Driver',
           driverRating: userRole === 'driver' ? 4.9 : 4.8,
@@ -134,6 +154,8 @@ export default function CreateRide() {
           time: formattedTime || time,
           seats: seatsNumber,
           notes,
+          vehicleId: selectedVehicle || undefined,
+          driverLocation: driverLocation,
         });
 
         setActiveRideId(newRide._id);

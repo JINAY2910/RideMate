@@ -195,9 +195,9 @@ export default function RideDetails() {
     }
     try {
       const updatedRide = await rideApi.addRequest(activeRideId, {
-        name: userRole === 'driver' ? 'Rider' : userName || 'You',
+        name: userName || 'Rider',
         rating: 5,
-        status: 'Approved',
+        seatsRequested: 1, // Default to 1 seat, can be made configurable later
       });
       setRide(updatedRide);
       setRideSummaryInput({

@@ -6,11 +6,15 @@ const {
   getRide,
   updateRide,
   deleteRide,
+  addRequest,
+  updateRequestStatus,
 } = require('../controllers/rideController');
 const { authMiddleware, driverMiddleware } = require('../middleware/authMiddleware');
 
 router.route('/').get(getRides).post(authMiddleware, driverMiddleware, createRide);
 router.route('/:id').get(getRide).put(authMiddleware, driverMiddleware, updateRide).delete(authMiddleware, driverMiddleware, deleteRide);
+router.route('/:id/requests').post(authMiddleware, addRequest);
+router.route('/:id/requests/:requestId').patch(authMiddleware, driverMiddleware, updateRequestStatus);
 
 module.exports = router;
 

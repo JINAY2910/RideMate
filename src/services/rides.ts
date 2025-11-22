@@ -5,6 +5,10 @@ if (import.meta.env.DEV) {
   console.log('API Base URL:', API_BASE);
 }
 
+const getAuthToken = () => {
+  return localStorage.getItem('authToken');
+};
+
 const buildQueryString = (params?: Record<string, string | number | undefined | null>) => {
   if (!params) return '';
   const query = Object.entries(params).reduce<string[]>((acc, [key, value]) => {
@@ -34,9 +38,17 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 
 export type RideRequest = {
   _id: string;
+  rider: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+  } | null;
   name: string;
   rating: number;
-  status: 'Approved' | 'Pending';
+  status: 'Approved' | 'Pending' | 'Rejected';
+  seatsRequested: number;
+  createdAt: string;
 };
 
 export type Ride = {
@@ -70,9 +82,21 @@ export type Ride = {
   notes?: string;
   requests: RideRequest[];
   participants?: Array<{
+    rider: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+    } | null;
     name: string;
     status: string;
+    seatsBooked: number;
   }>;
+  vehicleId?: string | null;
+  driverLocation?: {
+    lat: number;
+    lng: number;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -94,6 +118,11 @@ export type RideCreatePayload = {
   time: string;
   seats: number;
   notes?: string;
+  vehicleId?: string;
+  driverLocation?: {
+    lat: number;
+    lng: number;
+  };
 };
 
 export type RideQueryParams = {
@@ -128,9 +157,16 @@ export const rideApi = {
   },
 
   async create(payload: RideCreatePayload) {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please log in to create a ride.');
+    }
     const response = await fetch(`${API_BASE}/rides`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
     });
     return handleResponse<Ride>(response);
@@ -142,19 +178,49 @@ export const rideApi = {
   },
 
   async updateStatus(id: string, status: Ride['status']) {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please log in to update ride status.');
+    }
     const response = await fetch(`${API_BASE}/rides/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ status }),
     });
     return handleResponse<Ride>(response);
   },
 
-  async addRequest(id: string, payload: { name: string; rating?: number; status?: 'Approved' | 'Pending' }) {
+  async addRequest(id: string, payload: { name?: string; rating?: number; seatsRequested?: number }) {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please log in to add a request.');
+    }
     const response = await fetch(`${API_BASE}/rides/${id}/requests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(payload),
+    });
+    return handleResponse<Ride>(response);
+  },
+
+  async updateRequestStatus(rideId: string, requestId: string, status: 'Approved' | 'Rejected') {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please log in to update request status.');
+    }
+    const response = await fetch(`${API_BASE}/rides/${rideId}/requests/${requestId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
     });
     return handleResponse<Ride>(response);
   },

@@ -1,4 +1,4 @@
-const Driver = require('../models/Driver');
+const User = require('../models/User');
 
 // @desc    Add a vehicle to driver
 // @route   POST /api/vehicles
@@ -30,8 +30,15 @@ const addVehicle = async (req, res, next) => {
     }
 
     // Check if user is a driver
-    const driver = await Driver.findById(req.user.id);
-    if (!driver) {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role !== 'driver') {
       return res.status(403).json({
         success: false,
         message: 'Only drivers can add vehicles',
@@ -39,7 +46,7 @@ const addVehicle = async (req, res, next) => {
     }
 
     // Check if vehicle with same registration number already exists
-    const existingVehicle = driver.vehicles.find(
+    const existingVehicle = user.vehicles?.find(
       (v) => v.registrationNumber.toLowerCase() === registrationNumber.toLowerCase()
     );
     if (existingVehicle) {
@@ -49,7 +56,12 @@ const addVehicle = async (req, res, next) => {
       });
     }
 
-    // Add vehicle to driver's vehicles array
+    // Initialize vehicles array if it doesn't exist
+    if (!user.vehicles) {
+      user.vehicles = [];
+    }
+
+    // Add vehicle to user's vehicles array
     const newVehicle = {
       registrationNumber,
       seatingLimit: parseInt(seatingLimit),
@@ -59,13 +71,13 @@ const addVehicle = async (req, res, next) => {
       color: color || '',
     };
 
-    driver.vehicles.push(newVehicle);
+    user.vehicles.push(newVehicle);
     
-    // Save driver document to drivers collection
-    const savedDriver = await driver.save();
+    // Save user document
+    const savedUser = await user.save();
 
     // Get the newly added vehicle (it will have an _id after save)
-    const addedVehicle = savedDriver.vehicles[savedDriver.vehicles.length - 1];
+    const addedVehicle = savedUser.vehicles[savedUser.vehicles.length - 1];
 
     res.status(201).json({
       success: true,
@@ -82,8 +94,15 @@ const addVehicle = async (req, res, next) => {
 // @access  Private (Driver only)
 const getVehicles = async (req, res, next) => {
   try {
-    const driver = await Driver.findById(req.user.id);
-    if (!driver) {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role !== 'driver') {
       return res.status(403).json({
         success: false,
         message: 'Only drivers can view vehicles',
@@ -92,7 +111,7 @@ const getVehicles = async (req, res, next) => {
 
     res.json({
       success: true,
-      vehicles: driver.vehicles || [],
+      vehicles: user.vehicles || [],
     });
   } catch (error) {
     next(error);
@@ -107,15 +126,22 @@ const updateVehicle = async (req, res, next) => {
     const { vehicleId } = req.params;
     const { registrationNumber, seatingLimit, vehicleType, make, model, color } = req.body;
 
-    const driver = await Driver.findById(req.user.id);
-    if (!driver) {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role !== 'driver') {
       return res.status(403).json({
         success: false,
         message: 'Only drivers can update vehicles',
       });
     }
 
-    const vehicle = driver.vehicles.id(vehicleId);
+    const vehicle = user.vehicles?.id(vehicleId);
     if (!vehicle) {
       return res.status(404).json({
         success: false,
@@ -139,7 +165,7 @@ const updateVehicle = async (req, res, next) => {
     if (model !== undefined) vehicle.model = model;
     if (color !== undefined) vehicle.color = color;
 
-    await driver.save();
+    await user.save();
 
     res.json({
       success: true,
@@ -157,15 +183,22 @@ const deleteVehicle = async (req, res, next) => {
   try {
     const { vehicleId } = req.params;
 
-    const driver = await Driver.findById(req.user.id);
-    if (!driver) {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (user.role !== 'driver') {
       return res.status(403).json({
         success: false,
         message: 'Only drivers can delete vehicles',
       });
     }
 
-    const vehicle = driver.vehicles.id(vehicleId);
+    const vehicle = user.vehicles?.id(vehicleId);
     if (!vehicle) {
       return res.status(404).json({
         success: false,
@@ -174,7 +207,7 @@ const deleteVehicle = async (req, res, next) => {
     }
 
     vehicle.remove();
-    await driver.save();
+    await user.save();
 
     res.json({
       success: true,

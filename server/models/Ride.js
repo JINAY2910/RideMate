@@ -7,6 +7,22 @@ const rideSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Driver is required'],
     },
+    // Vehicle reference (vehicle ID from driver's vehicles array)
+    vehicleId: {
+      type: String,
+      trim: true,
+    },
+    // Driver's current location when creating the ride
+    driverLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude] for GeoJSON
+      },
+    },
     from: {
       type: String,
       required: [true, 'From location is required'],
@@ -44,13 +60,24 @@ const rideSchema = new mongoose.Schema(
       default: '',
     },
     requests: [{
+      rider: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
       name: String,
       rating: { type: Number, default: 5 },
-      status: { type: String, enum: ['Approved', 'Pending'], default: 'Pending' },
+      status: { type: String, enum: ['Approved', 'Pending', 'Rejected'], default: 'Pending' },
+      seatsRequested: { type: Number, default: 1, min: 1 },
+      createdAt: { type: Date, default: Date.now },
     }],
     participants: [{
+      rider: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
       name: String,
       status: String,
+      seatsBooked: { type: Number, default: 1 },
     }],
     date: {
       type: String,
@@ -96,6 +123,7 @@ rideSchema.index({ from: 1, to: 1, date: 1 });
 // GeoJSON 2dsphere indexes for location-based queries
 rideSchema.index({ startCoordinates: '2dsphere' });
 rideSchema.index({ destCoordinates: '2dsphere' });
+rideSchema.index({ driverLocation: '2dsphere' });
 
 module.exports = mongoose.model('Ride', rideSchema);
 

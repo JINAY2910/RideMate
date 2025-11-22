@@ -54,6 +54,48 @@ const userSchema = new mongoose.Schema(
       enum: ['driver', 'rider'],
       required: [true, 'Role is required'],
     },
+    // Vehicle details for drivers
+    vehicles: [{
+      registrationNumber: {
+        type: String,
+        trim: true,
+      },
+      seatingLimit: {
+        type: Number,
+        min: 1,
+      },
+      vehicleType: {
+        type: String,
+        enum: ['2-wheeler', '3-wheeler', '4-wheeler'],
+      },
+      make: {
+        type: String,
+        trim: true,
+      },
+      model: {
+        type: String,
+        trim: true,
+      },
+      color: {
+        type: String,
+        trim: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    }],
+    // Driver location coordinates
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude] for GeoJSON
+      },
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -65,6 +107,9 @@ const userSchema = new mongoose.Schema(
 );
 
 // Note: email index is automatically created by unique: true, no need for manual index
+
+// GeoJSON 2dsphere index for driver location
+userSchema.index({ location: '2dsphere' });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {

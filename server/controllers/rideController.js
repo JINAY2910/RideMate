@@ -1,4 +1,5 @@
 const Ride = require('../models/Ride');
+const User = require('../models/User');
 const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
 
@@ -39,12 +40,40 @@ const transformRide = (ride) => {
     time: rideObj.time || '',
     status: rideObj.isActive !== false ? 'Active' : 'Completed',
     seats: {
-      total: rideObj.seatsAvailable || 0,
+      total: (rideObj.seatsAvailable || 0) + (rideObj.participants?.reduce((sum, p) => sum + (p.seatsBooked || 1), 0) || 0),
       available: rideObj.seatsAvailable || 0,
     },
     notes: rideObj.notes || '',
-    requests: rideObj.requests || [],
-    participants: rideObj.participants || [],
+    requests: (rideObj.requests || []).map(req => ({
+      _id: req._id?.toString() || '',
+      rider: req.rider?._id ? {
+        id: req.rider._id.toString(),
+        name: req.rider.name || req.name || 'Unknown',
+        email: req.rider.email || '',
+        phone: req.rider.phone || '',
+      } : null,
+      name: req.rider?.name || req.name || 'Unknown',
+      rating: req.rating || 5,
+      status: req.status || 'Pending',
+      seatsRequested: req.seatsRequested || 1,
+      createdAt: req.createdAt ? req.createdAt.toISOString() : new Date().toISOString(),
+    })),
+    participants: (rideObj.participants || []).map(part => ({
+      rider: part.rider?._id ? {
+        id: part.rider._id.toString(),
+        name: part.rider.name || part.name || 'Unknown',
+        email: part.rider.email || '',
+        phone: part.rider.phone || '',
+      } : null,
+      name: part.rider?.name || part.name || 'Unknown',
+      status: part.status || 'Confirmed',
+      seatsBooked: part.seatsBooked || 1,
+    })),
+    vehicleId: rideObj.vehicleId || null,
+    driverLocation: rideObj.driverLocation?.coordinates ? {
+      lat: rideObj.driverLocation.coordinates[1],
+      lng: rideObj.driverLocation.coordinates[0],
+    } : null,
     createdAt: rideObj.createdAt ? rideObj.createdAt.toISOString() : new Date().toISOString(),
     updatedAt: rideObj.updatedAt ? rideObj.updatedAt.toISOString() : new Date().toISOString(),
   };
@@ -195,6 +224,29 @@ const createRide = async (req, res, next) => {
     const seats = req.body.seats || req.body.seatsAvailable || 1;
     const price = req.body.price || 0;
 
+    // Handle vehicle ID
+    const vehicleId = req.body.vehicleId || null;
+
+    // Handle driver location (lat/lng from request body)
+    let driverLocationGeoJSON = null;
+    if (req.body.driverLocation) {
+      const driverLat = req.body.driverLocation.lat || req.body.driverLocation.latitude;
+      const driverLng = req.body.driverLocation.lng || req.body.driverLocation.longitude;
+      if (driverLat && driverLng) {
+        driverLocationGeoJSON = {
+          type: 'Point',
+          coordinates: [parseFloat(driverLng), parseFloat(driverLat)], // GeoJSON: [lng, lat]
+        };
+      }
+    }
+
+    // Update driver's location in User model if provided
+    if (driverLocationGeoJSON) {
+      await User.findByIdAndUpdate(req.user.id, {
+        location: driverLocationGeoJSON,
+      });
+    }
+
     const ride = await Ride.create({
       driver: req.user.id,
       from: from.trim(),
@@ -209,6 +261,8 @@ const createRide = async (req, res, next) => {
       requests: [],
       participants: [],
       isActive: true,
+      vehicleId: vehicleId,
+      driverLocation: driverLocationGeoJSON,
     });
 
     const populatedRide = await Ride.findById(ride._id).populate({
@@ -227,7 +281,7 @@ const createRide = async (req, res, next) => {
 // @access  Public
 const getRides = async (req, res, next) => {
   try {
-    const { from, to, date, isActive, nearStart, nearDest, radius } = req.query;
+    const { from, to, date, isActive, nearStart, nearDest, radius, driver, participant } = req.query;
 
     // Build query
     const query = {};
@@ -295,10 +349,35 @@ const getRides = async (req, res, next) => {
       query.isActive = isActive === 'true';
     }
 
+    // Filter by driver name if provided (for "My Rides" view)
+    if (driver) {
+      // Find user by name and filter rides by driver ID
+      const driverUser = await User.findOne({ name: driver, role: 'driver' });
+      if (driverUser) {
+        query.driver = driverUser._id;
+      }
+    }
+
+    // Filter by participant if provided (for riders to see their booked rides)
+    if (participant) {
+      const participantUser = await User.findOne({ name: participant, role: 'rider' });
+      if (participantUser) {
+        query['participants.name'] = participant;
+      }
+    }
+
     const rides = await Ride.find(query)
       .populate({
         path: 'driver',
         select: 'name email phone role',
+      })
+      .populate({
+        path: 'requests.rider',
+        select: 'name email phone',
+      })
+      .populate({
+        path: 'participants.rider',
+        select: 'name email phone',
       })
       .sort({ date: 1, time: 1 })
       .limit(100);
@@ -317,10 +396,19 @@ const getRides = async (req, res, next) => {
 // @access  Public
 const getRide = async (req, res, next) => {
   try {
-    const ride = await Ride.findById(req.params.id).populate({
-      path: 'driver',
-      select: 'name email phone role',
-    });
+    const ride = await Ride.findById(req.params.id)
+      .populate({
+        path: 'driver',
+        select: 'name email phone role',
+      })
+      .populate({
+        path: 'requests.rider',
+        select: 'name email phone',
+      })
+      .populate({
+        path: 'participants.rider',
+        select: 'name email phone',
+      });
 
     if (!ride) {
       return res.status(404).json({
@@ -428,11 +516,199 @@ const deleteRide = async (req, res, next) => {
   }
 };
 
+// @desc    Add a ride request (rider wants to book)
+// @route   POST /api/rides/:id/requests
+// @access  Private (Rider only)
+const addRequest = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found',
+      });
+    }
+
+    // Check if ride is active
+    if (!ride.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ride is not active',
+      });
+    }
+
+    // Check if user is a rider
+    if (req.user.role !== 'rider') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only riders can request to book rides',
+      });
+    }
+
+    // Check if rider already has a pending or approved request
+    const existingRequest = ride.requests.find(
+      (r) => r.rider && r.rider.toString() === req.user.id.toString() && r.status !== 'Rejected'
+    );
+
+    if (existingRequest) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already requested to book this ride',
+      });
+    }
+
+    // Get seats requested (default 1)
+    const seatsRequested = parseInt(req.body.seatsRequested || req.body.seats || 1);
+
+    // Check if enough seats available
+    if (ride.seatsAvailable < seatsRequested) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${ride.seatsAvailable} seat(s) available`,
+      });
+    }
+
+    // Add request to ride
+    const newRequest = {
+      rider: req.user.id,
+      name: req.user.name || req.body.name || 'Rider',
+      rating: req.body.rating || 5,
+      status: 'Pending',
+      seatsRequested: seatsRequested,
+    };
+
+    ride.requests.push(newRequest);
+    await ride.save();
+
+    // Populate and return updated ride
+    const populatedRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate({
+      path: 'requests.rider',
+      select: 'name email phone',
+    });
+
+    res.status(201).json(transformRide(populatedRide));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update request status (approve/reject)
+// @route   PATCH /api/rides/:id/requests/:requestId
+// @access  Private (Driver only, owner only)
+const updateRequestStatus = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found',
+      });
+    }
+
+    // Check if user is the driver
+    if (ride.driver.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the driver can approve or reject requests',
+      });
+    }
+
+    const { status } = req.body;
+    if (!['Approved', 'Rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status must be either "Approved" or "Rejected"',
+      });
+    }
+
+    // Find the request
+    const request = ride.requests.id(req.params.requestId);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Request not found',
+      });
+    }
+
+    // Check if request is already processed
+    if (request.status === 'Approved' && status === 'Approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Request is already approved',
+      });
+    }
+
+    // If changing from Approved to Rejected, restore seats and remove from participants
+    if (request.status === 'Approved' && status === 'Rejected') {
+      ride.seatsAvailable += request.seatsRequested;
+      // Remove from participants
+      ride.participants = ride.participants.filter(
+        p => p.rider && p.rider.toString() !== request.rider.toString()
+      );
+    }
+
+    // If approving, check seats and update
+    if (status === 'Approved' && request.status !== 'Approved') {
+      if (ride.seatsAvailable < request.seatsRequested) {
+        return res.status(400).json({
+          success: false,
+          message: `Only ${ride.seatsAvailable} seat(s) available`,
+        });
+      }
+
+      // Reduce available seats
+      ride.seatsAvailable -= request.seatsRequested;
+
+      // Check if rider is already a participant (shouldn't happen, but safety check)
+      const existingParticipant = ride.participants.find(
+        p => p.rider && p.rider.toString() === request.rider.toString()
+      );
+      
+      if (!existingParticipant) {
+        // Add to participants
+        ride.participants.push({
+          rider: request.rider,
+          name: request.name,
+          status: 'Confirmed',
+          seatsBooked: request.seatsRequested,
+        });
+      }
+    }
+
+    // Update request status
+    request.status = status;
+    await ride.save();
+
+    // Populate and return updated ride
+    const populatedRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate({
+      path: 'requests.rider',
+      select: 'name email phone',
+    }).populate({
+      path: 'participants.rider',
+      select: 'name email phone',
+    });
+
+    res.json(transformRide(populatedRide));
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRide,
   getRides,
   getRide,
   updateRide,
   deleteRide,
+  addRequest,
+  updateRequestStatus,
 };
 
