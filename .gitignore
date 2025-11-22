@@ -38,4 +38,83 @@ build/
 dist
 build
 
-# Dep
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# dotenv environment variables
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Parcel-bundler cache (if used)
+.cache
+
+# Next.js
+.next
+out
+
+# React Native
+ios/Pods
+android/.gradle
+android/app/build/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# MacOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Dropbox
+.dropbox
+
+# node-waf configuration
+.lock-wscript
+
+# Vim swap files
+*.swp
+
+# SASS cache
+.sass-cache
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Firebase
+.firebase
+.firebaseproject
+
+# JetBrains IDEs (WebStorm, IntelliJ)
+.idea/
+*.iml
+
+# Local backups
+*.bak
+
+# Generated PDFs or exports
+*.pdf
+
+# Local tickets or exports folder
+tickets/
