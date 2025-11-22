@@ -15,6 +15,28 @@ export type RideSummaryInput = {
   destination: LocationPoint;
 };
 
+export type Vehicle = {
+  _id: string;
+  registrationNumber: string;
+  seatingLimit: number;
+  vehicleType: '2-wheeler' | '3-wheeler' | '4-wheeler';
+  make?: string;
+  model?: string;
+  color?: string;
+  createdAt: string;
+};
+
+export type RideSchedule = {
+  rideId: string;
+  days: string[];
+  time: string;
+  startLocation: LocationPoint;
+  destinationLocation: LocationPoint;
+  vehicleId: string;
+  seats: number;
+  notes?: string;
+};
+
 interface AppContextType {
   currentScreen: string;
   userRole: 'driver' | 'rider' | null;
@@ -25,6 +47,9 @@ interface AppContextType {
   emergencyContacts: EmergencyContact[];
   activeRideId: string | null;
   rideSummaryInput: RideSummaryInput | null;
+  vehicles: Vehicle[];
+  rideVehicles: Record<string, string>; // Maps rideId to vehicleId
+  rideSchedules: RideSchedule[]; // Weekly schedules
   navigateTo: (screen: string) => void;
   setRole: (role: 'driver' | 'rider') => void;
   setUserName: (name: string) => void;
@@ -34,6 +59,12 @@ interface AppContextType {
   setEmergencyContacts: (contacts: EmergencyContact[]) => void;
   setActiveRideId: (rideId: string | null) => void;
   setRideSummaryInput: (input: RideSummaryInput | null) => void;
+  setVehicles: (vehicles: Vehicle[]) => void;
+  addVehicle: (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => void;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
+  deleteVehicle: (id: string) => void;
+  setRideVehicle: (rideId: string, vehicleId: string) => void;
+  addRideSchedule: (schedule: RideSchedule) => void;
   logout: () => void;
 }
 
@@ -56,6 +87,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     { name: 'Michael Chen', phone: '+1 (555) 987-6543' },
     { name: 'David Lee', phone: '+1 (555) 222-8899' },
   ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [rideVehicles, setRideVehicles] = useState<Record<string, string>>({});
+  const [rideSchedules, setRideSchedules] = useState<RideSchedule[]>([]);
 
   const navigateTo = (screen: string) => {
     setCurrentScreen(screen);
@@ -71,8 +105,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserName('');
     setUserEmail('');
     setUserPhone('');
+    setVehicles([]);
+    setRideVehicles({});
+    setRideSchedules([]);
     localStorage.removeItem('authToken');
     navigateTo('landing');
+  };
+
+  const addVehicle = (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => {
+    const newVehicle: Vehicle = {
+      ...vehicle,
+      _id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setVehicles([...vehicles, newVehicle]);
+  };
+
+  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
+    setVehicles(vehicles.map(v => v._id === id ? { ...v, ...updates } : v));
+  };
+
+  const deleteVehicle = (id: string) => {
+    setVehicles(vehicles.filter(v => v._id !== id));
+  };
+
+  const setRideVehicle = (rideId: string, vehicleId: string) => {
+    setRideVehicles(prev => ({ ...prev, [rideId]: vehicleId }));
+  };
+
+  const addRideSchedule = (schedule: RideSchedule) => {
+    setRideSchedules(prev => [...prev, schedule]);
   };
 
   // Update localStorage when token changes
@@ -97,6 +159,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         emergencyContacts,
         activeRideId,
         rideSummaryInput,
+        vehicles,
         navigateTo,
         setRole,
         setUserName,
@@ -106,6 +169,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setEmergencyContacts,
         setActiveRideId,
         setRideSummaryInput,
+        setVehicles,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
+        rideVehicles,
+        setRideVehicle,
+        rideSchedules,
+        addRideSchedule,
         logout,
       }}
     >

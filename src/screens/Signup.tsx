@@ -13,6 +13,10 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'driver' | 'rider'>('rider');
+  const [gender, setGender] = useState('');
+  const [emergency1, setEmergency1] = useState('');
+  const [emergency2, setEmergency2] = useState('');
+  const [emergency3, setEmergency3] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -149,33 +153,6 @@ export default function Signup() {
             required
             disabled={loading}
           />
-          <Input
-            label="Password"
-            type="password"
-            placeholder="•••••••• (min 6 characters)"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null);
-            }}
-            icon={<Lock size={20} />}
-            required
-            disabled={loading}
-          />
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setError(null);
-            }}
-            icon={<Lock size={20} />}
-            required
-            disabled={loading}
-          />
-
           <div className="pt-2 pb-1">
             <label className="block text-sm font-semibold mb-3 text-black">I'm a</label>
             <div className="flex gap-3">
@@ -209,6 +186,109 @@ export default function Signup() {
               >
                 <Car size={18} /> Driver
               </button>
+            </div>
+          </div>
+
+          <Input
+            label="Password"
+            type="password"
+            placeholder="•••••••• (min 6 characters)"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
+            icon={<Lock size={20} />}
+            required
+            disabled={loading}
+          />
+          <Input
+            label="Confirm Password"
+            type="password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError(null);
+            }}
+            icon={<Lock size={20} />}
+            required
+            disabled={loading}
+          />
+
+          <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-6 shadow-sm">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2.5 text-black">
+                  Gender
+                </label>
+                <select
+                  value={gender}
+                  onChange={(e) => {
+                    setGender(e.target.value);
+                    setError(null);
+                  }}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+                  disabled={loading}
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-black">
+                  Emergency Contact Numbers
+                </label>
+                <Input
+                  label="Emergency Contact 1"
+                  type="tel"
+                  placeholder="+91 9876543210"
+                  value={emergency1}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^[\d+\s-()]*$/.test(value)) {
+                      setEmergency1(value);
+                      setError(null);
+                    }
+                  }}
+                  icon={<Phone size={20} />}
+                  disabled={loading}
+                />
+                <Input
+                  label="Emergency Contact 2"
+                  type="tel"
+                  placeholder="+91 9876543211"
+                  value={emergency2}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^[\d+\s-()]*$/.test(value)) {
+                      setEmergency2(value);
+                      setError(null);
+                    }
+                  }}
+                  icon={<Phone size={20} />}
+                  disabled={loading}
+                />
+                <Input
+                  label="Emergency Contact 3"
+                  type="tel"
+                  placeholder="+91 9876543212"
+                  value={emergency3}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^[\d+\s-()]*$/.test(value)) {
+                      setEmergency3(value);
+                      setError(null);
+                    }
+                  }}
+                  icon={<Phone size={20} />}
+                  disabled={loading}
+                />
+              </div>
             </div>
           </div>
 

@@ -8,6 +8,7 @@ export default function Dashboard() {
 
   const driverMenuItems = [
     { icon: PlusCircle, label: 'Create Ride', desc: 'Start a new ride', screen: 'create-ride' },
+    { icon: Car, label: 'Vehicles', desc: 'Manage your vehicles', screen: 'vehicles' },
     { icon: List, label: 'My Rides', desc: 'View active rides', screen: 'my-rides' },
     { icon: History, label: 'Ride History', desc: 'Past journeys', screen: 'ride-history' },
     { icon: User, label: 'Profile', desc: 'Edit your profile', screen: 'profile' },

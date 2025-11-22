@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, MapPin, Calendar, Star, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Star, Users, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Card from '../components/Card';
 
@@ -26,7 +26,7 @@ interface Ride {
 }
 
 export default function RideHistory() {
-  const { navigateTo } = useApp();
+  const { navigateTo, vehicles, rideVehicles } = useApp();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,13 +109,40 @@ export default function RideHistory() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t-2 border-gray-200 flex justify-between items-center">
-                <p className="text-sm text-gray-600">
-                  Driver: <span className="font-bold text-black">{ride.driver?.name}</span>
-                </p>
-                <span className="text-xs text-gray-500">
-                  Added: {new Date(ride.createdAt).toLocaleString()}
-                </span>
+              <div className="pt-4 border-t-2 border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-sm text-gray-600">
+                    Driver: <span className="font-bold text-black">{ride.driver?.name}</span>
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    Added: {new Date(ride.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                
+                {(() => {
+                  const vehicleId = rideVehicles[ride._id];
+                  const vehicle = vehicleId ? vehicles.find(v => v._id === vehicleId) : null;
+                  return vehicle ? (
+                    <div className="flex items-start pt-2 border-t border-gray-200">
+                      <Car size={20} className="text-black mr-2 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-black">Vehicle Details</p>
+                        <p className="text-gray-600">
+                          {vehicle.registrationNumber} • {vehicle.vehicleType}
+                        </p>
+                        {vehicle.make && vehicle.model && (
+                          <p className="text-gray-600">
+                            {vehicle.make} {vehicle.model}
+                          </p>
+                        )}
+                        {vehicle.color && (
+                          <p className="text-gray-600">Color: {vehicle.color}</p>
+                        )}
+                        <p className="text-gray-600">Seating: {vehicle.seatingLimit} seats</p>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </Card>
           ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Star, Users } from 'lucide-react';
+import { ArrowLeft, Star, Users, Car, Filter } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -9,13 +9,18 @@ import { Location } from '../services/locations';
 import { rideApi, Ride } from '../services/rides';
 
 export default function SearchRide() {
-  const { navigateTo, setRideSummaryInput, setActiveRideId } = useApp();
+  const { navigateTo, setRideSummaryInput, setActiveRideId, vehicles, rideVehicles } = useApp();
   const [startLocation, setStartLocation] = useState<Location | null>(null);
   const [destinationLocation, setDestinationLocation] = useState<Location | null>(null);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [requiredSeats, setRequiredSeats] = useState('');
   const [sameGender, setSameGender] = useState(false);
+  const [showVehicleFilters, setShowVehicleFilters] = useState(false);
+  const [filterVehicleType, setFilterVehicleType] = useState('');
+  const [filterMake, setFilterMake] = useState('');
+  const [filterModel, setFilterModel] = useState('');
+  const [allRides, setAllRides] = useState<Ride[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,7 +31,8 @@ export default function SearchRide() {
       setLoading(true);
       setError(null);
       const results = await rideApi.list(params);
-      setRides(results);
+      setAllRides(results);
+      applyVehicleFilters(results);
     } catch (err) {
       console.error('Error loading rides:', err);
       let errorMessage = 'Unable to load rides.';
@@ -65,6 +71,40 @@ export default function SearchRide() {
     });
   };
 
+  const applyVehicleFilters = (ridesToFilter: Ride[]) => {
+    let filtered = [...ridesToFilter];
+
+    if (filterVehicleType || filterMake || filterModel) {
+      filtered = filtered.filter(ride => {
+        const vehicleId = rideVehicles[ride._id];
+        if (!vehicleId) return false;
+        
+        const vehicle = vehicles.find(v => v._id === vehicleId);
+        if (!vehicle) return false;
+
+        if (filterVehicleType && vehicle.vehicleType !== filterVehicleType) {
+          return false;
+        }
+        if (filterMake && vehicle.make?.toLowerCase() !== filterMake.toLowerCase()) {
+          return false;
+        }
+        if (filterModel && vehicle.model?.toLowerCase() !== filterModel.toLowerCase()) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    setRides(filtered);
+  };
+
+  useEffect(() => {
+    if (allRides.length > 0) {
+      applyVehicleFilters(allRides);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterVehicleType, filterMake, filterModel, allRides.length]);
+
   const handleSearch = async () => {
     if (!startLocation || !destinationLocation) {
       setError('Please select both a starting point and destination.');
@@ -91,6 +131,24 @@ export default function SearchRide() {
       // Error is already handled in loadRides
       console.error('Search error:', err);
     }
+  };
+
+  const getUniqueMakes = () => {
+    const makes = vehicles
+      .map(v => v.make)
+      .filter((make): make is string => !!make)
+      .filter((make, index, self) => self.indexOf(make) === index)
+      .sort();
+    return makes;
+  };
+
+  const getUniqueModels = () => {
+    const models = vehicles
+      .map(v => v.model)
+      .filter((model): model is string => !!model)
+      .filter((model, index, self) => self.indexOf(model) === index)
+      .sort();
+    return models;
   };
 
   const prepareRideSummaryInput = (ride: Ride) => {
@@ -191,6 +249,76 @@ export default function SearchRide() {
               </label>
             </div>
 
+            <div className="flex items-center my-2 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+              <input
+                type="checkbox"
+                id="show-vehicle-filters"
+                checked={showVehicleFilters}
+                onChange={(e) => setShowVehicleFilters(e.target.checked)}
+                className="w-5 h-5 border-2 border-black rounded cursor-pointer"
+              />
+              <label htmlFor="show-vehicle-filters" className="ml-3 text-sm font-semibold text-black cursor-pointer flex items-center gap-2">
+                <Filter size={18} />
+                Vehicle Filters (Optional)
+              </label>
+            </div>
+
+            {showVehicleFilters && (
+              <div className="space-y-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+                <div>
+                  <label className="block text-sm font-semibold mb-2.5 text-black">
+                    Vehicle Type
+                  </label>
+                  <select
+                    value={filterVehicleType}
+                    onChange={(e) => setFilterVehicleType(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+                  >
+                    <option value="">All Types</option>
+                    <option value="2-wheeler">2-wheeler</option>
+                    <option value="3-wheeler">3-wheeler</option>
+                    <option value="4-wheeler">4-wheeler</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2.5 text-black">
+                    Make
+                  </label>
+                  <select
+                    value={filterMake}
+                    onChange={(e) => setFilterMake(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+                  >
+                    <option value="">All Makes</option>
+                    {getUniqueMakes().map((make) => (
+                      <option key={make} value={make}>
+                        {make}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2.5 text-black">
+                    Model
+                  </label>
+                  <select
+                    value={filterModel}
+                    onChange={(e) => setFilterModel(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+                  >
+                    <option value="">All Models</option>
+                    {getUniqueModels().map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             <Button type="button" fullWidth size="lg" onClick={handleSearch}>
               Search Rides
             </Button>
@@ -247,6 +375,16 @@ export default function SearchRide() {
                         ))}
                         <span className="text-sm font-semibold ml-1">{ride.driver.rating.toFixed(1)}</span>
                       </div>
+                      {(() => {
+                        const vehicleId = rideVehicles[ride._id];
+                        const vehicle = vehicleId ? vehicles.find(v => v._id === vehicleId) : null;
+                        return vehicle ? (
+                          <div className="mt-2 flex items-center text-xs text-gray-600">
+                            <Car size={14} className="mr-1" />
+                            <span>{vehicle.make && vehicle.model ? `${vehicle.make} ${vehicle.model}` : vehicle.vehicleType}</span>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
 
                     <div>

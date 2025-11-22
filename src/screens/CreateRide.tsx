@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, Car, Calendar } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -17,16 +17,37 @@ const formatTimeLabel = (timeValue: string) => {
   return `${normalizedHour}:${minute} ${suffix}`;
 };
 
+const DAYS_OF_WEEK = [
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
+];
+
 export default function CreateRide() {
-  const { navigateTo, setRideSummaryInput, userName, userRole, setActiveRideId } = useApp();
+  const { navigateTo, setRideSummaryInput, userName, userRole, setActiveRideId, vehicles, setRideVehicle, addRideSchedule } = useApp();
   const [startLocation, setStartLocation] = useState<Location | null>(null);
   const [destinationLocation, setDestinationLocation] = useState<Location | null>(null);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [seats, setSeats] = useState('');
   const [notes, setNotes] = useState('');
+  const [selectedVehicle, setSelectedVehicle] = useState('');
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleDay = (day: string) => {
+    setSelectedDays(prev => 
+      prev.includes(day) 
+        ? prev.filter(d => d !== day)
+        : [...prev, day]
+    );
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +55,31 @@ export default function CreateRide() {
       alert('Please select both a start and destination location.');
       return;
     }
-    if (!date || !time || !seats) {
-      alert('Please complete all required fields.');
-      return;
+    if (isScheduled) {
+      if (selectedDays.length === 0) {
+        alert('Please select at least one day for the schedule.');
+        return;
+      }
+      if (!time || !seats) {
+        alert('Please complete all required fields for scheduled ride.');
+        return;
+      }
+    } else {
+      if (!date || !time || !seats) {
+        alert('Please complete all required fields.');
+        return;
+      }
+    }
+    
+    if (userRole === 'driver') {
+      if (vehicles.length === 0) {
+        alert('Please add a vehicle first before creating a ride.');
+        return;
+      }
+      if (!selectedVehicle) {
+        alert('Please select a vehicle for this ride.');
+        return;
+      }
     }
 
     const seatsNumber = Number(seats);
@@ -51,38 +94,68 @@ export default function CreateRide() {
 
       const formattedTime = formatTimeLabel(time);
 
-      const newRide = await rideApi.create({
-        driverName: userName || 'RideMate Driver',
-        driverRating: userRole === 'driver' ? 4.9 : 4.8,
-        start: {
-          label: startLocation.name,
-          lat: startLocation.lat,
-          lng: startLocation.lng,
-        },
-        destination: {
-          label: destinationLocation.name,
-          lat: destinationLocation.lat,
-          lng: destinationLocation.lng,
-        },
-        date,
-        time: formattedTime || time,
-        seats: seatsNumber,
-        notes,
-      });
+      if (isScheduled) {
+        // Store schedule (dummy data - not saved to DB)
+        if (selectedVehicle && startLocation && destinationLocation) {
+          addRideSchedule({
+            rideId: `schedule_${Date.now()}`,
+            days: selectedDays,
+            time: formattedTime || time,
+            startLocation: {
+              lat: startLocation.lat,
+              lng: startLocation.lng,
+            },
+            destinationLocation: {
+              lat: destinationLocation.lat,
+              lng: destinationLocation.lng,
+            },
+            vehicleId: selectedVehicle,
+            seats: seatsNumber,
+            notes: notes || undefined,
+          });
+        }
+        alert(`Weekly schedule created for ${selectedDays.length} day(s) of the week!`);
+        navigateTo('dashboard');
+      } else {
+        const newRide = await rideApi.create({
+          driverName: userName || 'RideMate Driver',
+          driverRating: userRole === 'driver' ? 4.9 : 4.8,
+          start: {
+            label: startLocation.name,
+            lat: startLocation.lat,
+            lng: startLocation.lng,
+          },
+          destination: {
+            label: destinationLocation.name,
+            lat: destinationLocation.lat,
+            lng: destinationLocation.lng,
+          },
+          date,
+          time: formattedTime || time,
+          seats: seatsNumber,
+          notes,
+        });
 
-      setActiveRideId(newRide._id);
-      setRideSummaryInput({
-        start: {
-          lat: newRide.start.coordinates.lat,
-          lng: newRide.start.coordinates.lng,
-        },
-        destination: {
-          lat: newRide.destination.coordinates.lat,
-          lng: newRide.destination.coordinates.lng,
-        },
-      });
+        setActiveRideId(newRide._id);
+        
+        // Store vehicle ID for this ride (dummy data)
+        if (selectedVehicle) {
+          setRideVehicle(newRide._id, selectedVehicle);
+        }
+        
+        setRideSummaryInput({
+          start: {
+            lat: newRide.start.coordinates.lat,
+            lng: newRide.start.coordinates.lng,
+          },
+          destination: {
+            lat: newRide.destination.coordinates.lat,
+            lng: newRide.destination.coordinates.lng,
+          },
+        });
 
-      navigateTo('ride-confirmation');
+        navigateTo('ride-confirmation');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create ride. Please try again.');
     } finally {
@@ -131,22 +204,120 @@ export default function CreateRide() {
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                label="Date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
+            <div className="flex items-center p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+              <input
+                type="checkbox"
+                id="is-scheduled"
+                checked={isScheduled}
+                onChange={(e) => {
+                  setIsScheduled(e.target.checked);
+                  if (!e.target.checked) {
+                    setSelectedDays([]);
+                    setDate('');
+                  }
+                }}
+                className="w-5 h-5 border-2 border-black rounded cursor-pointer"
               />
-              <Input
-                label="Time"
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                required
-              />
+              <label htmlFor="is-scheduled" className="ml-3 text-sm font-semibold text-black cursor-pointer flex items-center gap-2">
+                <Calendar size={18} />
+                Create Weekly Schedule
+              </label>
             </div>
+
+            {isScheduled ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-3 text-black">
+                    Select Days of the Week *
+                  </label>
+                  <div className="grid grid-cols-7 gap-2">
+                    {DAYS_OF_WEEK.map((day) => (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDay(day.value)}
+                        className={`py-3 px-2 rounded-lg border-2 font-semibold text-sm transition-all ${
+                          selectedDays.includes(day.value)
+                            ? 'bg-black text-white border-black'
+                            : 'bg-white text-black border-gray-300 hover:border-black'
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedDays.length > 0 && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      Selected: {selectedDays.length} day{selectedDays.length !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+                <Input
+                  label="Time *"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Input
+                  label="Date *"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Time *"
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {userRole === 'driver' && (
+              <div>
+                <label className="block text-sm font-semibold mb-2.5 text-black">
+                  Select Vehicle *
+                </label>
+                {vehicles.length > 0 ? (
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
+                      <Car size={20} />
+                    </div>
+                    <select
+                      value={selectedVehicle}
+                      onChange={(e) => setSelectedVehicle(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
+                      required
+                    >
+                      <option value="">Choose a vehicle</option>
+                      {vehicles.map((vehicle) => (
+                        <option key={vehicle._id} value={vehicle._id}>
+                          {vehicle.registrationNumber} - {vehicle.vehicleType} ({vehicle.seatingLimit} seats)
+                          {vehicle.make && vehicle.model && ` - ${vehicle.make} ${vehicle.model}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-2">No vehicles added yet.</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => navigateTo('vehicles')}
+                    >
+                      Add Vehicle First
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <Input
               label="Available Seats"

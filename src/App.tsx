@@ -16,6 +16,7 @@ import Platform from './screens/Platform';
 import Cities from './screens/Cities';
 import Safety from './screens/Safety';
 import RideConfirmation from './screens/RideConfirmation';
+import Vehicles from './screens/Vehicles';
 
 function AppRouter() {
   const { currentScreen } = useApp();
@@ -38,6 +39,7 @@ function AppRouter() {
     cities: <Cities />,
     safety: <Safety />,
     'ride-confirmation': <RideConfirmation />,
+    vehicles: <Vehicles />,
   };
 
   return screens[currentScreen] || <Landing />;
