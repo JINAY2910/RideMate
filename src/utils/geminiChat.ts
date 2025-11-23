@@ -15,6 +15,6 @@ export async function askGemini(message: string) {
     return result.response.text();
   } catch (err) {
     console.error("Gemini Error:", err);
-    return "Gemini API error.";
+    return "Error: Failed to process the request.";
   }
 }
