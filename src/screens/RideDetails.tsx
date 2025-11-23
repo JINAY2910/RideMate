@@ -339,32 +339,58 @@ export default function RideDetails() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Button fullWidth onClick={() => navigateTo('chat')}>
                   <MessageCircle size={20} className="inline mr-2" />
                   Chat
                 </Button>
-                <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
-                  <MapPin size={20} className="inline mr-2" />
-                  Track
-                </Button>
-                <Button
-                  fullWidth
-                  variant="secondary"
-                  onClick={handleSOSButtonClick}
-                  className="border-red-500 text-red-600"
-                >
-                  <AlertTriangle size={20} className="inline mr-2 text-red-600" />
-                  SOS
-                </Button>
-                <Button
-                  fullWidth
-                  onClick={handleBookRideFromDetails}
-                  disabled={hasRequested || ride.seats.available === 0}
-                  variant={hasRequested ? 'secondary' : 'primary'}
-                >
-                  {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : 'Book Ride'}
-                </Button>
+
+                {/* Driver Actions */}
+                {userRole === 'driver' && ride.driver.id === userId && (
+                  <Button fullWidth onClick={() => navigateTo('gps-tracking')}>
+                    <MapPin size={20} className="inline mr-2" />
+                    Start Trip
+                  </Button>
+                )}
+
+                {/* Rider Actions - Only if Confirmed */}
+                {ride.participants?.some(p => p.rider?.id === userId) && (
+                  <>
+                    <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
+                      <MapPin size={20} className="inline mr-2" />
+                      Track Ride
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="secondary"
+                      onClick={() => alert('Ticket Downloaded!')}
+                    >
+                      <ShieldAlert size={20} className="inline mr-2" />
+                      Download Ticket
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="secondary"
+                      onClick={handleSOSButtonClick}
+                      className="border-red-500 text-red-600"
+                    >
+                      <AlertTriangle size={20} className="inline mr-2 text-red-600" />
+                      SOS
+                    </Button>
+                  </>
+                )}
+
+                {/* Non-Driver / Non-Participant Actions */}
+                {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
+                  <Button
+                    fullWidth
+                    onClick={handleBookRideFromDetails}
+                    disabled={hasRequested || ride.seats.available === 0}
+                    variant={hasRequested ? 'secondary' : 'primary'}
+                  >
+                    {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : 'Request Ride'}
+                  </Button>
+                )}
               </div>
             </Card>
 
@@ -486,11 +512,7 @@ export default function RideDetails() {
             )}
 
             <div className="mt-6 flex flex-col gap-3">
-              {userRole === 'driver' && (
-                <Button fullWidth onClick={() => navigateTo('gps-tracking')}>
-                  Start Trip
-                </Button>
-              )}
+
               {rideStatus !== 'Completed' ? (
                 <Button fullWidth variant="secondary" onClick={handleMarkRideComplete}>
                   Mark Ride Complete

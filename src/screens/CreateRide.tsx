@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Users, Car, Calendar } from 'lucide-react';
+import { ArrowLeft, Users, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -17,18 +17,8 @@ const formatTimeLabel = (timeValue: string) => {
   return `${normalizedHour}:${minute} ${suffix}`;
 };
 
-const DAYS_OF_WEEK = [
-  { value: 'monday', label: 'Mon' },
-  { value: 'tuesday', label: 'Tue' },
-  { value: 'wednesday', label: 'Wed' },
-  { value: 'thursday', label: 'Thu' },
-  { value: 'friday', label: 'Fri' },
-  { value: 'saturday', label: 'Sat' },
-  { value: 'sunday', label: 'Sun' },
-];
-
 export default function CreateRide() {
-  const { navigateTo, setRideSummaryInput, userName, userRole, setActiveRideId, vehicles, setRideVehicle, addRideSchedule } = useApp();
+  const { navigateTo, setRideSummaryInput, userName, userRole, setActiveRideId, vehicles, setRideVehicle } = useApp();
   const [startLocation, setStartLocation] = useState<Location | null>(null);
   const [destinationLocation, setDestinationLocation] = useState<Location | null>(null);
   const [date, setDate] = useState('');
@@ -36,39 +26,22 @@ export default function CreateRide() {
   const [seats, setSeats] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState('');
-  const [isScheduled, setIsScheduled] = useState(false);
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggleDay = (day: string) => {
-    setSelectedDays(prev =>
-      prev.includes(day)
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
-    );
-  };
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) return; // Debounce check
+
     if (!startLocation || !destinationLocation) {
       alert('Please select both a start and destination location.');
       return;
     }
-    if (isScheduled) {
-      if (selectedDays.length === 0) {
-        alert('Please select at least one day for the schedule.');
-        return;
-      }
-      if (!time || !seats) {
-        alert('Please complete all required fields for scheduled ride.');
-        return;
-      }
-    } else {
-      if (!date || !time || !seats) {
-        alert('Please complete all required fields.');
-        return;
-      }
+
+    if (!date || !time || !seats) {
+      alert('Please complete all required fields.');
+      return;
     }
 
     if (userRole === 'driver') {
@@ -94,94 +67,75 @@ export default function CreateRide() {
 
       const formattedTime = formatTimeLabel(time);
 
-      if (isScheduled) {
-        // Store schedule (dummy data - not saved to DB)
-        if (selectedVehicle && startLocation && destinationLocation) {
-          addRideSchedule({
-            rideId: `schedule_${Date.now()}`,
-            days: selectedDays,
-            time: formattedTime || time,
-            startLocation: {
-              lat: startLocation.lat,
-              lng: startLocation.lng,
-            },
-            destinationLocation: {
-              lat: destinationLocation.lat,
-              lng: destinationLocation.lng,
-            },
-            vehicleId: selectedVehicle,
-            seats: seatsNumber,
-            notes: notes || undefined,
-          });
-        }
-        alert(`Weekly schedule created for ${selectedDays.length} day(s) of the week!`);
-        navigateTo('dashboard');
-      } else {
-        // Get driver's current location
-        let driverLocation: { lat: number; lng: number } | undefined = undefined;
-        if (userRole === 'driver' && typeof navigator !== 'undefined' && navigator.geolocation) {
-          try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, {
-                timeout: 5000,
-                maximumAge: 60000, // Use cached location if less than 1 minute old
-              });
+      // Get driver's current location
+      let driverLocation: { lat: number; lng: number } | undefined = undefined;
+      if (userRole === 'driver' && typeof navigator !== 'undefined' && navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              maximumAge: 60000, // Use cached location if less than 1 minute old
             });
-            driverLocation = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-          } catch (err) {
-            console.warn('Could not get driver location:', err);
-            // Continue without location - it's optional
-          }
+          });
+          driverLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+        } catch (err) {
+          console.warn('Could not get driver location:', err);
+          // Continue without location - it's optional
         }
-
-        const newRide = await rideApi.create({
-          driverName: userName || 'RideMate Driver',
-          driverRating: userRole === 'driver' ? 4.9 : 4.8,
-          start: {
-            label: startLocation.name,
-            lat: startLocation.lat,
-            lng: startLocation.lng,
-          },
-          destination: {
-            label: destinationLocation.name,
-            lat: destinationLocation.lat,
-            lng: destinationLocation.lng,
-          },
-          date,
-          time: formattedTime || time,
-          seats: seatsNumber,
-          notes,
-          vehicleId: selectedVehicle || undefined,
-          driverLocation: driverLocation,
-        });
-
-        setActiveRideId(newRide._id);
-
-        // Store vehicle ID for this ride (dummy data)
-        if (selectedVehicle) {
-          setRideVehicle(newRide._id, selectedVehicle);
-        }
-
-        setRideSummaryInput({
-          start: {
-            lat: newRide.start.coordinates.lat,
-            lng: newRide.start.coordinates.lng,
-          },
-          destination: {
-            lat: newRide.destination.coordinates.lat,
-            lng: newRide.destination.coordinates.lng,
-          },
-        });
-
-        navigateTo('ride-confirmation');
       }
+
+      const newRide = await rideApi.create({
+        driverName: userName || 'RideMate Driver',
+        driverRating: userRole === 'driver' ? 4.9 : 4.8,
+        start: {
+          label: startLocation.name,
+          lat: startLocation.lat,
+          lng: startLocation.lng,
+        },
+        destination: {
+          label: destinationLocation.name,
+          lat: destinationLocation.lat,
+          lng: destinationLocation.lng,
+        },
+        date,
+        time: formattedTime || time,
+        seats: seatsNumber,
+        notes,
+        vehicleId: selectedVehicle || undefined,
+        driverLocation: driverLocation,
+      });
+
+      setActiveRideId(newRide._id);
+
+      // Store vehicle ID for this ride (dummy data)
+      if (selectedVehicle) {
+        setRideVehicle(newRide._id, selectedVehicle);
+      }
+
+      setRideSummaryInput({
+        start: {
+          lat: newRide.start.coordinates.lat,
+          lng: newRide.start.coordinates.lng,
+        },
+        destination: {
+          lat: newRide.destination.coordinates.lat,
+          lng: newRide.destination.coordinates.lng,
+        },
+      });
+
+      navigateTo('dashboard');
+
+      // Debounce: Keep isSubmitting true for 5 seconds to prevent double submission
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 5000);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create ride. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Reset immediately on error
     }
   };
 
@@ -228,79 +182,22 @@ export default function CreateRide() {
               />
             </div>
 
-            <div className="flex items-center p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-              <input
-                type="checkbox"
-                id="is-scheduled"
-                checked={isScheduled}
-                onChange={(e) => {
-                  setIsScheduled(e.target.checked);
-                  if (!e.target.checked) {
-                    setSelectedDays([]);
-                    setDate('');
-                  }
-                }}
-                className="w-5 h-5 border-2 border-black rounded cursor-pointer"
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                label="Date *"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
               />
-              <label htmlFor="is-scheduled" className="ml-3 text-sm font-semibold text-black cursor-pointer flex items-center gap-2">
-                <Calendar size={18} />
-                Create Weekly Schedule
-              </label>
+              <Input
+                label="Time *"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                required
+              />
             </div>
-
-            {isScheduled ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-3 text-black">
-                    Select Days of the Week *
-                  </label>
-                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                    {DAYS_OF_WEEK.map((day) => (
-                      <button
-                        key={day.value}
-                        type="button"
-                        onClick={() => toggleDay(day.value)}
-                        className={`py-3 px-2 rounded-lg border-2 font-semibold text-sm transition-all ${selectedDays.includes(day.value)
-                            ? 'bg-black text-white border-black'
-                            : 'bg-white text-black border-gray-300 hover:border-black'
-                          }`}
-                      >
-                        {day.label}
-                      </button>
-                    ))}
-                  </div>
-                  {selectedDays.length > 0 && (
-                    <p className="text-xs text-gray-600 mt-2">
-                      Selected: {selectedDays.length} day{selectedDays.length !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
-                <Input
-                  label="Time *"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  required
-                />
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Input
-                  label="Date *"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Time *"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  required
-                />
-              </div>
-            )}
 
             {userRole === 'driver' && (
               <div>

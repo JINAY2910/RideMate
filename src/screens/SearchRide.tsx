@@ -16,11 +16,6 @@ export default function SearchRide() {
   const [time, setTime] = useState('');
   const [requiredSeats, setRequiredSeats] = useState('');
   const [sameGender, setSameGender] = useState(false);
-  const [showVehicleFilters, setShowVehicleFilters] = useState(false);
-  const [filterVehicleType, setFilterVehicleType] = useState('');
-  const [filterMake, setFilterMake] = useState('');
-  const [filterModel, setFilterModel] = useState('');
-  const [allRides, setAllRides] = useState<Ride[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,8 +26,7 @@ export default function SearchRide() {
       setLoading(true);
       setError(null);
       const results = await rideApi.list(params);
-      setAllRides(results);
-      applyVehicleFilters(results);
+      setRides(results);
     } catch (err) {
       console.error('Error loading rides:', err);
       let errorMessage = 'Unable to load rides.';
@@ -71,38 +65,11 @@ export default function SearchRide() {
     });
   };
 
-  const applyVehicleFilters = (ridesToFilter: Ride[]) => {
-    let filtered = [...ridesToFilter];
 
-    if (filterVehicleType || filterMake || filterModel) {
-      filtered = filtered.filter(ride => {
-        const vehicle = ride.vehicle;
-        if (!vehicle) return false;
-
-        if (filterVehicleType && vehicle.type !== filterVehicleType) {
-          return false;
-        }
-        if (filterMake && vehicle.make?.toLowerCase() !== filterMake.toLowerCase()) {
-          return false;
-        }
-        if (filterModel && vehicle.model?.toLowerCase() !== filterModel.toLowerCase()) {
-          return false;
-        }
-        return true;
-      });
-    }
-
-    setRides(filtered);
-  };
-
-  useEffect(() => {
-    if (allRides.length > 0) {
-      applyVehicleFilters(allRides);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterVehicleType, filterMake, filterModel, allRides.length]);
 
   const handleSearch = async () => {
+    if (loading) return; // Debounce: Prevent search if already loading
+
     if (!startLocation || !destinationLocation) {
       setError('Please select both a starting point and destination.');
       return;
@@ -117,6 +84,9 @@ export default function SearchRide() {
 
     // Use geo-based search with location names
     try {
+      // Set loading true immediately to block subsequent clicks
+      setLoading(true);
+
       await loadRides({
         nearStart: startLocation.name,
         nearDest: destinationLocation.name,
@@ -124,29 +94,21 @@ export default function SearchRide() {
         limit: 50,
       });
       setHasSearched(true);
+
+      // Debounce: Keep loading state true for at least 5 seconds total
+      // This prevents spamming the search button
+      setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+
     } catch (err) {
       // Error is already handled in loadRides
       console.error('Search error:', err);
+      setLoading(false); // Reset on error
     }
   };
 
-  const getUniqueMakes = () => {
-    const makes = allRides
-      .map(r => r.vehicle?.make)
-      .filter((make): make is string => !!make)
-      .filter((make, index, self) => self.indexOf(make) === index)
-      .sort();
-    return makes;
-  };
 
-  const getUniqueModels = () => {
-    const models = allRides
-      .map(r => r.vehicle?.model)
-      .filter((model): model is string => !!model)
-      .filter((model, index, self) => self.indexOf(model) === index)
-      .sort();
-    return models;
-  };
 
   const prepareRideSummaryInput = (ride: Ride) => {
     if (ride.start?.coordinates && ride.destination?.coordinates) {
@@ -248,75 +210,7 @@ export default function SearchRide() {
               </label>
             </div>
 
-            <div className="flex items-center my-2 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-              <input
-                type="checkbox"
-                id="show-vehicle-filters"
-                checked={showVehicleFilters}
-                onChange={(e) => setShowVehicleFilters(e.target.checked)}
-                className="w-5 h-5 border-2 border-black rounded cursor-pointer"
-              />
-              <label htmlFor="show-vehicle-filters" className="ml-3 text-sm font-semibold text-black cursor-pointer flex items-center gap-2">
-                <Filter size={18} />
-                Vehicle Filters (Optional)
-              </label>
-            </div>
 
-            {showVehicleFilters && (
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-                <div>
-                  <label className="block text-sm font-semibold mb-2.5 text-black">
-                    Vehicle Type
-                  </label>
-                  <select
-                    value={filterVehicleType}
-                    onChange={(e) => setFilterVehicleType(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
-                  >
-                    <option value="">All Types</option>
-                    <option value="2-wheeler">2-wheeler</option>
-                    <option value="3-wheeler">3-wheeler</option>
-                    <option value="4-wheeler">4-wheeler</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2.5 text-black">
-                    Make
-                  </label>
-                  <select
-                    value={filterMake}
-                    onChange={(e) => setFilterMake(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
-                  >
-                    <option value="">All Makes</option>
-                    {getUniqueMakes().map((make) => (
-                      <option key={make} value={make}>
-                        {make}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold mb-2.5 text-black">
-                    Model
-                  </label>
-                  <select
-                    value={filterModel}
-                    onChange={(e) => setFilterModel(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
-                  >
-                    <option value="">All Models</option>
-                    {getUniqueModels().map((model) => (
-                      <option key={model} value={model}>
-                        {model}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
 
             <Button type="button" fullWidth size="lg" onClick={handleSearch}>
               Search Rides

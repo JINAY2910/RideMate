@@ -1,4 +1,5 @@
 const Ride = require('../models/Ride');
+const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
 const { validateRideInput } = require('../utils/validate');
@@ -628,6 +629,15 @@ const addRequest = async (req, res, next) => {
     ride.requests.push(newRequest);
     await ride.save();
 
+    // Create a Booking record for the rider (status: Pending)
+    await Booking.create({
+      ride: ride._id,
+      rider: req.user.id,
+      seatsBooked: seatsRequested,
+      totalPrice: ride.price * seatsRequested,
+      status: 'Pending',
+    });
+
     // Populate and return updated ride
     const populatedRide = await Ride.findById(ride._id).populate({
       path: 'driver',
@@ -730,6 +740,13 @@ const updateRequestStatus = async (req, res, next) => {
     // Update request status
     request.status = status;
     await ride.save();
+
+    // Update the corresponding Booking record
+    // We match by ride ID and rider ID since we don't store booking ID in the request object yet
+    await Booking.findOneAndUpdate(
+      { ride: ride._id, rider: request.rider },
+      { status: status }
+    );
 
     // Populate and return updated ride
     const populatedRide = await Ride.findById(ride._id).populate({
