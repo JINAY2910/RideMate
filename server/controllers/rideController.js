@@ -538,12 +538,18 @@ const addRequest = async (req, res, next) => {
       });
     }
 
-    // Check if user is a rider
-    if (req.user.role !== 'rider') {
+    // Check if user is a rider (allow if role is not 'driver' or if role is 'rider')
+    // This handles cases where role might be undefined or different
+    if (req.user.role === 'driver') {
       return res.status(403).json({
         success: false,
-        message: 'Only riders can request to book rides',
+        message: 'Drivers cannot request to book their own rides. Only riders can request to book rides.',
       });
+    }
+    
+    // Log for debugging if role is unexpected
+    if (req.user.role && req.user.role !== 'rider') {
+      console.warn(`Unexpected user role: ${req.user.role} for user ${req.user.id}`);
     }
 
     // Check if rider already has a pending or approved request

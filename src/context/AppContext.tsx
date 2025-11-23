@@ -40,6 +40,7 @@ export type RideSchedule = {
 interface AppContextType {
   currentScreen: string;
   userRole: 'driver' | 'rider' | null;
+  userId: string | null;
   userName: string;
   userEmail: string;
   userPhone: string;
@@ -52,6 +53,7 @@ interface AppContextType {
   rideSchedules: RideSchedule[]; // Weekly schedules
   navigateTo: (screen: string) => void;
   setRole: (role: 'driver' | 'rider') => void;
+  setUserId: (id: string | null) => void;
   setUserName: (name: string) => void;
   setUserEmail: (email: string) => void;
   setUserPhone: (phone: string) => void;
@@ -73,6 +75,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [currentScreen, setCurrentScreen] = useState('landing');
   const [userRole, setUserRole] = useState<'driver' | 'rider' | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [userPhone, setUserPhone] = useState('');
@@ -102,6 +105,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setAuthToken(null);
     setUserRole(null);
+    setUserId(null);
     setUserName('');
     setUserEmail('');
     setUserPhone('');
@@ -152,6 +156,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       value={{
         currentScreen,
         userRole,
+        userId,
         userName,
         userEmail,
         userPhone,
@@ -162,6 +167,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         vehicles,
         navigateTo,
         setRole,
+        setUserId,
         setUserName,
         setUserEmail,
         setUserPhone,

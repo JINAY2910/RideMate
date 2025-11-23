@@ -21,6 +21,7 @@ export default function RideDetails() {
   const {
     navigateTo,
     userRole,
+    userId,
     userName,
     emergencyContacts,
     activeRideId,
@@ -48,30 +49,46 @@ export default function RideDetails() {
       setLoadError(null);
       return;
     }
-    let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
 
-    rideApi
-      .getById(activeRideId)
-      .then((data) => {
-        if (!cancelled) {
-          setRide(data);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setLoadError(err instanceof Error ? err.message : 'Unable to load ride.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
+    let cancelled = false;
+
+    // Function to fetch ride data
+    const fetchRide = (isInitial = false) => {
+      if (isInitial) {
+        setLoading(true);
+        setLoadError(null);
+      }
+
+      rideApi
+        .getById(activeRideId)
+        .then((data) => {
+          if (!cancelled) {
+            setRide(data);
+          }
+        })
+        .catch((err) => {
+          if (!cancelled && isInitial) {
+            setLoadError(err instanceof Error ? err.message : 'Unable to load ride.');
+          }
+        })
+        .finally(() => {
+          if (!cancelled && isInitial) {
+            setLoading(false);
+          }
+        });
+    };
+
+    // Initial fetch
+    fetchRide(true);
+
+    // Polling interval (every 15 seconds)
+    const intervalId = setInterval(() => {
+      fetchRide(false);
+    }, 15000);
 
     return () => {
       cancelled = true;
+      clearInterval(intervalId);
     };
   }, [activeRideId]);
 
@@ -87,10 +104,10 @@ export default function RideDetails() {
   const trustedContacts = emergencyContacts.length
     ? emergencyContacts
     : [
-        { name: 'Add a contact', phone: 'No phone' },
-        { name: 'Add a contact', phone: 'No phone' },
-        { name: 'Add a contact', phone: 'No phone' },
-      ];
+      { name: 'Add a contact', phone: 'No phone' },
+      { name: 'Add a contact', phone: 'No phone' },
+      { name: 'Add a contact', phone: 'No phone' },
+    ];
   const emergencyTypes = [
     { id: 'medical', label: 'Medical Emergency', desc: 'Health issue, injury, or medical distress' },
     { id: 'security', label: 'Security Threat', desc: 'Harassment, assault, or unsafe rider/driver' },
@@ -101,6 +118,11 @@ export default function RideDetails() {
   const canSubmitRatings =
     approvedRequests.length > 0 &&
     approvedRequests.every((request) => (riderRatings[request._id] || 0) > 0);
+
+  // Check if current user has already requested this ride
+  const hasRequested = ride?.requests?.some(
+    (req) => req.rider?.id === userId && req.status !== 'Rejected'
+  );
 
   const handleRating = (riderId: string, rating: number) => {
     setRiderRatings((prev) => ({ ...prev, [riderId]: rating }));
@@ -266,9 +288,8 @@ export default function RideDetails() {
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-black mb-2">{ride.driver.name}</h2>
                     <span
-                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full border ${
-                        rideStatus === 'Completed' ? 'border-green-600 text-green-600' : 'border-black text-black'
-                      }`}
+                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full border ${rideStatus === 'Completed' ? 'border-green-600 text-green-600' : 'border-black text-black'
+                        }`}
                     >
                       {rideStatus}
                     </span>
@@ -332,78 +353,154 @@ export default function RideDetails() {
                   <AlertTriangle size={20} className="inline mr-2 text-red-600" />
                   SOS
                 </Button>
-                <Button fullWidth onClick={handleBookRideFromDetails}>
-                  Book Ride
+                <Button
+                  fullWidth
+                  onClick={handleBookRideFromDetails}
+                  disabled={hasRequested || ride.seats.available === 0}
+                  variant={hasRequested ? 'secondary' : 'primary'}
+                >
+                  {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : 'Book Ride'}
                 </Button>
               </div>
             </Card>
 
             {userRole === 'driver' && (
-              <Card>
-                <h3 className="text-2xl font-bold mb-4 text-black">Rider Requests</h3>
-                <div className="space-y-3">
-                  {(ride.requests ?? []).map((request) => (
-                    <div key={request._id} className="p-4 border-2 border-black rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-bold text-black">{request.name}</p>
-                          <div className="flex items-center mt-1">
-                            <Star size={14} className="text-black fill-black mr-1" />
-                            <span className="text-sm">{request.rating}</span>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-3 py-1 text-sm font-medium rounded-full border-2 border-black ${
-                            request.status === 'Approved' ? 'bg-black text-white' : 'bg-white text-black'
-                          }`}
-                        >
-                          {request.status}
-                        </span>
-                      </div>
-
-                      {request.status === 'Approved' && (
-                        <div className="mt-4">
-                          <p className="text-sm font-semibold text-gray-600 mb-2 uppercase">Rate rider</p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={`${request._id}-${star}`}
-                                type="button"
-                                onClick={() => handleRating(request._id, star)}
-                                className="transition-transform duration-150 hover:scale-110"
-                              >
-                                <Star
-                                  size={28}
-                                  className={`${
-                                    star <= (riderRatings[request._id] || 0)
-                                      ? 'text-black fill-black'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              </button>
-                            ))}
-                            <span className="text-sm font-medium text-black">
-                              {(riderRatings[request._id] || 0) > 0
-                                ? `${riderRatings[request._id]} / 5`
-                                : 'Tap to rate'}
+              <>
+                <Card className="mb-6">
+                  <h3 className="text-2xl font-bold mb-4 text-black">Riders Joined</h3>
+                  <div className="space-y-3">
+                    {ride.participants && ride.participants.length > 0 ? (
+                      ride.participants.map((participant, index) => (
+                        <div key={participant.rider?.id || index} className="p-4 border-2 border-black rounded-lg bg-green-50">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-black">{participant.name}</p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Seats: {participant.seatsBooked} • Status: {participant.status}
+                              </p>
+                              {participant.rider?.email && (
+                                <p className="text-xs text-gray-500 mt-1">Email: {participant.rider.email}</p>
+                              )}
+                              {participant.rider?.phone && (
+                                <p className="text-xs text-gray-500">Phone: {participant.rider.phone}</p>
+                              )}
+                            </div>
+                            <span className="px-3 py-1 text-sm font-medium rounded-full border-2 border-green-600 bg-green-600 text-white">
+                              Confirmed
                             </span>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {approvedRequests.length > 0 && (
-                  <div className="mt-6 flex flex-col gap-3">
-                    <p className="text-sm text-gray-600">
-                      Rate each approved rider to keep your community trustworthy.
-                    </p>
-                    <Button onClick={handleSubmitRatings} disabled={!canSubmitRatings}>
-                      Submit Rider Ratings
-                    </Button>
+                      ))
+                    ) : (
+                      <p className="text-gray-600 text-center py-4">No riders have joined yet.</p>
+                    )}
                   </div>
-                )}
-              </Card>
+                </Card>
+
+                <Card className="mb-6">
+                  <h3 className="text-2xl font-bold mb-4 text-black">Rider Requests</h3>
+                  <div className="space-y-3">
+                    {ride.requests && ride.requests.length > 0 && (
+                      ride.requests.map((request) => (
+                        <div key={request._id} className="p-4 border-2 border-black rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-black">{request.name}</p>
+                              <div className="flex items-center mt-1">
+                                <Star size={14} className="text-black fill-black mr-1" />
+                                <span className="text-sm">{request.rating}</span>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-3 py-1 text-sm font-medium rounded-full border-2 border-black ${request.status === 'Approved' ? 'bg-black text-white' : 'bg-white text-black'
+                                }`}
+                            >
+                              {request.status}
+                            </span>
+                          </div>
+
+                          {request.status === 'Pending' && (
+                            <div className="mt-4 flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await rideApi.updateRequestStatus(ride!._id, request._id, 'Approved');
+                                    setRide(updated);
+                                    setActionError(null);
+                                  } catch (err) {
+                                    setActionError(err instanceof Error ? err.message : 'Failed to approve request');
+                                  }
+                                }}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={async () => {
+                                  try {
+                                    const updated = await rideApi.updateRequestStatus(ride!._id, request._id, 'Rejected');
+                                    setRide(updated);
+                                    setActionError(null);
+                                  } catch (err) {
+                                    setActionError(err instanceof Error ? err.message : 'Failed to reject request');
+                                  }
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                          {request.status === 'Approved' && (
+                            <div className="mt-4">
+                              <p className="text-sm font-semibold text-gray-600 mb-2 uppercase">Rate rider</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <button
+                                    key={`${request._id}-${star}`}
+                                    type="button"
+                                    onClick={() => handleRating(request._id, star)}
+                                    className="transition-transform duration-150 hover:scale-110"
+                                  >
+                                    <Star
+                                      size={28}
+                                      className={`${star <= (riderRatings[request._id] || 0)
+                                        ? 'text-black fill-black'
+                                        : 'text-gray-300'
+                                        }`}
+                                    />
+                                  </button>
+                                ))}
+                                <span className="text-sm font-medium text-black">
+                                  {(riderRatings[request._id] || 0) > 0
+                                    ? `${riderRatings[request._id]} / 5`
+                                    : 'Tap to rate'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          <div className="mt-2 text-xs text-gray-600">
+                            Seats requested: {request.seatsRequested || 1}
+                          </div>
+                        </div>
+                      )))}
+                    {(!ride.requests || ride.requests.length === 0) && (
+                      <p className="text-gray-600 text-center py-4">No pending requests.</p>
+                    )}
+                  </div>
+                  {approvedRequests.length > 0 && (
+                    <div className="mt-6 flex flex-col gap-3">
+                      <p className="text-sm text-gray-600">
+                        Rate each approved rider to keep your community trustworthy.
+                      </p>
+                      <Button onClick={handleSubmitRatings} disabled={!canSubmitRatings}>
+                        Submit Rider Ratings
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              </>
             )}
 
             <div className="mt-6 flex flex-col gap-3">
@@ -484,9 +581,8 @@ export default function RideDetails() {
                   key={type.id}
                   type="button"
                   onClick={() => setEmergencyType(type.id)}
-                  className={`rounded-2xl border-2 p-4 text-left transition-colors ${
-                    emergencyType === type.id ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'
-                  }`}
+                  className={`rounded-2xl border-2 p-4 text-left transition-colors ${emergencyType === type.id ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'
+                    }`}
                 >
                   <p className="font-semibold">{type.label}</p>
                   <p className={`text-sm mt-1 ${emergencyType === type.id ? 'text-white/80' : 'text-gray-600'}`}>

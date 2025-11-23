@@ -6,7 +6,7 @@ import Input from '../components/Input';
 import { authApi } from '../services/auth';
 
 export default function Signup() {
-  const { navigateTo, setAuthToken, setRole, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
+  const { navigateTo, setAuthToken, setRole, setUserId, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -72,6 +72,7 @@ export default function Signup() {
       // Store auth data
       setAuthToken(response.token);
       setRole(response.user.role);
+      setUserId(response.user.id);
       setUserName(response.user.name);
       setUserEmail(response.user.email);
       setUserPhone(response.user.phone);
@@ -103,7 +104,7 @@ export default function Signup() {
     } catch (err) {
       console.error('Signup error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
-      
+
       if (errorMessage.includes('already exists')) {
         setError('An account with this email already exists. Please login instead.');
       } else {
@@ -190,11 +191,10 @@ export default function Signup() {
                   setError(null);
                 }}
                 disabled={loading}
-                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-                  selectedRole === 'rider'
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-gray-300 hover:border-black'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'rider'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-black border-gray-300 hover:border-black'
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <LogOut size={18} /> Rider
               </button>
@@ -205,11 +205,10 @@ export default function Signup() {
                   setError(null);
                 }}
                 disabled={loading}
-                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-                  selectedRole === 'driver'
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-gray-300 hover:border-black'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'driver'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-black border-gray-300 hover:border-black'
+                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Car size={18} /> Driver
               </button>

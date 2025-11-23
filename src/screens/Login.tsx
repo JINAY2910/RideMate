@@ -7,7 +7,7 @@ import Logo from '../components/Logo';
 import { authApi } from '../services/auth';
 
 export default function Login() {
-  const { navigateTo, setAuthToken, setRole, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
+  const { navigateTo, setAuthToken, setRole, setUserId, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (!email || !password) {
       setError('Please enter both email and password');
       return;
@@ -25,14 +25,15 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await authApi.login({ email, password });
-      
+
       // Store auth data
       setAuthToken(response.token);
       setRole(response.user.role);
+      setUserId(response.user.id);
       setUserName(response.user.name);
       setUserEmail(response.user.email);
       setUserPhone(response.user.phone);
-      
+
       // Load emergency contacts from user data
       const emergencyContacts = [];
       if (response.user.emergencyName1 && response.user.emergencyPhone1) {
@@ -54,13 +55,13 @@ export default function Login() {
         });
       }
       setEmergencyContacts(emergencyContacts);
-      
+
       // Navigate to dashboard
       navigateTo('dashboard');
     } catch (err) {
       console.error('Login error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      
+
       // Check if user doesn't exist - redirect to create account
       if (errorMessage.includes('Invalid credentials') || errorMessage.includes('401')) {
         // User might not exist or wrong password
