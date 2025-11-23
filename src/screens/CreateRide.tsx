@@ -7,6 +7,10 @@ import Card from '../components/Card';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { Location } from '../services/locations';
 import { rideApi } from '../services/rides';
+import RollerTimePicker from '../components/RollerPicker/RollerTimePicker';
+import CalendarDatePicker from '../components/RollerPicker/CalendarDatePicker';
+import PickerModal from '../components/RollerPicker/PickerModal';
+import { Calendar, Clock } from 'lucide-react';
 
 const formatTimeLabel = (timeValue: string) => {
   if (!timeValue) return '';
@@ -28,6 +32,9 @@ export default function CreateRide() {
   const [selectedVehicle, setSelectedVehicle] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ... inside component ...
+  const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,21 +190,49 @@ export default function CreateRide() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                label="Date *"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-              />
-              <Input
-                label="Time *"
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                required
-              />
+              <div>
+                <label className="block text-sm font-semibold mb-2.5 text-black">Date *</label>
+                <button
+                  type="button"
+                  onClick={() => setActivePicker('date')}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg flex items-center justify-between hover:border-black transition-colors bg-white"
+                >
+                  <span className={date ? 'text-black' : 'text-gray-400'}>
+                    {date || 'Select Date'}
+                  </span>
+                  <Calendar size={20} className="text-gray-500" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2.5 text-black">Time *</label>
+                <button
+                  type="button"
+                  onClick={() => setActivePicker('time')}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg flex items-center justify-between hover:border-black transition-colors bg-white"
+                >
+                  <span className={time ? 'text-black' : 'text-gray-400'}>
+                    {time ? formatTimeLabel(time) : 'Select Time'}
+                  </span>
+                  <Clock size={20} className="text-gray-500" />
+                </button>
+              </div>
             </div>
+
+            <PickerModal
+              isOpen={activePicker === 'date'}
+              onClose={() => setActivePicker(null)}
+              title="Select Date"
+            >
+              <CalendarDatePicker value={date} onChange={setDate} />
+            </PickerModal>
+
+            <PickerModal
+              isOpen={activePicker === 'time'}
+              onClose={() => setActivePicker(null)}
+              title="Select Time"
+            >
+              <RollerTimePicker value={time} onChange={setTime} />
+            </PickerModal>
 
             {userRole === 'driver' && (
               <div>
