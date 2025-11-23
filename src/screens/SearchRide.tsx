@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Star, Users, Car, Filter } from 'lucide-react';
+import { ArrowLeft, Star, Users, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -13,7 +13,7 @@ import PickerModal from '../components/RollerPicker/PickerModal';
 import { Calendar, Clock } from 'lucide-react';
 
 export default function SearchRide() {
-  const { navigateTo, setRideSummaryInput, setActiveRideId, vehicles, rideVehicles } = useApp();
+  const { navigateTo, setRideSummaryInput, setActiveRideId } = useApp();
   const [startLocation, setStartLocation] = useState<Location | null>(null);
   const [destinationLocation, setDestinationLocation] = useState<Location | null>(null);
   const [date, setDate] = useState('');

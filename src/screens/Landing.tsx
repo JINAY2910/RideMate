@@ -1,323 +1,200 @@
-import { useEffect, useState } from 'react';
-import {
-  ArrowRight,
-  ShieldCheck,
-  Users,
-  MapPin,
-  Clock3,
-  Wallet,
-  Car,
-  Star,
-  Sparkles,
-  Zap,
-} from 'lucide-react';
+import React from 'react';
+import { ArrowRight, Shield, Globe, Zap, Smartphone, Users } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
+import CustomCursor from '../components/CustomCursor/CustomCursor';
+import RollingReviews from '../components/RollingReviews/RollingReviews';
+import AnimatedSection from '../components/AnimatedSection/AnimatedSection';
+import FloatingActionButton from '../components/FloatingActionButton/FloatingActionButton';
+import ScrollProgressBar from '../components/ScrollProgressBar';
+import Footer from '../components/Footer';
+import '../styles/landing.css';
 
 export default function Landing() {
   const { navigateTo, authToken } = useApp();
-  const [persona, setPersona] = useState<'rider' | 'driver'>('rider');
-  const [activeReview, setActiveReview] = useState(0);
-
-  const stats = [
-    { label: 'Cities synced', value: '3+', detail: 'Expanding monthly' },
-    { label: 'Trips weekly', value: '10K', detail: 'Peak reliability' },
-    { label: 'Avg. response', value: '42s', detail: 'Live operations' },
-  ];
-
-  const personaHighlights = {
-    rider: [
-      {
-        icon: MapPin,
-        title: 'Predictive pickups',
-        metric: '±2 min ETA',
-        desc: 'Detours auto-adjust to traffic, so arrivals feel seamless.',
-      },
-      {
-        icon: ShieldCheck,
-        title: 'Layered safety',
-        metric: '24/7 ops',
-        desc: 'Real-time trip sharing, SOS laddering, verified driver bios.',
-      },
-      {
-        icon: Wallet,
-        title: 'Flexible payments',
-        metric: '3 loyalty tiers',
-        desc: 'Split fares, reward miles, and instant refunds when plans shift.',
-      },
-    ],
-    driver: [
-      {
-        icon: Car,
-        title: 'Smart demand zones',
-        metric: '+22% earnings',
-        desc: 'Heatmaps and route playlists keep your car full at peak hours.',
-      },
-      {
-        icon: Clock3,
-        title: 'Schedule autonomy',
-        metric: 'Stacked drops',
-        desc: 'Batch requests, pause instantly, and sync breaks with commute flows.',
-      },
-      {
-        icon: Users,
-        title: 'Community trust',
-        metric: '4.9⭐ avg',
-        desc: 'Transparent rider scoring with dispute resolution that protects pros.',
-      },
-    ],
-  };
-
-  const testimonials = [
-    {
-      quote:
-        'RideMate lets us coordinate 30+ daily carpools without a dispatcher. The live dashboard is basically air traffic control for commutes.',
-      name: 'Nirali Shah',
-      role: 'Mobility lead • Pune',
-      rating: 5,
-    },
-    {
-      quote:
-        'As a driver, heatmap nudges and payout transparency mean I never guess where to go. My idle time dropped by half.',
-      name: 'Diego Martínez',
-      role: 'Driver-partner • Mexico City',
-      rating: 5,
-    },
-    {
-      quote:
-        'We run company offsites and RideMate handles every airport transfer. The concierge chat and multi-stop planner are game changers.',
-      name: 'Leah Williams',
-      role: 'Ops director • Seattle',
-      rating: 4,
-    },
-  ];
-
-  const trustSignals = ['Verified IDs', 'Live telemetry', 'Insurance backed', 'SOC2 in progress'];
-
-  useEffect(() => {
-    const ticker = setInterval(() => {
-      setActiveReview((prev) => (prev + 1) % testimonials.length);
-    }, 6000);
-
-    return () => clearInterval(ticker);
-  }, [testimonials.length]);
-
-  const currentTestimonials = testimonials[activeReview];
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-gray-900">
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
-        <header className="sticky top-0 z-20 mb-6 flex items-center justify-between rounded-3xl border border-black/5 bg-white/80 px-4 sm:px-6 py-4 shadow-[0_10px_45px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex items-center gap-3">
-            <Logo className="h-10 w-10 sm:h-14 sm:w-14 shadow-xl" />
-            <div>
-              <p className="text-[10px] sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.45em] text-gray-500">RideMate</p>
-              <p className="font-semibold text-sm sm:text-lg hidden sm:block">Community mobility OS</p>
-            </div>
+    <div className="landing-page">
+      <ScrollProgressBar />
+      <CustomCursor />
+      <FloatingActionButton />
+
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-hover">
+            <Logo className="h-10 w-10" />
+            <span className="font-bold text-xl tracking-tight">RideMate</span>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-sm text-gray-500">
-            <button onClick={() => navigateTo('platform')} className="hover:text-gray-900 transition-colors">
-              Platform
-            </button>
-            <button onClick={() => navigateTo('safety')} className="hover:text-gray-900 transition-colors">
-              Safety
-            </button>
-            <button onClick={() => navigateTo('cities')} className="hover:text-gray-900 transition-colors">
-              Cities
-            </button>
-          </div>
-          <div className="flex items-center gap-3">
+
+          <nav className="hidden md:flex items-center gap-8">
+            <button onClick={() => navigateTo('platform')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors cursor-hover">Platform</button>
+            <button onClick={() => navigateTo('cities')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors cursor-hover">Cities</button>
+            <button onClick={() => navigateTo('safety')} className="text-sm font-medium text-gray-600 hover:text-black transition-colors cursor-hover">Safety</button>
+          </nav>
+
+          <div className="flex items-center gap-4">
             {authToken ? (
-              <Button onClick={() => navigateTo('dashboard')} size="sm">
+              <Button onClick={() => navigateTo('dashboard')} size="sm" className="cursor-hover">
                 Dashboard
               </Button>
             ) : (
               <>
-                <button
-                  onClick={() => navigateTo('login')}
-                  className="px-3 sm:px-5 py-2 rounded-full border border-black/10 font-semibold hover:bg-black/5 transition-all duration-300 text-sm"
-                >
+                <button onClick={() => navigateTo('login')} className="text-sm font-medium hover:text-gray-600 transition-colors cursor-hover">
                   Log in
                 </button>
-                <Button onClick={() => navigateTo('signup')} size="sm" className="hidden sm:flex">
-                  Create account
+                <Button onClick={() => navigateTo('signup')} size="sm" className="bg-black text-white hover:bg-gray-800 cursor-hover">
+                  Sign up
                 </Button>
               </>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="grid gap-10 lg:grid-cols-[1.2fr,0.8fr]">
-          <section className="space-y-8">
-            <div className="space-y-5">
-              <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-black/5 px-4 py-1 text-sm font-semibold text-black">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Faster routes with human-first guardrails
-              </span>
-              <h1 className="text-4xl sm:text-5xl font-bold leading-tight text-gray-900">
-                The carpool command center for riders, drivers, and teams on the move.
-              </h1>
-              <p className="text-lg text-gray-600 max-w-3xl">
-                RideMate blends predictive routing, live safety escalation, and transparent earnings into a single surface.
-                Switch between rider and driver tooling instantly and orchestrate journeys that feel concierge-level every time.
-              </p>
-            </div>
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="max-w-7xl mx-auto w-full">
+          <AnimatedSection delay={200}>
+            <h1 className="hero-title">
+              Mobility,<br />
+              Reimagined.
+            </h1>
+          </AnimatedSection>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-3xl border border-black/5 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] space-y-1"
-                >
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-xs uppercase tracking-[0.4em] text-gray-500">{stat.label}</p>
-                  <p className="text-sm text-gray-500">{stat.detail}</p>
-                </div>
-              ))}
-            </div>
+          <AnimatedSection delay={400}>
+            <p className="hero-subtitle">
+              Experience the future of urban transportation. Seamless, sustainable, and designed for the modern world.
+            </p>
+          </AnimatedSection>
 
-            <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_22px_70px_rgba(15,23,42,0.09)] space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                {(['rider', 'driver'] as const).map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setPersona(option)}
-                    className={`rounded-full px-6 py-2 text-sm font-semibold transition-all duration-300 ${persona === option ? 'bg-black text-white shadow-lg' : 'bg-black/5 text-gray-700 hover:bg-black/10'
-                      }`}
-                  >
-                    {option === 'rider' ? 'Rider experience' : 'Driver toolkit'}
-                  </button>
-                ))}
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500 ml-auto">Live preview</span>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {personaHighlights[persona].map((feature) => {
-                  const Icon = feature.icon;
-                  return (
-                    <div
-                      key={feature.title}
-                      className="rounded-2xl border border-black/5 bg-white p-4 space-y-3 hover:-translate-y-1 transition-transform duration-300 shadow-[0_18px_60px_rgba(15,23,42,0.08)]"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-2xl bg-black/5 p-2 text-black">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <p className="text-xs uppercase tracking-wide text-gray-500">{feature.metric}</p>
-                      </div>
-                      <p className="text-lg font-semibold text-gray-900">{feature.title}</p>
-                      <p className="text-sm text-gray-600">{feature.desc}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4 sm:flex-row">
+          <AnimatedSection delay={600}>
+            <div className="hero-buttons">
               <Button
                 size="lg"
-                fullWidth
-                onClick={() => navigateTo('login')}
-                className="bg-black text-white hover:bg-gray-900"
+                onClick={() => navigateTo('signup')}
+                className="bg-black text-white px-8 py-4 rounded-full text-lg hover:scale-105 transition-transform cursor-hover"
               >
-                Start planning
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 border border-white/20 text-white">
-                  <ArrowRight size={18} />
-                </span>
+                Start Riding
+                <ArrowRight className="ml-2" size={20} />
               </Button>
               <Button
                 size="lg"
                 variant="secondary"
-                fullWidth
-                onClick={() => navigateTo('signup')}
-                className="bg-white text-black border border-black/10 hover:bg-gray-100"
+                onClick={() => navigateTo('platform')}
+                className="bg-white text-black border border-black/10 px-8 py-4 rounded-full text-lg hover:bg-gray-50 cursor-hover"
               >
-                Create free workspace
+                Learn More
               </Button>
             </div>
-
-            <p className="text-sm text-gray-500">
-              No credit card · SOC2 in progress · Cancel anytime · Concierge onboarding for teams
-            </p>
-          </section>
-
-          <aside className="space-y-6">
-            <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_25px_75px_rgba(15,23,42,0.08)] space-y-5">
-              <div className="flex items-center gap-3">
-                <Sparkles className="h-5 w-5 text-black" />
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Live snapshots</p>
-              </div>
-              <div className="grid gap-4">
-                <div className="rounded-2xl border border-black/5 bg-white p-4 space-y-2">
-                  <p className="text-sm text-gray-500">Driver earnings feed</p>
-                  <p className="text-3xl font-semibold text-gray-900">+ ₹5,640</p>
-                  <p className="text-xs text-gray-500">4 stacked drops · South Loop</p>
-                </div>
-                <div className="rounded-2xl border border-black/5 bg-white p-4 space-y-2">
-                  <p className="text-sm text-gray-500">Rider check-ins</p>
-                  <p className="text-3xl font-semibold text-gray-900">98%</p>
-                  <p className="text-xs text-gray-500">Within 2 min of ETA</p>
-                </div>
-                <div className="rounded-2xl border border-black/5 bg-white p-4 flex items-center gap-3">
-                  <Zap className="h-6 w-6 text-black" />
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Ops window</p>
-                    <p className="font-semibold text-gray-900">2 dispatchers online now</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_22px_70px_rgba(15,23,42,0.08)] space-y-5 text-gray-900">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Reviews</p>
-                  <h3 className="text-2xl font-semibold mt-2">Trusted by riders + drivers</h3>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setActiveReview((prev) => (prev - 1 + testimonials.length) % testimonials.length)}
-                    className="rounded-full border border-black/10 p-2 hover:bg-black/5 transition-all duration-300"
-                  >
-                    <ArrowRight className="h-4 w-4 rotate-180" />
-                  </button>
-                  <button
-                    onClick={() => setActiveReview((prev) => (prev + 1) % testimonials.length)}
-                    className="rounded-full border border-black/10 p-2 hover:bg-black/5 transition-all duration-300"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 border border-black/5 space-y-4 shadow-inner min-h-[220px]">
-                <div className="flex items-center gap-1 text-amber-500">
-                  {Array.from({ length: currentTestimonials.rating }).map((_, idx) => (
-                    <Star key={idx} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-lg leading-relaxed text-gray-700">&ldquo;{currentTestimonials.quote}&rdquo;</p>
-                <div>
-                  <p className="font-semibold text-gray-900">{currentTestimonials.name}</p>
-                  <p className="text-sm text-gray-500">{currentTestimonials.role}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {trustSignals.map((signal) => (
-                  <span
-                    key={signal}
-                    className="rounded-full border border-black/10 px-3 py-1 text-xs uppercase tracking-widest text-gray-600 bg-white"
-                  >
-                    {signal}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </aside>
+          </AnimatedSection>
         </div>
-      </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <AnimatedSection className="section-header">
+            <span className="section-label">Why RideMate</span>
+            <h2 className="section-title">Engineered for Excellence</h2>
+          </AnimatedSection>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <AnimatedSection delay={200} direction="up">
+              <div className="feature-card cursor-hover">
+                <div className="feature-icon-wrapper">
+                  <Zap size={24} />
+                </div>
+                <h3 className="feature-title">Lightning Fast</h3>
+                <p className="feature-desc">
+                  Our predictive algorithms ensure the quickest routes and minimal wait times, getting you there faster.
+                </p>
+              </div>
+            </AnimatedSection>
+
+            <AnimatedSection delay={400} direction="up">
+              <div className="feature-card cursor-hover">
+                <div className="feature-icon-wrapper">
+                  <Shield size={24} />
+                </div>
+                <h3 className="feature-title">Safety First</h3>
+                <p className="feature-desc">
+                  Verified drivers, real-time tracking, and 24/7 support. Your safety is our absolute priority.
+                </p>
+              </div>
+            </AnimatedSection>
+
+            <AnimatedSection delay={600} direction="up">
+              <div className="feature-card cursor-hover">
+                <div className="feature-icon-wrapper">
+                  <Globe size={24} />
+                </div>
+                <h3 className="feature-title">Global Scale</h3>
+                <p className="feature-desc">
+                  Available in major cities worldwide. One app, endless destinations. Travel without boundaries.
+                </p>
+              </div>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      {/* Rolling Reviews */}
+      <section className="py-24 bg-gray-50 overflow-hidden">
+        <AnimatedSection className="section-header">
+          <span className="section-label">Community</span>
+          <h2 className="section-title">Loved by Thousands</h2>
+        </AnimatedSection>
+        <RollingReviews />
+      </section>
+
+      {/* App Showcase */}
+      <section className="py-24 px-6 bg-black text-white">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+          <AnimatedSection direction="right">
+            <span className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 block">The App</span>
+            <h2 className="text-5xl font-bold mb-6">Power in your pocket.</h2>
+            <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              Manage rides, track payments, and connect with drivers—all from a beautifully designed interface.
+            </p>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2 border border-white/20 rounded-lg px-4 py-2 cursor-hover hover:bg-white/10 transition-colors">
+                <Smartphone size={24} />
+                <div>
+                  <p className="text-xs text-gray-400">Download on the</p>
+                  <p className="font-bold">App Store</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 border border-white/20 rounded-lg px-4 py-2 cursor-hover hover:bg-white/10 transition-colors">
+                <Smartphone size={24} />
+                <div>
+                  <p className="text-xs text-gray-400">Get it on</p>
+                  <p className="font-bold">Google Play</p>
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
+
+          <AnimatedSection direction="left" delay={300}>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 blur-3xl rounded-full" />
+              <div className="relative bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex items-center justify-center driver-partner-section">
+                <div className="text-center driver-partner-content">
+                  <Users size={48} className="mx-auto mb-4 text-white/80" />
+                  <h3 className="text-2xl font-bold mb-2">Driver Partner?</h3>
+                  <p className="text-gray-400 mb-6">Join our fleet and earn on your terms.</p>
+                  <Button onClick={() => navigateTo('signup')} variant="secondary" className="bg-white text-black hover:bg-gray-200 cursor-hover">
+                    Become a Driver
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

@@ -1,82 +1,88 @@
-import { ArrowLeft, UserCheck, Shield, Users, Map, Star, Eye, MessageSquare } from 'lucide-react';
+import React from 'react';
+import { ArrowLeft, ShieldCheck, Lock, Eye, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import Logo from '../components/Logo';
+import ScrollProgressBar from '../components/ScrollProgressBar';
+import CustomCursor from '../components/CustomCursor/CustomCursor';
+import AnimatedSection from '../components/AnimatedSection/AnimatedSection';
+import Footer from '../components/Footer';
+import '../styles/landing.css';
 
 export default function Safety() {
-  const { navigateTo, goBack } = useApp();
-
-  const safetyFeatures = [
-    { icon: UserCheck, title: 'Verified user profiles' },
-    { icon: Shield, title: 'SOS emergency button', desc: 'UI only' },
-    { icon: Users, title: '3 trusted emergency contacts stored in rider profile' },
-    { icon: Users, title: 'Gender-preference matching' },
-    { icon: Map, title: 'Live location map', desc: 'mock' },
-    { icon: Star, title: 'Transparent driver ratings' },
-    { icon: Eye, title: 'Profile visibility before booking' },
-    { icon: MessageSquare, title: 'Post-ride rating system' },
-  ];
+  const { navigateTo } = useApp();
 
   return (
-    <div className="min-h-screen bg-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
+    <div className="landing-page">
+      <ScrollProgressBar />
+      <CustomCursor />
 
-      <div className="max-w-4xl mx-auto relative z-10 animate-fade-in">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={goBack}
-              className="flex items-center text-black hover:opacity-70 transition-opacity font-semibold"
-            >
-              <ArrowLeft size={24} className="mr-2" />
-              Back
-            </button>
-            <Logo className="h-10 w-10" />
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigateTo('login')}
-              className="px-5 py-2 rounded-full border-2 border-black font-semibold hover:bg-gray-50 transition-all duration-300"
-            >
-              Log in
-            </button>
-            <button
-              onClick={() => navigateTo('signup')}
-              className="px-5 py-2 rounded-full bg-black text-white font-semibold hover:opacity-90 transition-all duration-300"
-            >
-              Create account
-            </button>
-          </div>
+      <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button
+            onClick={() => navigateTo('landing')}
+            className="flex items-center gap-2 text-sm font-medium hover:text-gray-600 transition-colors cursor-hover"
+          >
+            <ArrowLeft size={18} />
+            Back to Home
+          </button>
+          <span className="font-bold text-lg">Safety</span>
         </div>
+      </header>
 
-        <div className="mb-12">
-          <h1 className="text-5xl font-bold text-black mb-4">Safety First, Always</h1>
-        </div>
-
-        <div className="space-y-4 mb-12">
-          {safetyFeatures.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <div
-                key={index}
-                className="p-6 bg-white border-2 border-black rounded-xl flex items-start gap-4 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="p-2 bg-black/5 rounded-lg flex-shrink-0">
-                  <Icon className="h-6 w-6 text-black" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-black mb-1">{feature.title}</h3>
-                  {feature.desc && <p className="text-sm text-gray-600 font-medium">{feature.desc}</p>}
-                </div>
+      <div className="pt-32 pb-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <AnimatedSection>
+            <div className="text-center mb-20">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-black text-white rounded-2xl mb-6">
+                <ShieldCheck size={32} />
               </div>
-            );
-          })}
-        </div>
+              <h1 className="hero-title mb-6">Uncompromised<br />Safety Standards</h1>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Every feature, every trip, and every interaction is designed with your security as the foundation.
+              </p>
+            </div>
+          </AnimatedSection>
 
-        <div className="text-center pt-8 border-t-2 border-black">
-          <p className="text-lg font-semibold text-black">Your safety is our priority — always.</p>
+          <div className="grid md:grid-cols-2 gap-8 mb-20">
+            <AnimatedSection delay={200}>
+              <div className="bg-white border border-black/10 rounded-3xl p-8 h-full hover:border-black/30 transition-colors cursor-hover">
+                <Lock className="mb-6 text-black" size={32} />
+                <h3 className="text-2xl font-bold mb-4">End-to-End Encryption</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Your personal data, location history, and payment information are encrypted with military-grade protocols.
+                  We never share your private details with third parties without your explicit consent.
+                </p>
+              </div>
+            </AnimatedSection>
+
+            <AnimatedSection delay={400}>
+              <div className="bg-white border border-black/10 rounded-3xl p-8 h-full hover:border-black/30 transition-colors cursor-hover">
+                <Eye className="mb-6 text-black" size={32} />
+                <h3 className="text-2xl font-bold mb-4">Real-Time Monitoring</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Our safety algorithms monitor every trip in real-time. Unusual stops or route deviations trigger
+                  automatic check-ins from our 24/7 safety response team.
+                </p>
+              </div>
+            </AnimatedSection>
+          </div>
+
+          <AnimatedSection delay={600}>
+            <div className="bg-black text-white rounded-3xl p-10 md:p-16 text-center">
+              <AlertTriangle className="mx-auto mb-6 text-yellow-400" size={48} />
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Emergency Assistance</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto mb-8 text-lg">
+                In the unlikely event of an emergency, our in-app SOS button connects you directly to local authorities
+                and shares your live location with your trusted contacts instantly.
+              </p>
+              <button className="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-colors cursor-hover">
+                Learn About SOS Features
+              </button>
+            </div>
+          </AnimatedSection>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
-
