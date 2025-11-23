@@ -7,10 +7,10 @@ const rideSchema = new mongoose.Schema(
       ref: 'User',
       required: [true, 'Driver is required'],
     },
-    // Vehicle reference (vehicle ID from driver's vehicles array)
-    vehicleId: {
-      type: String,
-      trim: true,
+    // Vehicle reference
+    vehicle: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Vehicle',
     },
     // Driver's current location when creating the ride
     driverLocation: {

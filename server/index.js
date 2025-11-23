@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const rideRoutes = require('./routes/rideRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const locationRoutes = require('./routes/locationRoutes');
+const vehicleRoutes = require('./routes/vehicleRoutes');
 
 // Connect to database
 connectDB();
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

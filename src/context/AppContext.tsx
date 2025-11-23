@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { vehicleApi } from '../services/vehicles';
 
 export type EmergencyContact = {
   name: string;
@@ -62,9 +63,9 @@ interface AppContextType {
   setActiveRideId: (rideId: string | null) => void;
   setRideSummaryInput: (input: RideSummaryInput | null) => void;
   setVehicles: (vehicles: Vehicle[]) => void;
-  addVehicle: (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => void;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
-  deleteVehicle: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => Promise<void>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
   setRideVehicle: (rideId: string, vehicleId: string) => void;
   addRideSchedule: (schedule: RideSchedule) => void;
   logout: () => void;
@@ -94,6 +95,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [rideVehicles, setRideVehicles] = useState<Record<string, string>>({});
   const [rideSchedules, setRideSchedules] = useState<RideSchedule[]>([]);
 
+  // Fetch vehicles when user is a driver and has a token
+  useEffect(() => {
+    if (userRole === 'driver' && authToken) {
+      vehicleApi.list()
+        .then(response => {
+          if (response.success) {
+            setVehicles(response.vehicles);
+          }
+        })
+        .catch(err => console.error('Failed to fetch vehicles:', err));
+    } else if (!authToken) {
+      setVehicles([]);
+    }
+  }, [userRole, authToken]);
+
   const navigateTo = (screen: string) => {
     setCurrentScreen(screen);
   };
@@ -116,21 +132,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     navigateTo('landing');
   };
 
-  const addVehicle = (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => {
-    const newVehicle: Vehicle = {
-      ...vehicle,
-      _id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-    };
-    setVehicles([...vehicles, newVehicle]);
+  const addVehicle = async (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => {
+    try {
+      const response = await vehicleApi.create(vehicle);
+      if (response.success) {
+        setVehicles([...vehicles, response.vehicle]);
+      }
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      throw error;
+    }
   };
 
-  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
-    setVehicles(vehicles.map(v => v._id === id ? { ...v, ...updates } : v));
+  const updateVehicle = async (id: string, updates: Partial<Vehicle>) => {
+    try {
+      const response = await vehicleApi.update(id, updates);
+      if (response.success) {
+        setVehicles(vehicles.map(v => v._id === id ? response.vehicle : v));
+      }
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      throw error;
+    }
   };
 
-  const deleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter(v => v._id !== id));
+  const deleteVehicle = async (id: string) => {
+    try {
+      await vehicleApi.delete(id);
+      setVehicles(vehicles.filter(v => v._id !== id));
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      throw error;
+    }
   };
 
   const setRideVehicle = (rideId: string, vehicleId: string) => {

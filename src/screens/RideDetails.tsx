@@ -136,14 +136,16 @@ export default function RideDetails() {
   };
 
   const handleMarkRideComplete = async () => {
-    if (!ride || ride.status === 'Completed') return;
-    try {
-      const updated = await rideApi.updateStatus(ride._id, 'Completed');
-      setRide(updated);
-      clearRideChat(updated._id);
-      setActionError(null);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to update ride status.');
+    if (!ride) return;
+    // User requested that the ride be deleted after completion
+    if (window.confirm('Are you sure you want to complete and delete this ride? This action cannot be undone.')) {
+      try {
+        await rideApi.delete(ride._id);
+        clearRideChat(ride._id);
+        navigateTo('dashboard');
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Unable to delete ride.');
+      }
     }
   };
 

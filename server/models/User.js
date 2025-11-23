@@ -54,37 +54,7 @@ const userSchema = new mongoose.Schema(
       enum: ['driver', 'rider'],
       required: [true, 'Role is required'],
     },
-    // Vehicle details for drivers
-    vehicles: [{
-      registrationNumber: {
-        type: String,
-        trim: true,
-      },
-      seatingLimit: {
-        type: Number,
-        min: 1,
-      },
-      vehicleType: {
-        type: String,
-        enum: ['2-wheeler', '3-wheeler', '4-wheeler'],
-      },
-      make: {
-        type: String,
-        trim: true,
-      },
-      model: {
-        type: String,
-        trim: true,
-      },
-      color: {
-        type: String,
-        trim: true,
-      },
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
-    }],
+
     // Driver location coordinates
     location: {
       type: {

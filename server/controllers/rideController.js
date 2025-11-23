@@ -1,24 +1,40 @@
 const Ride = require('../models/Ride');
 const User = require('../models/User');
+const Vehicle = require('../models/Vehicle');
 const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
 
 // Transform ride to match frontend format
 const transformRide = (ride) => {
   if (!ride) return null;
-  
+
   const rideObj = ride.toObject ? ride.toObject() : ride;
-  
+
   // Handle driver - could be populated object or just ID
   const driverName = rideObj.driver?.name || (typeof rideObj.driver === 'string' ? 'Unknown' : 'Unknown');
   const driverRating = rideObj.driver?.rating || 4.5;
-  
+
+  // Handle vehicle details (populated)
+  let vehicleDetails = null;
+  if (rideObj.vehicle) {
+    vehicleDetails = {
+      _id: rideObj.vehicle._id.toString(),
+      registrationNumber: rideObj.vehicle.registrationNumber,
+      model: rideObj.vehicle.model,
+      make: rideObj.vehicle.make,
+      color: rideObj.vehicle.color,
+      type: rideObj.vehicle.vehicleType,
+      seatingLimit: rideObj.vehicle.seatingLimit
+    };
+  }
+
   return {
     _id: rideObj._id.toString(),
     id: rideObj._id.toString(),
     driver: {
       name: driverName,
       rating: driverRating,
+      id: rideObj.driver?._id?.toString()
     },
     start: {
       label: rideObj.from || '',
@@ -69,7 +85,7 @@ const transformRide = (ride) => {
       status: part.status || 'Confirmed',
       seatsBooked: part.seatsBooked || 1,
     })),
-    vehicleId: rideObj.vehicleId || null,
+    vehicle: vehicleDetails,
     driverLocation: rideObj.driverLocation?.coordinates ? {
       lat: rideObj.driverLocation.coordinates[1],
       lng: rideObj.driverLocation.coordinates[0],
@@ -85,19 +101,19 @@ const transformRide = (ride) => {
 const createRide = async (req, res, next) => {
   try {
     let from, to, startCoordsGeoJSON, destCoordsGeoJSON;
-    
+
     // Handle location input - can be place name (string) or object with coordinates
     if (req.body.start && req.body.destination) {
       // New format from frontend
       from = req.body.start.label || req.body.start.name || req.body.start;
       to = req.body.destination.label || req.body.destination.name || req.body.destination;
-      
+
       // Check if coordinates are provided
       const startLat = req.body.start.lat || req.body.start.coordinates?.lat;
       const startLng = req.body.start.lng || req.body.start.coordinates?.lng;
       const destLat = req.body.destination.lat || req.body.destination.coordinates?.lat;
       const destLng = req.body.destination.lng || req.body.destination.coordinates?.lng;
-      
+
       // If coordinates provided, use them; otherwise geocode the place name
       if (startLat && startLng) {
         startCoordsGeoJSON = {
@@ -132,7 +148,7 @@ const createRide = async (req, res, next) => {
           message: 'Start location is required (provide name or coordinates)',
         });
       }
-      
+
       if (destLat && destLng) {
         destCoordsGeoJSON = {
           type: 'Point',
@@ -170,13 +186,13 @@ const createRide = async (req, res, next) => {
       // Old format - geocode place names
       from = req.body.from.trim();
       to = req.body.to.trim();
-      
+
       try {
         const [startGeocoded, destGeocoded] = await Promise.all([
           geocode(from),
           geocode(to),
         ]);
-        
+
         if (!startGeocoded) {
           return res.status(400).json({
             success: false,
@@ -189,7 +205,7 @@ const createRide = async (req, res, next) => {
             message: `Could not find destination: ${to}`,
           });
         }
-        
+
         startCoordsGeoJSON = {
           type: 'Point',
           coordinates: [startGeocoded.lng, startGeocoded.lat],
@@ -226,6 +242,21 @@ const createRide = async (req, res, next) => {
 
     // Handle vehicle ID
     const vehicleId = req.body.vehicleId || null;
+    if (vehicleId) {
+      const vehicle = await Vehicle.findById(vehicleId);
+      if (!vehicle) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vehicle not found',
+        });
+      }
+      if (vehicle.driver.toString() !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not authorized to use this vehicle',
+        });
+      }
+    }
 
     // Handle driver location (lat/lng from request body)
     let driverLocationGeoJSON = null;
@@ -261,14 +292,14 @@ const createRide = async (req, res, next) => {
       requests: [],
       participants: [],
       isActive: true,
-      vehicleId: vehicleId,
+      vehicle: vehicleId,
       driverLocation: driverLocationGeoJSON,
     });
 
     const populatedRide = await Ride.findById(ride._id).populate({
       path: 'driver',
       select: 'name email phone role',
-    });
+    }).populate('vehicle');
 
     res.status(201).json(transformRide(populatedRide));
   } catch (error) {
@@ -371,6 +402,7 @@ const getRides = async (req, res, next) => {
         path: 'driver',
         select: 'name email phone role',
       })
+      .populate('vehicle')
       .populate({
         path: 'requests.rider',
         select: 'name email phone',
@@ -401,6 +433,7 @@ const getRide = async (req, res, next) => {
         path: 'driver',
         select: 'name email phone role',
       })
+      .populate('vehicle')
       .populate({
         path: 'requests.rider',
         select: 'name email phone',
@@ -456,6 +489,14 @@ const updateRide = async (req, res, next) => {
       }
     }
 
+    // Map 'status' field to 'isActive' if provided (for backward compatibility or PATCH requests)
+    let isActive = req.body.isActive;
+    if (req.body.status === 'Completed') {
+      isActive = false;
+    } else if (req.body.status === 'Active') {
+      isActive = true;
+    }
+
     // Update ride
     ride = await Ride.findByIdAndUpdate(
       req.params.id,
@@ -466,7 +507,7 @@ const updateRide = async (req, res, next) => {
         time: req.body.time || ride.time,
         price: req.body.price !== undefined ? parseFloat(req.body.price) : ride.price,
         seatsAvailable: req.body.seatsAvailable !== undefined ? parseInt(req.body.seatsAvailable) : ride.seatsAvailable,
-        isActive: req.body.isActive !== undefined ? req.body.isActive : ride.isActive,
+        isActive: isActive !== undefined ? isActive : ride.isActive,
       },
       {
         new: true,
@@ -475,7 +516,7 @@ const updateRide = async (req, res, next) => {
     ).populate({
       path: 'driver',
       select: 'name email phone role',
-    });
+    }).populate('vehicle');
 
     res.json(transformRide(ride));
   } catch (error) {
@@ -546,7 +587,7 @@ const addRequest = async (req, res, next) => {
         message: 'Drivers cannot request to book their own rides. Only riders can request to book rides.',
       });
     }
-    
+
     // Log for debugging if role is unexpected
     if (req.user.role && req.user.role !== 'rider') {
       console.warn(`Unexpected user role: ${req.user.role} for user ${req.user.id}`);
@@ -591,7 +632,7 @@ const addRequest = async (req, res, next) => {
     const populatedRide = await Ride.findById(ride._id).populate({
       path: 'driver',
       select: 'name email phone role',
-    }).populate({
+    }).populate('vehicle').populate({
       path: 'requests.rider',
       select: 'name email phone',
     });
@@ -674,7 +715,7 @@ const updateRequestStatus = async (req, res, next) => {
       const existingParticipant = ride.participants.find(
         p => p.rider && p.rider.toString() === request.rider.toString()
       );
-      
+
       if (!existingParticipant) {
         // Add to participants
         ride.participants.push({
@@ -694,7 +735,7 @@ const updateRequestStatus = async (req, res, next) => {
     const populatedRide = await Ride.findById(ride._id).populate({
       path: 'driver',
       select: 'name email phone role',
-    }).populate({
+    }).populate('vehicle').populate({
       path: 'requests.rider',
       select: 'name email phone',
     }).populate({

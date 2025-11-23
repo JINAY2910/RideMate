@@ -76,13 +76,10 @@ export default function SearchRide() {
 
     if (filterVehicleType || filterMake || filterModel) {
       filtered = filtered.filter(ride => {
-        const vehicleId = rideVehicles[ride._id];
-        if (!vehicleId) return false;
-        
-        const vehicle = vehicles.find(v => v._id === vehicleId);
+        const vehicle = ride.vehicle;
         if (!vehicle) return false;
 
-        if (filterVehicleType && vehicle.vehicleType !== filterVehicleType) {
+        if (filterVehicleType && vehicle.type !== filterVehicleType) {
           return false;
         }
         if (filterMake && vehicle.make?.toLowerCase() !== filterMake.toLowerCase()) {
@@ -117,7 +114,7 @@ export default function SearchRide() {
     }
 
     const normalizedDate = date ? date : '';
-    
+
     // Use geo-based search with location names
     try {
       await loadRides({
@@ -134,8 +131,8 @@ export default function SearchRide() {
   };
 
   const getUniqueMakes = () => {
-    const makes = vehicles
-      .map(v => v.make)
+    const makes = allRides
+      .map(r => r.vehicle?.make)
       .filter((make): make is string => !!make)
       .filter((make, index, self) => self.indexOf(make) === index)
       .sort();
@@ -143,8 +140,8 @@ export default function SearchRide() {
   };
 
   const getUniqueModels = () => {
-    const models = vehicles
-      .map(v => v.model)
+    const models = allRides
+      .map(r => r.vehicle?.model)
       .filter((model): model is string => !!model)
       .filter((model, index, self) => self.indexOf(model) === index)
       .sort();
@@ -375,16 +372,20 @@ export default function SearchRide() {
                         ))}
                         <span className="text-sm font-semibold ml-1">{ride.driver.rating.toFixed(1)}</span>
                       </div>
-                      {(() => {
-                        const vehicleId = rideVehicles[ride._id];
-                        const vehicle = vehicleId ? vehicles.find(v => v._id === vehicleId) : null;
-                        return vehicle ? (
-                          <div className="mt-2 flex items-center text-xs text-gray-600">
+                      {ride.vehicle && (
+                        <div className="mt-2 text-xs text-gray-600">
+                          <div className="flex items-center mb-1">
                             <Car size={14} className="mr-1" />
-                            <span>{vehicle.make && vehicle.model ? `${vehicle.make} ${vehicle.model}` : vehicle.vehicleType}</span>
+                            <span className="font-semibold">
+                              {ride.vehicle.make} {ride.vehicle.model}
+                            </span>
                           </div>
-                        ) : null;
-                      })()}
+                          <div className="pl-5">
+                            <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: ride.vehicle.color || '#000' }}></span>
+                            {ride.vehicle.color} • {ride.vehicle.registrationNumber}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
