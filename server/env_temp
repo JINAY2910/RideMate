@@ -1,0 +1,17 @@
+#   - nominatim: OpenStreetMap (FREE, unlimited, 1 req/sec recommended) - DEFAULT
+#   - geoapify: Geoapify API (FREE: 3000 requests/day) - Get key at https://www.geoapify.com/
+#   - positionstack: PositionStack API (FREE: 25,000 requests/month) - Get key at https://positionstack.com/
+#
+# PAID PROVIDERS (Require billing/credit card):
+#   - google: Google Maps API (Requires billing, /month free credit)
+#   - mapbox: Mapbox API (Requires billing, free tier available)
+#
+GEOCODING_PROVIDER=geoapify
+
+# FREE API Keys (Optional - only if using these providers)
+# Geoapify: Sign up at https://www.geoapify.com/ (Free, no credit card)
+GEOAPIFY_API_KEY=81a8cad27f1a4393bee30a0bfcb45a44
+
+
+# PositionStack: Sign up at https://positionstack.com/ (Free, no credit card)
+POSITIONSTACK_API_KEY=105e585769ad63c32eb3fad86eee2492
