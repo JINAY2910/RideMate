@@ -1,6 +1,6 @@
-/* Hide default cursor globally */
-body,
-* {
+/* Hide default cursor only when custom cursor is active */
+body.use-custom-cursor,
+body.use-custom-cursor * {
     cursor: none !important;
 }
 

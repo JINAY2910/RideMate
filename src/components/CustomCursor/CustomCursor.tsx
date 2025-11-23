@@ -28,9 +28,14 @@ const CustomCursor: React.FC = () => {
         window.addEventListener('mousemove', updatePosition);
         window.addEventListener('mouseover', handleMouseOver);
 
+        // Add class to hide default cursor
+        document.body.classList.add('use-custom-cursor');
+
         return () => {
             window.removeEventListener('mousemove', updatePosition);
             window.removeEventListener('mouseover', handleMouseOver);
+            // Remove class to restore default cursor
+            document.body.classList.remove('use-custom-cursor');
         };
     }, []);
 
