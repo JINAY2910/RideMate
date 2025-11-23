@@ -3,8 +3,8 @@
 ## ✅ Issues Fixed
 
 ### 1. **Port Conflict (EADDRINUSE)**
-- **Problem**: Port 5001 was already in use by another process
-- **Solution**: Killed the existing process on port 5001
+- **Problem**: Port 5000 was already in use by another process
+- **Solution**: Killed the existing process on port 5000
 - **Status**: ✅ Fixed
 
 ### 2. **Mongoose Duplicate Index Warning**
@@ -49,7 +49,7 @@
 
 ## 🚀 Server Status
 
-The server is now running successfully on `http://localhost:5001`
+The server is now running successfully on `http://localhost:5000`
 
 ### Test Endpoints:
 - ✅ `GET /api/health` - Server health check
@@ -81,6 +81,6 @@ To test the Find My Ride feature:
 
 If you still see issues:
 - Check browser console for API errors
-- Verify the API base URL in frontend matches `http://localhost:5001/api`
+- Verify the API base URL in frontend matches `http://localhost:5000/api`
 - Check that rides exist in the database (run `npm run seed` if needed)
 

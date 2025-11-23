@@ -332,7 +332,7 @@ export default function SearchRide() {
               <p className="font-bold mb-2">Error: {error}</p>
               {error.includes('connect') || error.includes('Failed to fetch') ? (
                 <div className="text-sm mt-2 space-y-1">
-                  <p>• Make sure the backend server is running on port 5001</p>
+                  <p>• Make sure the backend server is running on port 5000</p>
                   <p>• Check that VITE_API_URL in your .env file is correct</p>
                   <p>• Verify CORS is enabled on the server</p>
                 </div>
