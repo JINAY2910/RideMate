@@ -7,7 +7,7 @@ import { rideApi, Ride, RideRequest } from '../services/rides';
 import RiderProfileModal from '../components/RiderProfileModal';
 
 export default function Dashboard() {
-  const { navigateTo, userRole, userName } = useApp();
+  const { navigateTo, userRole, userName, logout } = useApp();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<{ rideId: string; request: RideRequest } | null>(null);
@@ -206,7 +206,7 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={() => navigateTo('landing')}>
+            <Button variant="secondary" onClick={logout}>
               <LogOut size={18} />
               Sign Out
             </Button>
