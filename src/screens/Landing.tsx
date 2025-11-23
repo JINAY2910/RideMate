@@ -1,8 +1,6 @@
-import React from 'react';
 import { ArrowRight, Shield, Globe, Zap, Smartphone, Users } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
-import Logo from '../components/Logo';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
 import RollingReviews from '../components/RollingReviews/RollingReviews';
 import AnimatedSection from '../components/AnimatedSection/AnimatedSection';
@@ -24,8 +22,11 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-hover">
-            <Logo className="h-10 w-10" />
-            <span className="font-bold text-xl tracking-tight">RideMate</span>
+            <img
+              src="/ridemate_logo.png"
+              alt="RideMate - Mobility, Reimagined"
+              className="h-16 w-auto object-contain rounded-2xl border border-black"
+            />
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -55,38 +56,51 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section className="hero-section">
-        <div className="max-w-7xl mx-auto w-full">
-          <AnimatedSection delay={200}>
-            <h1 className="hero-title">
-              Mobility,<br />
-              Reimagined.
-            </h1>
-          </AnimatedSection>
+        <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center">
+          <div className="flex flex-col justify-center">
+            <AnimatedSection delay={200}>
+              <h1 className="hero-title">
+                Mobility,<br />
+                Reimagined.
+              </h1>
+            </AnimatedSection>
 
-          <AnimatedSection delay={400}>
-            <p className="hero-subtitle">
-              Experience the future of urban transportation. Seamless, sustainable, and designed for the modern world.
-            </p>
-          </AnimatedSection>
+            <AnimatedSection delay={400}>
+              <p className="hero-subtitle">
+                Experience the future of urban transportation. Seamless, sustainable, and designed for the modern world.
+              </p>
+            </AnimatedSection>
 
-          <AnimatedSection delay={600}>
-            <div className="hero-buttons">
-              <Button
-                size="lg"
-                onClick={() => navigateTo('signup')}
-                className="bg-black text-white px-8 py-4 rounded-full text-lg hover:scale-105 transition-transform cursor-hover"
-              >
-                Start Riding
-                <ArrowRight className="ml-2" size={20} />
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => navigateTo('platform')}
-                className="bg-white text-black border border-black/10 px-8 py-4 rounded-full text-lg hover:bg-gray-50 cursor-hover"
-              >
-                Learn More
-              </Button>
+            <AnimatedSection delay={600}>
+              <div className="hero-buttons">
+                <Button
+                  size="lg"
+                  onClick={() => navigateTo('signup')}
+                  className="bg-black text-white px-8 py-4 rounded-full text-lg hover:scale-105 transition-transform cursor-hover"
+                >
+                  Start Riding
+                  <ArrowRight className="ml-2" size={20} />
+                </Button>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  onClick={() => navigateTo('platform')}
+                  className="bg-white text-black border border-black/10 px-8 py-4 rounded-full text-lg hover:bg-gray-50 cursor-hover"
+                >
+                  Learn More
+                </Button>
+              </div>
+            </AnimatedSection>
+          </div>
+
+          <AnimatedSection delay={800} className="hidden md:block">
+            <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-black/5 transform hover:scale-[1.02] transition-transform duration-500">
+              <img
+                src="/hero_image.jpg"
+                alt="RideMate Hero"
+                className="w-full h-auto block"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             </div>
           </AnimatedSection>
         </div>
@@ -150,7 +164,7 @@ export default function Landing() {
       </section>
 
       {/* App Showcase */}
-      <section className="py-24 px-6 bg-black text-white">
+      <section id="app-showcase" className="py-24 px-6 bg-black text-white">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
           <AnimatedSection direction="right">
             <span className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 block">The App</span>
