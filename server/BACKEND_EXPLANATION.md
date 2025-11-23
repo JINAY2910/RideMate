@@ -37,7 +37,7 @@ The server starts here:
 - Connects to MongoDB database
 - Sets up Express app with middleware (CORS, JSON parsing)
 - Registers all route handlers
-- Starts listening on specified PORT (default: 5001)
+- Starts listening on specified PORT (default: 5000)
 
 **Flow:**
 ```
@@ -255,7 +255,7 @@ All demo users have password: `password123`
 2. **Set up environment variables:**
    Create `.env` file with:
    ```
-   PORT=5001
+   PORT=5000
    MONGO_URI=your_mongodb_connection_string
    JWT_SECRET=your_secret_key
    ```
@@ -274,7 +274,7 @@ All demo users have password: `password123`
 
 The server will:
 - Connect to MongoDB
-- Start listening on port 5001
+- Start listening on port 5000
 - Be ready to handle API requests
 
 ## 📝 API Response Format

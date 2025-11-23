@@ -34,7 +34,7 @@ export default function RideHistory() {
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/rides');
+        const response = await fetch('http://localhost:5000/api/rides');
         if (!response.ok) throw new Error('Failed to fetch rides.');
         const data: Ride[] = await response.json();
         setRides(data);
