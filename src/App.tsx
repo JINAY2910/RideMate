@@ -17,6 +17,7 @@ import Cities from './screens/Cities';
 import Safety from './screens/Safety';
 import RideConfirmation from './screens/RideConfirmation';
 import Vehicles from './screens/Vehicles';
+import Chatbot from './components/Chatbot';
 
 function AppRouter() {
   const { currentScreen } = useApp();
@@ -49,8 +50,20 @@ function App() {
   return (
     <AppProvider>
       <AppRouter />
+      <ChatbotWrapper />
     </AppProvider>
   );
+}
+
+function ChatbotWrapper() {
+  const { authToken, currentScreen } = useApp();
+
+  // Show chatbot only when authenticated and on the dashboard
+  if (!authToken || currentScreen !== 'dashboard') {
+    return null;
+  }
+
+  return <Chatbot />;
 }
 
 export default App;
