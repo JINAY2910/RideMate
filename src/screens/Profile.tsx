@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, User as UserIcon, Star, Shield } from 'lucide-react';
 import { EmergencyContact, useApp } from '../context/AppContext';
 import Button from '../components/Button';
