@@ -54,6 +54,10 @@ const userSchema = new mongoose.Schema(
       enum: ['driver', 'rider'],
       required: [true, 'Role is required'],
     },
+    profilePhoto: {
+      type: String,
+      default: '',
+    },
 
     // Driver location coordinates
     location: {

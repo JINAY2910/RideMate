@@ -1,189 +1,231 @@
-import { useState, useEffect } from 'react';
-import { rideApi, Ride, RideRequest } from '../services/rides';
-import Card from './Card';
+import { useState } from 'react';
+import { MapPin, Calendar, Clock, User, CheckCircle, XCircle, ChevronDown, ChevronUp, Car, Plus } from 'lucide-react';
 import Button from './Button';
-import { Clock, Users, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
-import RiderProfileModal from './RiderProfileModal';
+import Card from './Card';
+import { useApp } from '../context/AppContext';
 
-export default function DriverDashboard({ userName }: { userName: string }) {
-    const [rides, setRides] = useState<Ride[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [expandedRideId, setExpandedRideId] = useState<string | null>(null);
-    const [selectedRequest, setSelectedRequest] = useState<{ rideId: string; request: RideRequest } | null>(null);
-    const [activeTab, setActiveTab] = useState<'Active' | 'Completed'>('Active');
+interface RideRequest {
+    id: string;
+    riderName: string;
+    riderRating: number;
+    pickup: string;
+    dropoff: string;
+    date: string;
+    time: string;
+    seats: number;
+    price: number;
+    status: 'pending' | 'accepted' | 'rejected';
+}
 
-    const fetchRides = async () => {
-        try {
-            setLoading(true);
-            const data = await rideApi.list({ driver: userName });
-            setRides(data);
-        } catch (err) {
-            console.error('Failed to fetch rides:', err);
-        } finally {
-            setLoading(false);
+interface DriverDashboardProps {
+    userName: string;
+}
+
+export default function DriverDashboard({ userName }: DriverDashboardProps) {
+    const { navigateTo } = useApp();
+    const [activeTab, setActiveTab] = useState<'requests' | 'upcoming' | 'completed'>('requests');
+    const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
+
+    // Mock data - replace with API calls
+    const requests: RideRequest[] = [
+        {
+            id: '1',
+            riderName: 'Sarah Jenkins',
+            riderRating: 4.8,
+            pickup: 'Central Station',
+            dropoff: 'Tech Park, Sector 4',
+            date: 'Today',
+            time: '09:30 AM',
+            seats: 1,
+            price: 150,
+            status: 'pending',
+        },
+        {
+            id: '2',
+            riderName: 'Mike Chen',
+            riderRating: 4.5,
+            pickup: 'Green Valley Apts',
+            dropoff: 'City Mall',
+            date: 'Today',
+            time: '10:15 AM',
+            seats: 2,
+            price: 280,
+            status: 'pending',
+        },
+    ];
+
+    const upcomingRides = [
+        {
+            id: '3',
+            riderName: 'Priya Sharma',
+            pickup: 'University Campus',
+            dropoff: 'Airport Terminal 2',
+            date: 'Tomorrow',
+            time: '06:00 AM',
+            seats: 1,
+            price: 450,
+            status: 'accepted',
         }
+    ];
+
+    const toggleRequest = (id: string) => {
+        setExpandedRequest(expandedRequest === id ? null : id);
     };
 
-    useEffect(() => {
-        fetchRides();
-    }, [userName]);
-
-    const toggleRide = (rideId: string) => {
-        setExpandedRideId(expandedRideId === rideId ? null : rideId);
+    const handleAccept = (id: string) => {
+        console.log('Accepted request:', id);
+        // Add API call
     };
 
-    const handleRequestAction = async (rideId: string, requestId: string, status: 'Approved' | 'Rejected') => {
-        try {
-            await rideApi.updateRequestStatus(rideId, requestId, status);
-            fetchRides(); // Refresh data
-            setSelectedRequest(null);
-        } catch (err) {
-            alert(err instanceof Error ? err.message : 'Failed to update request');
-        }
+    const handleReject = (id: string) => {
+        console.log('Rejected request:', id);
+        // Add API call
     };
-
-    const filteredRides = rides.filter(ride => {
-        if (activeTab === 'Active') return ride.status === 'Active' || ride.status === 'Pending' || ride.status === 'Confirmed';
-        return ride.status === 'Completed';
-    });
-
-    if (loading) return <div className="text-center py-8">Loading your rides...</div>;
 
     return (
-        <div className="space-y-8">
-            <div>
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-black">My Rides</h2>
-                    <div className="flex p-1 bg-gray-100 rounded-lg">
-                        {(['Active', 'Completed'] as const).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${activeTab === tab
-                                        ? 'bg-white text-black shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                    }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-black">My Rides</h2>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigateTo('vehicles')}
+                    className="flex items-center gap-2 border-2 border-black hover:bg-black hover:text-white transition-colors"
+                >
+                    <Plus size={16} />
+                    Add Vehicle
+                </Button>
+            </div>
 
-                {filteredRides.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
-                        <p className="text-gray-500">No {activeTab.toLowerCase()} rides found.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredRides.map((ride) => (
-                            <Card key={ride._id} className="transition-all duration-300">
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${ride.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                {ride.status}
-                                            </span>
-                                            <span className="text-sm text-gray-500">{new Date(ride.createdAt).toLocaleDateString()}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 font-semibold text-lg">
-                                            <span>{ride.start.label}</span>
-                                            <span className="text-gray-400">→</span>
-                                            <span>{ride.destination.label}</span>
-                                        </div>
-                                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                                            <div className="flex items-center gap-1">
-                                                <Clock size={16} />
-                                                {ride.date} • {ride.time}
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-xl w-fit border-2 border-transparent">
+                {(['requests', 'upcoming', 'completed'] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${activeTab === tab
+                                ? 'bg-white text-black shadow-sm border-2 border-black'
+                                : 'text-gray-500 hover:text-black'
+                            }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
+
+            <div className="space-y-4">
+                {activeTab === 'requests' && (
+                    <>
+                        {requests.length === 0 ? (
+                            <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                <p className="text-gray-500">No new ride requests</p>
+                            </div>
+                        ) : (
+                            requests.map((request) => (
+                                <Card key={request.id} className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] transition-transform">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1 cursor-pointer" onClick={() => toggleRequest(request.id)}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-lg text-black">{request.riderName}</h3>
+                                                    <div className="flex items-center text-sm text-gray-600">
+                                                        <User size={14} className="mr-1" />
+                                                        <span>{request.riderRating} ★</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-lg text-black">₹{request.price}</p>
+                                                    <p className="text-xs text-gray-500">{request.seats} seat{request.seats > 1 ? 's' : ''}</p>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <Users size={16} />
-                                                {ride.seats.available} seats left
+
+                                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                                                <div className="flex items-center">
+                                                    <Calendar size={14} className="mr-1" />
+                                                    {request.date}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Clock size={14} className="mr-1" />
+                                                    {request.time}
+                                                </div>
                                             </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-black" />
+                                                    <p className="text-sm font-medium text-gray-900">{request.pickup}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-gray-300" />
+                                                    <p className="text-sm text-gray-600">{request.dropoff}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="ml-4 flex flex-col gap-2">
+                                            <button
+                                                onClick={() => handleAccept(request.id)}
+                                                className="p-2 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors"
+                                                title="Accept"
+                                            >
+                                                <CheckCircle size={20} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleReject(request.id)}
+                                                className="p-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                title="Reject"
+                                            >
+                                                <XCircle size={20} />
+                                            </button>
                                         </div>
                                     </div>
+                                </Card>
+                            ))
+                        )}
+                    </>
+                )}
 
-                                    <div className="flex items-center gap-3 w-full md:w-auto">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => toggleRide(ride._id)}
-                                            className="flex items-center gap-2"
-                                        >
-                                            {ride.requests.length > 0 ? `View Requests (${ride.requests.length})` : 'No Requests'}
-                                            {expandedRideId === ride._id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                        </Button>
+                {activeTab === 'upcoming' && (
+                    <div className="space-y-4">
+                        {upcomingRides.map((ride) => (
+                            <Card key={ride.id} className="border-2 border-gray-200">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                                        Confirmed
+                                    </span>
+                                    <p className="font-bold">₹{ride.price}</p>
+                                </div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <User size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold">{ride.riderName}</p>
+                                        <p className="text-xs text-gray-500">Passenger</p>
                                     </div>
                                 </div>
-
-                                {/* Expanded Requests Section */}
-                                {expandedRideId === ride._id && (
-                                    <div className="mt-6 pt-6 border-t border-gray-100 animate-fade-in">
-                                        <h3 className="font-bold text-sm uppercase tracking-wider text-gray-500 mb-4">Ride Requests</h3>
-                                        {ride.requests.length === 0 ? (
-                                            <p className="text-sm text-gray-500 italic">No requests received yet.</p>
-                                        ) : (
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                                {ride.requests.map((request) => (
-                                                    <div key={request._id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex justify-between items-center">
-                                                        <div>
-                                                            <p className="font-bold text-black">{request.name}</p>
-                                                            <p className="text-xs text-gray-500">Requested {request.seatsRequested} seat(s)</p>
-                                                            <div className="mt-1">
-                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${request.status === 'Approved' ? 'bg-green-100 text-green-700' :
-                                                                        request.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                                                                            'bg-yellow-100 text-yellow-700'
-                                                                    }`}>
-                                                                    {request.status}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        {request.status === 'Pending' && (
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleRequestAction(ride._id, request._id, 'Approved')}
-                                                                    className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
-                                                                    title="Accept"
-                                                                >
-                                                                    <Check size={18} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleRequestAction(ride._id, request._id, 'Rejected')}
-                                                                    className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-                                                                    title="Reject"
-                                                                >
-                                                                    <X size={18} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setSelectedRequest({ rideId: ride._id, request })}
-                                                                    className="p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                                                                    title="View Profile"
-                                                                >
-                                                                    <Users size={18} />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                <div className="space-y-3 pl-4 border-l-2 border-gray-100">
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wider">Pickup</p>
+                                        <p className="font-medium">{ride.pickup}</p>
                                     </div>
-                                )}
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wider">Dropoff</p>
+                                        <p className="font-medium">{ride.dropoff}</p>
+                                    </div>
+                                </div>
                             </Card>
                         ))}
                     </div>
                 )}
-            </div>
 
-            {selectedRequest && (
-                <RiderProfileModal
-                    rider={selectedRequest.request.rider}
-                    rating={selectedRequest.request.rating}
-                    onAccept={() => handleRequestAction(selectedRequest.rideId, selectedRequest.request._id, 'Approved')}
-                    onReject={() => handleRequestAction(selectedRequest.rideId, selectedRequest.request._id, 'Rejected')}
-                    onClose={() => setSelectedRequest(null)}
-                />
-            )}
+                {activeTab === 'completed' && (
+                    <div className="text-center py-12">
+                        <Button variant="outline" onClick={() => navigateTo('ride-history')}>
+                            View Full Ride History
+                        </Button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

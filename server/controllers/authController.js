@@ -14,11 +14,11 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
-    const { 
-      name, 
-      email, 
-      password, 
-      phone, 
+    const {
+      name,
+      email,
+      password,
+      phone,
       role,
       emergencyName1,
       emergencyPhone1,
@@ -26,6 +26,7 @@ const register = async (req, res, next) => {
       emergencyPhone2,
       emergencyName3,
       emergencyPhone3,
+      profilePhoto,
     } = req.body;
 
     // Validation
@@ -79,6 +80,7 @@ const register = async (req, res, next) => {
       emergencyPhone2: emergencyPhone2 || '',
       emergencyName3: emergencyName3 || '',
       emergencyPhone3: emergencyPhone3 || '',
+      profilePhoto: profilePhoto || '',
     });
 
     // Generate token
@@ -98,7 +100,9 @@ const register = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
+        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
+        profilePhoto: user.profilePhoto,
       },
     });
   } catch (error) {
@@ -158,7 +162,9 @@ const login = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
+        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
+        profilePhoto: user.profilePhoto,
       },
     });
   } catch (error) {
@@ -187,7 +193,9 @@ const getMe = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
+        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
+        profilePhoto: user.profilePhoto,
       },
     });
   } catch (error) {
@@ -209,6 +217,7 @@ const updateProfile = async (req, res, next) => {
       emergencyPhone2,
       emergencyName3,
       emergencyPhone3,
+      profilePhoto,
     } = req.body;
 
     const user = await User.findById(req.user.id);
@@ -229,6 +238,7 @@ const updateProfile = async (req, res, next) => {
     if (emergencyPhone2 !== undefined) user.emergencyPhone2 = emergencyPhone2;
     if (emergencyName3 !== undefined) user.emergencyName3 = emergencyName3;
     if (emergencyPhone3 !== undefined) user.emergencyPhone3 = emergencyPhone3;
+    if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
 
     await user.save();
 
@@ -246,7 +256,9 @@ const updateProfile = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
+        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
+        profilePhoto: user.profilePhoto,
       },
     });
   } catch (error) {

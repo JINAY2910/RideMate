@@ -56,6 +56,7 @@ export type User = {
   emergencyPhone2?: string;
   emergencyName3?: string;
   emergencyPhone3?: string;
+  profilePhoto?: string;
 };
 
 export type AuthResponse = {
@@ -99,7 +100,7 @@ export const authApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
+
       // Check if response is HTML (error page)
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('text/html')) {
@@ -107,7 +108,7 @@ export const authApi = {
         console.error('Server returned HTML error page:', text);
         throw new Error(`Server route not found. Check if server is running and route exists at ${url}`);
       }
-      
+
       return handleResponse<AuthResponse>(response);
     } catch (error) {
       // Handle network errors
@@ -134,7 +135,7 @@ export const authApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
+
       // Check if response is HTML (error page)
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('text/html')) {
@@ -142,7 +143,7 @@ export const authApi = {
         console.error('Server returned HTML error page:', text);
         throw new Error(`Server route not found. Check if server is running and route exists at ${url}`);
       }
-      
+
       return handleResponse<AuthResponse>(response);
     } catch (error) {
       // Handle network errors
@@ -187,6 +188,7 @@ export const authApi = {
       emergencyPhone2?: string;
       emergencyName3?: string;
       emergencyPhone3?: string;
+      profilePhoto?: string;
     }
   ): Promise<{ success: boolean; user: User }> {
     try {

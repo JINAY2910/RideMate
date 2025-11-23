@@ -1,238 +1,248 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, User as UserIcon, Star, Shield } from 'lucide-react';
-import { EmergencyContact, useApp } from '../context/AppContext';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Camera, LogOut, HelpCircle, Phone, Heart } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
-import Input from '../components/Input';
-import { authApi } from '../services/auth';
+import { rideApi } from '../services/rides';
+import Layout from '../components/Layout';
 
 export default function Profile() {
-  const { navigateTo, userName, setUserName, userRole, authToken, setEmergencyContacts } = useApp();
-  const [name, setName] = useState(userName);
-  const [gender, setGender] = useState('male');
+  const { navigateTo, userName, userRole, logout, updateProfile, user } = useApp();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    emergencyName1: '',
+    emergencyPhone1: '',
+    emergencyName2: '',
+    emergencyPhone2: '',
+    emergencyName3: '',
+    emergencyPhone3: '',
+    profilePhoto: '',
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [contacts, setContacts] = useState<EmergencyContact[]>([
-    { name: '', phone: '' },
-    { name: '', phone: '' },
-    { name: '', phone: '' },
-  ]);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  // Fetch user data including emergency contacts on mount
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!authToken) return;
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        emergencyName1: user.emergencyName1 || '',
+        emergencyPhone1: user.emergencyPhone1 || '',
+        emergencyName2: user.emergencyName2 || '',
+        emergencyPhone2: user.emergencyPhone2 || '',
+        emergencyName3: user.emergencyName3 || '',
+        emergencyPhone3: user.emergencyPhone3 || '',
+        profilePhoto: user.profilePhoto || '',
+      });
+    }
+  }, [user]);
 
-      try {
-        const response = await authApi.getMe(authToken);
-        const user = response.user;
-
-        setName(user.name);
-
-        // Load emergency contacts from database
-        const dbContacts: EmergencyContact[] = [
-          {
-            name: user.emergencyName1 || '',
-            phone: user.emergencyPhone1 || ''
-          },
-          {
-            name: user.emergencyName2 || '',
-            phone: user.emergencyPhone2 || ''
-          },
-          {
-            name: user.emergencyName3 || '',
-            phone: user.emergencyPhone3 || ''
-          },
-        ];
-
-        setContacts(dbContacts);
-        setEmergencyContacts(dbContacts.filter(c => c.name && c.phone));
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        // Don't show error on initial load, just use defaults
-      }
-    };
-
-    fetchUserData();
-  }, [authToken, setEmergencyContacts]);
-
-  const handleContactChange = (index: number, field: keyof EmergencyContact, value: string) => {
-    setContacts((prev) =>
-      prev.map((contact, i) => (i === index ? { ...contact, [field]: value } : contact))
-    );
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-
-    if (!authToken) {
-      setError('You must be logged in to update your profile');
-      setLoading(false);
-      return;
-    }
-
+    setMessage(null);
     try {
-      const normalizedContacts = contacts.map((contact) => ({
-        name: contact.name.trim(),
-        phone: contact.phone.trim(),
-      }));
-
-      // Update profile in database
-      const response = await authApi.updateProfile(authToken, {
-        name: name.trim(),
-        emergencyName1: normalizedContacts[0].name,
-        emergencyPhone1: normalizedContacts[0].phone,
-        emergencyName2: normalizedContacts[1].name,
-        emergencyPhone2: normalizedContacts[1].phone,
-        emergencyName3: normalizedContacts[2].name,
-        emergencyPhone3: normalizedContacts[2].phone,
-      });
-
-      // Update local state
-      setUserName(response.user.name);
-      setEmergencyContacts(normalizedContacts.filter(c => c.name && c.phone));
-
-      navigateTo('dashboard');
-    } catch (err) {
-      console.error('Error updating profile:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
+      await updateProfile(formData);
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setIsEditing(false);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigateTo('landing');
+  };
+
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
-      </div>
+    <Layout fullWidth>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <button
+          onClick={() => navigateTo('dashboard')}
+          className="mb-8 flex items-center text-gray-600 hover:text-black transition-colors"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Dashboard
+        </button>
 
-      <button
-        onClick={() => navigateTo('dashboard')}
-        className="mb-8 flex items-center text-black hover:opacity-70 transition-opacity font-semibold"
-      >
-        <ArrowLeft size={24} className="mr-2" />
-        Back to Dashboard
-      </button>
-
-      <div className="max-w-md mx-auto relative z-10 animate-fade-in">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black">Your Profile</h1>
-          <p className="text-gray-600 font-medium mt-2">Manage your account settings</p>
-        </div>
-
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-40 h-40 bg-gradient-to-br from-black to-gray-800 border-4 border-black rounded-full flex items-center justify-center mb-6 shadow-lg">
-            <UserIcon size={80} className="text-white" strokeWidth={1} />
-          </div>
-          <Button variant="secondary" size="sm">
-            Change Photo
-          </Button>
-        </div>
-
-        <div className="mb-8 p-6 bg-gradient-to-br from-gray-100 to-gray-50 border-2 border-black rounded-xl text-center">
-          <p className="text-sm text-gray-600 font-semibold uppercase mb-3">Community Rating</p>
-          <div className="flex items-center justify-center gap-1 mb-3">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} size={24} className="text-black fill-black" />
-            ))}
-          </div>
-          <p className="text-3xl font-bold text-black">4.8</p>
-          <p className="text-xs text-gray-600 mt-2">Based on 47 rides</p>
-        </div>
-
-        <form onSubmit={handleSave} className="space-y-5">
-          {error && (
-            <div className="rounded-lg border-2 border-red-500 bg-red-50 p-4 text-red-700 font-semibold text-sm">
-              {error}
-            </div>
-          )}
-
-          <Input
-            label="Full Name"
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            disabled={loading}
-          />
-
-          <div className="mb-1">
-            <label className="block text-sm font-semibold mb-2.5 text-black">Gender</label>
-            <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
-              disabled={loading}
-            >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div className="p-5 bg-gray-50 border-2 border-black rounded-xl mt-6">
-            <p className="text-xs text-gray-600 font-semibold uppercase mb-2">Account Role</p>
-            <p className="text-2xl font-bold text-black capitalize">{userRole}</p>
-          </div>
-
-          <div className="p-5 bg-white border-2 border-black rounded-xl mt-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield size={24} className="text-black" />
-              <div>
-                <p className="text-xs text-gray-600 font-semibold uppercase">Safety</p>
-                <h3 className="text-xl font-bold text-black">Emergency Contacts</h3>
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+            <div className="flex flex-col items-center mb-8">
+              <div className="relative mb-4 group">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-100 border-4 border-white shadow-lg">
+                  {formData.profilePhoto ? (
+                    <img src={formData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-300 uppercase">
+                      {userName?.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                {isEditing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <Camera className="text-white" size={24} />
+                  </div>
+                )}
               </div>
+
+              {isEditing ? (
+                <div className="w-full max-w-md mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile Photo URL</label>
+                  <input
+                    type="text"
+                    name="profilePhoto"
+                    value={formData.profilePhoto}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors"
+                    placeholder="https://example.com/photo.jpg"
+                  />
+                </div>
+              ) : null}
+
+              <h1 className="text-2xl font-bold text-black">{userName}</h1>
+              <p className="text-gray-500 capitalize">{userRole}</p>
             </div>
-            <p className="text-sm text-gray-600 mb-6">
-              Add up to three trusted contacts who will receive real-time alerts whenever you trigger SOS.
-            </p>
-            <div className="space-y-5">
-              {contacts.map((contact, index) => (
-                <div key={`contact-${index}`} className="rounded-2xl border-2 border-gray-200 p-4">
-                  <p className="text-sm font-semibold text-gray-500 uppercase mb-3">
-                    Contact {index + 1}
-                  </p>
-                  <div className="space-y-4">
-                    <Input
-                      label="Full Name"
-                      placeholder="e.g., Priya Verma"
-                      value={contact.name}
-                      onChange={(e) => handleContactChange(index, 'name', e.target.value)}
-                      disabled={loading}
+
+            {message && (
+              <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {message.text}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    disabled
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Heart className="text-red-500" size={20} />
+                  <h2 className="text-lg font-semibold">Emergency Contacts</h2>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 1 Name</label>
+                    <input
+                      type="text"
+                      name="emergencyName1"
+                      value={formData.emergencyName1}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                     />
-                    <Input
-                      label="Phone Number"
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 1 Phone</label>
+                    <input
                       type="tel"
-                      placeholder="e.g., +1 (555) 123-4567"
-                      value={contact.phone}
-                      onChange={(e) => handleContactChange(index, 'phone', e.target.value)}
-                      disabled={loading}
+                      name="emergencyPhone1"
+                      value={formData.emergencyPhone1}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 2 Name</label>
+                    <input
+                      type="text"
+                      name="emergencyName2"
+                      value={formData.emergencyName2}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 2 Phone</label>
+                    <input
+                      type="tel"
+                      name="emergencyPhone2"
+                      value={formData.emergencyPhone2}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+
+              <div className="flex justify-end gap-4 pt-4">
+                {isEditing ? (
+                  <>
+                    <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </>
+                ) : (
+                  <Button type="button" onClick={() => setIsEditing(true)}>
+                    Edit Profile
+                  </Button>
+                )}
+              </div>
+            </form>
           </div>
 
-          <div className="flex gap-3 pt-6">
-            <Button type="submit" fullWidth size="lg" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="lg"
-              onClick={() => navigateTo('dashboard')}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
+          <div className="grid md:grid-cols-2 gap-4">
+            <button className="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-200 hover:border-black transition-colors group w-full">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-black group-hover:text-white transition-colors">
+                  <HelpCircle size={24} />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-black">Help & Support</p>
+                  <p className="text-sm text-gray-500">Get assistance with your rides</p>
+                </div>
+              </div>
+            </button>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
