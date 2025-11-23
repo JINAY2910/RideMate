@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import Logo from '../components/Logo';
 
 export default function Platform() {
-  const { navigateTo } = useApp();
+  const { navigateTo, goBack } = useApp();
 
   const features = [
     { icon: Zap, title: 'Real-time ride matching', desc: 'UI mock' },
@@ -24,7 +24,7 @@ export default function Platform() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigateTo('landing')}
+              onClick={goBack}
               className="flex items-center text-black hover:opacity-70 transition-opacity font-semibold"
             >
               <ArrowLeft size={24} className="mr-2" />

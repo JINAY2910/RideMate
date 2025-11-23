@@ -15,7 +15,8 @@ import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { clearRideChat } from '../utils/chatStorage';
-import { rideApi, Ride } from '../services/rides';
+import { rideApi, Ride, RideRequest } from '../services/rides';
+import RiderProfileModal from '../components/RiderProfileModal';
 
 export default function RideDetails() {
   const {
@@ -41,6 +42,7 @@ export default function RideDetails() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatchComplete, setDispatchComplete] = useState(false);
   const [rideCancelled, setRideCancelled] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<RideRequest | null>(null);
 
   useEffect(() => {
     if (!activeRideId) {
@@ -134,14 +136,16 @@ export default function RideDetails() {
   };
 
   const handleMarkRideComplete = async () => {
-    if (!ride || ride.status === 'Completed') return;
-    try {
-      const updated = await rideApi.updateStatus(ride._id, 'Completed');
-      setRide(updated);
-      clearRideChat(updated._id);
-      setActionError(null);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Unable to update ride status.');
+    if (!ride) return;
+    // User requested that the ride be deleted after completion
+    if (window.confirm('Are you sure you want to complete and delete this ride? This action cannot be undone.')) {
+      try {
+        await rideApi.delete(ride._id);
+        clearRideChat(ride._id);
+        navigateTo('dashboard');
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Unable to delete ride.');
+      }
     }
   };
 
@@ -420,35 +424,13 @@ export default function RideDetails() {
                           </div>
 
                           {request.status === 'Pending' && (
-                            <div className="mt-4 flex gap-2">
+                            <div className="mt-4">
                               <Button
                                 size="sm"
-                                onClick={async () => {
-                                  try {
-                                    const updated = await rideApi.updateRequestStatus(ride!._id, request._id, 'Approved');
-                                    setRide(updated);
-                                    setActionError(null);
-                                  } catch (err) {
-                                    setActionError(err instanceof Error ? err.message : 'Failed to approve request');
-                                  }
-                                }}
+                                onClick={() => setSelectedRequest(request)}
+                                fullWidth
                               >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={async () => {
-                                  try {
-                                    const updated = await rideApi.updateRequestStatus(ride!._id, request._id, 'Rejected');
-                                    setRide(updated);
-                                    setActionError(null);
-                                  } catch (err) {
-                                    setActionError(err instanceof Error ? err.message : 'Failed to reject request');
-                                  }
-                                }}
-                              >
-                                Reject
+                                Review Profile & Request
                               </Button>
                             </div>
                           )}
@@ -671,6 +653,35 @@ export default function RideDetails() {
             </div>
           </div>
         </div>
+      )}
+      {selectedRequest && (
+        <RiderProfileModal
+          rider={selectedRequest.rider}
+          rating={selectedRequest.rating}
+          onAccept={async () => {
+            if (!ride) return;
+            try {
+              const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Approved');
+              setRide(updated);
+              setActionError(null);
+              setSelectedRequest(null);
+            } catch (err) {
+              setActionError(err instanceof Error ? err.message : 'Failed to approve request');
+            }
+          }}
+          onReject={async () => {
+            if (!ride) return;
+            try {
+              const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Rejected');
+              setRide(updated);
+              setActionError(null);
+              setSelectedRequest(null);
+            } catch (err) {
+              setActionError(err instanceof Error ? err.message : 'Failed to reject request');
+            }
+          }}
+          onClose={() => setSelectedRequest(null)}
+        />
       )}
     </div>
   );

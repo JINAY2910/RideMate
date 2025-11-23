@@ -1,6 +1,6 @@
 // Ensure API_BASE always ends with /api and doesn't have trailing slash
 const getApiBase = () => {
-  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
+  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
   // Remove trailing slash if present
   const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
   // Ensure it ends with /api
@@ -112,7 +112,7 @@ export const authApi = {
     } catch (error) {
       // Handle network errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to the server. Please check if the server is running on port 5000.');
+        throw new Error('Unable to connect to the server. Please check if the server is running on port 5001.');
       }
       throw error;
     }
@@ -147,7 +147,7 @@ export const authApi = {
     } catch (error) {
       // Handle network errors
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Unable to connect to the server. Please check if the server is running on port 5000.');
+        throw new Error('Unable to connect to the server. Please check if the server is running on port 5001.');
       }
       throw error;
     }

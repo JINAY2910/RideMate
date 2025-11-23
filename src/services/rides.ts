@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
 // Log API base URL in development (helps debug configuration issues)
 if (import.meta.env.DEV) {
@@ -97,6 +97,15 @@ export type Ride = {
     lat: number;
     lng: number;
   } | null;
+  vehicle?: {
+    _id: string;
+    registrationNumber: string;
+    model?: string;
+    make?: string;
+    color?: string;
+    type: '2-wheeler' | '3-wheeler' | '4-wheeler';
+    seatingLimit: number;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -175,6 +184,21 @@ export const rideApi = {
   async getById(id: string) {
     const response = await fetch(`${API_BASE}/rides/${id}`);
     return handleResponse<Ride>(response);
+  },
+
+  async delete(id: string) {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required. Please log in to delete a ride.');
+    }
+    const response = await fetch(`${API_BASE}/rides/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<{ success: true; message: string }>(response);
   },
 
   async updateStatus(id: string, status: Ride['status']) {

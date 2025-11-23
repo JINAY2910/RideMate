@@ -16,7 +16,7 @@ import Button from '../components/Button';
 import Logo from '../components/Logo';
 
 export default function Landing() {
-  const { navigateTo } = useApp();
+  const { navigateTo, authToken } = useApp();
   const [persona, setPersona] = useState<'rider' | 'driver'>('rider');
   const [activeReview, setActiveReview] = useState(0);
 
@@ -128,15 +128,23 @@ export default function Landing() {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigateTo('login')}
-              className="px-5 py-2 rounded-full border border-black/10 font-semibold hover:bg-black/5 transition-all duration-300"
-            >
-              Log in
-            </button>
-            <Button onClick={() => navigateTo('signup')} size="sm">
-              Create account
-            </Button>
+            {authToken ? (
+              <Button onClick={() => navigateTo('dashboard')} size="sm">
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigateTo('login')}
+                  className="px-5 py-2 rounded-full border border-black/10 font-semibold hover:bg-black/5 transition-all duration-300"
+                >
+                  Log in
+                </button>
+                <Button onClick={() => navigateTo('signup')} size="sm">
+                  Create account
+                </Button>
+              </>
+            )}
           </div>
         </header>
 
@@ -175,9 +183,8 @@ export default function Landing() {
                   <button
                     key={option}
                     onClick={() => setPersona(option)}
-                    className={`rounded-full px-6 py-2 text-sm font-semibold transition-all duration-300 ${
-                      persona === option ? 'bg-black text-white shadow-lg' : 'bg-black/5 text-gray-700 hover:bg-black/10'
-                    }`}
+                    className={`rounded-full px-6 py-2 text-sm font-semibold transition-all duration-300 ${persona === option ? 'bg-black text-white shadow-lg' : 'bg-black/5 text-gray-700 hover:bg-black/10'
+                      }`}
                   >
                     {option === 'rider' ? 'Rider experience' : 'Driver toolkit'}
                   </button>

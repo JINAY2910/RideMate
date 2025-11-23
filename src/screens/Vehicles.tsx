@@ -20,7 +20,7 @@ export default function Vehicles() {
   const [model, setModel] = useState('');
   const [color, setColor] = useState('');
 
-  // Using dummy data from context - no API calls needed
+
 
   const resetForm = () => {
     setRegistrationNumber('');
@@ -46,7 +46,7 @@ export default function Vehicles() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!registrationNumber || !seatingLimit || !vehicleType || !make || !model || !color) {
       setError('Please fill in all required fields.');
       return;
@@ -63,8 +63,7 @@ export default function Vehicles() {
       setError(null);
 
       if (editingVehicle) {
-        // Update existing vehicle (dummy data)
-        updateVehicle(editingVehicle._id, {
+        await updateVehicle(editingVehicle._id, {
           registrationNumber,
           seatingLimit: seatingLimitNum,
           vehicleType,
@@ -73,8 +72,7 @@ export default function Vehicles() {
           color: color || undefined,
         });
       } else {
-        // Add new vehicle (dummy data)
-        addVehicle({
+        await addVehicle({
           registrationNumber,
           seatingLimit: seatingLimitNum,
           vehicleType,
@@ -92,13 +90,16 @@ export default function Vehicles() {
     }
   };
 
-  const handleDelete = (vehicleId: string) => {
+  const handleDelete = async (vehicleId: string) => {
     if (!confirm('Are you sure you want to delete this vehicle?')) {
       return;
     }
 
-    // Delete vehicle from dummy data
-    deleteVehicle(vehicleId);
+    try {
+      await deleteVehicle(vehicleId);
+    } catch (err) {
+      alert('Failed to delete vehicle');
+    }
   };
 
   return (

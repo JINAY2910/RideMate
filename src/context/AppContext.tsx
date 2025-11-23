@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { vehicleApi } from '../services/vehicles';
 
 export type EmergencyContact = {
   name: string;
@@ -52,6 +53,7 @@ interface AppContextType {
   rideVehicles: Record<string, string>; // Maps rideId to vehicleId
   rideSchedules: RideSchedule[]; // Weekly schedules
   navigateTo: (screen: string) => void;
+  goBack: () => void;
   setRole: (role: 'driver' | 'rider') => void;
   setUserId: (id: string | null) => void;
   setUserName: (name: string) => void;
@@ -62,9 +64,9 @@ interface AppContextType {
   setActiveRideId: (rideId: string | null) => void;
   setRideSummaryInput: (input: RideSummaryInput | null) => void;
   setVehicles: (vehicles: Vehicle[]) => void;
-  addVehicle: (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => void;
-  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => void;
-  deleteVehicle: (id: string) => void;
+  addVehicle: (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => Promise<void>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
   setRideVehicle: (rideId: string, vehicleId: string) => void;
   addRideSchedule: (schedule: RideSchedule) => void;
   logout: () => void;
@@ -73,16 +75,22 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [currentScreen, setCurrentScreen] = useState('landing');
-  const [userRole, setUserRole] = useState<'driver' | 'rider' | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [userPhone, setUserPhone] = useState('');
-  const [authToken, setAuthToken] = useState<string | null>(() => {
-    // Load token from localStorage on init
-    return localStorage.getItem('authToken');
+  // Initialize state from localStorage if available
+  const [currentScreen, setCurrentScreen] = useState(() => localStorage.getItem('currentScreen') || 'landing');
+  const [history, setHistory] = useState<string[]>(() => {
+    const saved = localStorage.getItem('navHistory');
+    return saved ? JSON.parse(saved) : ['landing'];
   });
+
+  const [userRole, setUserRole] = useState<'driver' | 'rider' | null>(() => {
+    return (localStorage.getItem('userRole') as 'driver' | 'rider') || null;
+  });
+  const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('userId'));
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || '');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
+  const [userPhone, setUserPhone] = useState(() => localStorage.getItem('userPhone') || '');
+  const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('authToken'));
+
   const [activeRideId, setActiveRideId] = useState<string | null>(null);
   const [rideSummaryInput, setRideSummaryInput] = useState<RideSummaryInput | null>(null);
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([
@@ -94,11 +102,75 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [rideVehicles, setRideVehicles] = useState<Record<string, string>>({});
   const [rideSchedules, setRideSchedules] = useState<RideSchedule[]>([]);
 
+  // Persist state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('currentScreen', currentScreen);
+  }, [currentScreen]);
+
+  useEffect(() => {
+    localStorage.setItem('navHistory', JSON.stringify(history));
+  }, [history]);
+
+  useEffect(() => {
+    if (userRole) localStorage.setItem('userRole', userRole);
+    else localStorage.removeItem('userRole');
+  }, [userRole]);
+
+  useEffect(() => {
+    if (userId) localStorage.setItem('userId', userId);
+    else localStorage.removeItem('userId');
+  }, [userId]);
+
+  useEffect(() => {
+    localStorage.setItem('userName', userName);
+  }, [userName]);
+
+  useEffect(() => {
+    localStorage.setItem('userEmail', userEmail);
+  }, [userEmail]);
+
+  useEffect(() => {
+    localStorage.setItem('userPhone', userPhone);
+  }, [userPhone]);
+
+  useEffect(() => {
+    if (authToken) localStorage.setItem('authToken', authToken);
+    else localStorage.removeItem('authToken');
+  }, [authToken]);
+
+  // Fetch vehicles when user is a driver and has a token
+  useEffect(() => {
+    if (userRole === 'driver' && authToken) {
+      vehicleApi.list()
+        .then(response => {
+          if (response.success) {
+            setVehicles(response.vehicles);
+          }
+        })
+        .catch(err => console.error('Failed to fetch vehicles:', err));
+    } else if (!authToken) {
+      setVehicles([]);
+    }
+  }, [userRole, authToken]);
+
   const navigateTo = (screen: string) => {
-    setCurrentScreen(screen);
+    if (screen !== currentScreen) {
+      setHistory(prev => [...prev, screen]);
+      setCurrentScreen(screen);
+    }
   };
 
-  const setRole = (role: 'driver' | 'rider') => {
+  const goBack = () => {
+    setHistory(prev => {
+      if (prev.length <= 1) return prev;
+      const newHistory = prev.slice(0, -1);
+      const previousScreen = newHistory[newHistory.length - 1];
+      setCurrentScreen(previousScreen);
+      return newHistory;
+    });
+  };
+
+  const handleSetRole = (role: 'driver' | 'rider') => {
     setUserRole(role);
   };
 
@@ -112,25 +184,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setVehicles([]);
     setRideVehicles({});
     setRideSchedules([]);
+
+    // Clear localStorage
     localStorage.removeItem('authToken');
-    navigateTo('landing');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userPhone');
+    localStorage.removeItem('currentScreen');
+    localStorage.removeItem('navHistory');
+
+    setHistory(['landing']);
+    setCurrentScreen('landing'); // Don't use navigateTo here to avoid adding to history
   };
 
-  const addVehicle = (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => {
-    const newVehicle: Vehicle = {
-      ...vehicle,
-      _id: `vehicle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-    };
-    setVehicles([...vehicles, newVehicle]);
+  const addVehicle = async (vehicle: Omit<Vehicle, '_id' | 'createdAt'>) => {
+    try {
+      const response = await vehicleApi.create(vehicle);
+      if (response.success) {
+        setVehicles([...vehicles, response.vehicle]);
+      }
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      throw error;
+    }
   };
 
-  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
-    setVehicles(vehicles.map(v => v._id === id ? { ...v, ...updates } : v));
+  const updateVehicle = async (id: string, updates: Partial<Vehicle>) => {
+    try {
+      const response = await vehicleApi.update(id, updates);
+      if (response.success) {
+        setVehicles(vehicles.map(v => v._id === id ? response.vehicle : v));
+      }
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      throw error;
+    }
   };
 
-  const deleteVehicle = (id: string) => {
-    setVehicles(vehicles.filter(v => v._id !== id));
+  const deleteVehicle = async (id: string) => {
+    try {
+      await vehicleApi.delete(id);
+      setVehicles(vehicles.filter(v => v._id !== id));
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      throw error;
+    }
   };
 
   const setRideVehicle = (rideId: string, vehicleId: string) => {
@@ -139,16 +239,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addRideSchedule = (schedule: RideSchedule) => {
     setRideSchedules(prev => [...prev, schedule]);
-  };
-
-  // Update localStorage when token changes
-  const handleSetAuthToken = (token: string | null) => {
-    setAuthToken(token);
-    if (token) {
-      localStorage.setItem('authToken', token);
-    } else {
-      localStorage.removeItem('authToken');
-    }
   };
 
   return (
@@ -166,12 +256,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         rideSummaryInput,
         vehicles,
         navigateTo,
-        setRole,
+        goBack,
+        setRole: handleSetRole,
         setUserId,
         setUserName,
         setUserEmail,
         setUserPhone,
-        setAuthToken: handleSetAuthToken,
+        setAuthToken,
         setEmergencyContacts,
         setActiveRideId,
         setRideSummaryInput,
