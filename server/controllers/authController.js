@@ -81,6 +81,10 @@ const register = async (req, res, next) => {
       emergencyName3: emergencyName3 || '',
       emergencyPhone3: emergencyPhone3 || '',
       profilePhoto: profilePhoto || '',
+      location: {
+        type: 'Point',
+        coordinates: [0, 0], // Default to [0, 0] to satisfy 2dsphere index
+      },
     });
 
     // Generate token

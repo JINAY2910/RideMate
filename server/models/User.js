@@ -70,6 +70,7 @@ const userSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], // [longitude, latitude] for GeoJSON
+        default: [0, 0],
       },
     },
     createdAt: {
