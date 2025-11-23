@@ -182,13 +182,13 @@ Test the endpoints:
 
 ```bash
 # Search locations
-curl "http://localhost:5000/api/locations/search?q=delhi"
+curl "http://localhost:5001/api/locations/search?q=delhi"
 
 # Geocode
-curl "http://localhost:5000/api/locations/geocode?q=Delhi Airport"
+curl "http://localhost:5001/api/locations/geocode?q=Delhi Airport"
 
 # Search rides
-curl "http://localhost:5000/api/rides?nearStart=Delhi Airport&nearDest=Connaught Place"
+curl "http://localhost:5001/api/rides?nearStart=Delhi Airport&nearDest=Connaught Place"
 ```
 
 ## 📚 Documentation
