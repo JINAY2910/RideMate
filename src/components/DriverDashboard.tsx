@@ -26,47 +26,9 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
     const [activeTab, setActiveTab] = useState<'requests' | 'upcoming' | 'completed'>('requests');
     const [expandedRequest, setExpandedRequest] = useState<string | null>(null);
 
-    // Mock data - replace with API calls
-    const requests: RideRequest[] = [
-        {
-            id: '1',
-            riderName: 'Sarah Jenkins',
-            riderRating: 4.8,
-            pickup: 'Central Station',
-            dropoff: 'Tech Park, Sector 4',
-            date: 'Today',
-            time: '09:30 AM',
-            seats: 1,
-            price: 150,
-            status: 'pending',
-        },
-        {
-            id: '2',
-            riderName: 'Mike Chen',
-            riderRating: 4.5,
-            pickup: 'Green Valley Apts',
-            dropoff: 'City Mall',
-            date: 'Today',
-            time: '10:15 AM',
-            seats: 2,
-            price: 280,
-            status: 'pending',
-        },
-    ];
-
-    const upcomingRides = [
-        {
-            id: '3',
-            riderName: 'Priya Sharma',
-            pickup: 'University Campus',
-            dropoff: 'Airport Terminal 2',
-            date: 'Tomorrow',
-            time: '06:00 AM',
-            seats: 1,
-            price: 450,
-            status: 'accepted',
-        }
-    ];
+    // TODO: Replace with API calls to fetch real data
+    const requests: RideRequest[] = [];
+    const upcomingRides: any[] = [];
 
     const toggleRequest = (id: string) => {
         setExpandedRequest(expandedRequest === id ? null : id);
@@ -103,8 +65,8 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${activeTab === tab
-                                ? 'bg-white text-black shadow-sm border-2 border-black'
-                                : 'text-gray-500 hover:text-black'
+                            ? 'bg-white text-black shadow-sm border-2 border-black'
+                            : 'text-gray-500 hover:text-black'
                             }`}
                     >
                         {tab}

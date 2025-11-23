@@ -109,11 +109,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [activeRideId, setActiveRideId] = useState<string | null>(null);
   const [rideSummaryInput, setRideSummaryInput] = useState<RideSummaryInput | null>(null);
-  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([
-    { name: 'Priya Verma', phone: '+1 (555) 123-4567' },
-    { name: 'Michael Chen', phone: '+1 (555) 987-6543' },
-    { name: 'David Lee', phone: '+1 (555) 222-8899' },
-  ]);
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [rideVehicles, setRideVehicles] = useState<Record<string, string>>({});
   const [rideSchedules, setRideSchedules] = useState<RideSchedule[]>([]);
