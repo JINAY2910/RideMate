@@ -4,6 +4,13 @@ body,
     cursor: none !important;
 }
 
+/* Allow default cursor on inputs for usability */
+input,
+textarea,
+[contenteditable] {
+    cursor: text !important;
+}
+
 .custom-cursor {
     position: fixed;
     top: 0;

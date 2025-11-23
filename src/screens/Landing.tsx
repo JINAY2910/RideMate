@@ -93,7 +93,7 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 px-6 bg-white">
+      <section className="py-16 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <AnimatedSection className="section-header">
             <span className="section-label">Why RideMate</span>

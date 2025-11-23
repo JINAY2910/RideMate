@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import { authApi } from '../services/auth';
+import CustomCursor from '../components/CustomCursor/CustomCursor';
 
 export default function Signup() {
   const { navigateTo, setAuthToken, setRole, setUserId, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
@@ -117,6 +118,7 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative">
+      <CustomCursor />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-72 h-72 bg-gray-100 rounded-full -translate-y-1/2 -translate-x-1/3 opacity-20"></div>
       </div>
