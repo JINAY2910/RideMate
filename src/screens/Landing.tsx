@@ -108,15 +108,15 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-zinc-50 text-gray-900">
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
-        <header className="sticky top-0 z-20 mb-6 flex items-center justify-between rounded-3xl border border-black/5 bg-white/80 px-6 py-4 shadow-[0_10px_45px_rgba(15,23,42,0.08)] backdrop-blur">
+        <header className="sticky top-0 z-20 mb-6 flex items-center justify-between rounded-3xl border border-black/5 bg-white/80 px-4 sm:px-6 py-4 shadow-[0_10px_45px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="flex items-center gap-3">
-            <Logo className="h-14 w-14 shadow-xl" />
+            <Logo className="h-10 w-10 sm:h-14 sm:w-14 shadow-xl" />
             <div>
-              <p className="text-sm uppercase tracking-[0.45em] text-gray-500">RideMate</p>
-              <p className="font-semibold text-lg">Community mobility OS</p>
+              <p className="text-[10px] sm:text-sm uppercase tracking-[0.2em] sm:tracking-[0.45em] text-gray-500">RideMate</p>
+              <p className="font-semibold text-sm sm:text-lg hidden sm:block">Community mobility OS</p>
             </div>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-500">
+          <div className="hidden md:flex items-center gap-6 text-sm text-gray-500">
             <button onClick={() => navigateTo('platform')} className="hover:text-gray-900 transition-colors">
               Platform
             </button>
@@ -136,11 +136,11 @@ export default function Landing() {
               <>
                 <button
                   onClick={() => navigateTo('login')}
-                  className="px-5 py-2 rounded-full border border-black/10 font-semibold hover:bg-black/5 transition-all duration-300"
+                  className="px-3 sm:px-5 py-2 rounded-full border border-black/10 font-semibold hover:bg-black/5 transition-all duration-300 text-sm"
                 >
                   Log in
                 </button>
-                <Button onClick={() => navigateTo('signup')} size="sm">
+                <Button onClick={() => navigateTo('signup')} size="sm" className="hidden sm:flex">
                   Create account
                 </Button>
               </>

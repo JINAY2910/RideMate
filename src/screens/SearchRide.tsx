@@ -170,8 +170,10 @@ export default function SearchRide() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-96 h-96 bg-gray-100 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none"></div>
+    <div className="min-h-screen bg-white p-4 sm:p-6 relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-96 h-96 bg-gray-100 rounded-full -translate-x-1/2 -translate-y-1/2 opacity-20"></div>
+      </div>
 
       <button
         onClick={() => navigateTo('dashboard')}

@@ -42,8 +42,8 @@ export default function CreateRide() {
   const [error, setError] = useState<string | null>(null);
 
   const toggleDay = (day: string) => {
-    setSelectedDays(prev => 
-      prev.includes(day) 
+    setSelectedDays(prev =>
+      prev.includes(day)
         ? prev.filter(d => d !== day)
         : [...prev, day]
     );
@@ -70,7 +70,7 @@ export default function CreateRide() {
         return;
       }
     }
-    
+
     if (userRole === 'driver') {
       if (vehicles.length === 0) {
         alert('Please add a vehicle first before creating a ride.');
@@ -159,12 +159,12 @@ export default function CreateRide() {
         });
 
         setActiveRideId(newRide._id);
-        
+
         // Store vehicle ID for this ride (dummy data)
         if (selectedVehicle) {
           setRideVehicle(newRide._id, selectedVehicle);
         }
-        
+
         setRideSummaryInput({
           start: {
             lat: newRide.start.coordinates.lat,
@@ -187,8 +187,10 @@ export default function CreateRide() {
 
 
   return (
-    <div className="min-h-screen bg-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
+    <div className="min-h-screen bg-white p-4 sm:p-6 relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
+      </div>
 
       <button
         onClick={() => navigateTo('dashboard')}
@@ -252,17 +254,16 @@ export default function CreateRide() {
                   <label className="block text-sm font-semibold mb-3 text-black">
                     Select Days of the Week *
                   </label>
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                     {DAYS_OF_WEEK.map((day) => (
                       <button
                         key={day.value}
                         type="button"
                         onClick={() => toggleDay(day.value)}
-                        className={`py-3 px-2 rounded-lg border-2 font-semibold text-sm transition-all ${
-                          selectedDays.includes(day.value)
+                        className={`py-3 px-2 rounded-lg border-2 font-semibold text-sm transition-all ${selectedDays.includes(day.value)
                             ? 'bg-black text-white border-black'
                             : 'bg-white text-black border-gray-300 hover:border-black'
-                        }`}
+                          }`}
                       >
                         {day.label}
                       </button>

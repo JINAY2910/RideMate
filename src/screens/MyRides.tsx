@@ -133,7 +133,7 @@ export default function MyRides() {
               <div className="text-sm">
                 <p className="font-semibold text-black">Vehicle Details</p>
                 <p className="text-gray-600">
-                  {vehicle.registrationNumber} • {vehicle.type || vehicle.vehicleType}
+                  {vehicle.registrationNumber} • {'type' in vehicle ? (vehicle as any).type : (vehicle as any).vehicleType}
                 </p>
                 {vehicle.make && vehicle.model && (
                   <p className="text-gray-600">
@@ -152,7 +152,7 @@ export default function MyRides() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className="min-h-screen bg-white p-4 sm:p-6">
       <button onClick={() => navigateTo('dashboard')} className="mb-8 flex items-center text-black hover:opacity-70">
         <ArrowLeft size={24} className="mr-2" />
         Back to Dashboard

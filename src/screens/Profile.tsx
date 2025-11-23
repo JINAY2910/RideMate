@@ -21,29 +21,29 @@ export default function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!authToken) return;
-      
+
       try {
         const response = await authApi.getMe(authToken);
         const user = response.user;
-        
+
         setName(user.name);
-        
+
         // Load emergency contacts from database
         const dbContacts: EmergencyContact[] = [
-          { 
-            name: user.emergencyName1 || '', 
-            phone: user.emergencyPhone1 || '' 
+          {
+            name: user.emergencyName1 || '',
+            phone: user.emergencyPhone1 || ''
           },
-          { 
-            name: user.emergencyName2 || '', 
-            phone: user.emergencyPhone2 || '' 
+          {
+            name: user.emergencyName2 || '',
+            phone: user.emergencyPhone2 || ''
           },
-          { 
-            name: user.emergencyName3 || '', 
-            phone: user.emergencyPhone3 || '' 
+          {
+            name: user.emergencyName3 || '',
+            phone: user.emergencyPhone3 || ''
           },
         ];
-        
+
         setContacts(dbContacts);
         setEmergencyContacts(dbContacts.filter(c => c.name && c.phone));
       } catch (err) {
@@ -92,7 +92,7 @@ export default function Profile() {
       // Update local state
       setUserName(response.user.name);
       setEmergencyContacts(normalizedContacts.filter(c => c.name && c.phone));
-      
+
       navigateTo('dashboard');
     } catch (err) {
       console.error('Error updating profile:', err);
@@ -104,8 +104,10 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
+    <div className="min-h-screen bg-white p-4 sm:p-6 relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gray-100 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20"></div>
+      </div>
 
       <button
         onClick={() => navigateTo('dashboard')}
@@ -219,10 +221,10 @@ export default function Profile() {
             <Button type="submit" fullWidth size="lg" disabled={loading}>
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              size="lg" 
+            <Button
+              type="button"
+              variant="secondary"
+              size="lg"
               onClick={() => navigateTo('dashboard')}
               disabled={loading}
             >

@@ -108,7 +108,7 @@ export default function Chat() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="p-6 border-b-2 border-gray-200 bg-white sticky top-0 z-10">
+      <div className="p-4 sm:p-6 border-b-2 border-gray-200 bg-white sticky top-0 z-10">
         <button
           onClick={() => navigateTo('ride-details')}
           className="flex items-center text-black hover:opacity-70 transition-opacity font-semibold"
@@ -138,7 +138,7 @@ export default function Chat() {
           {rideError}
         </div>
       ) : (
-        <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50">
           <div className="max-w-2xl mx-auto space-y-4">
             {messages.length === 0 && (
               <p className="text-center text-sm text-gray-500">No messages yet. Say hello to get started.</p>
@@ -152,11 +152,10 @@ export default function Chat() {
                       {isMe ? 'You' : msg.senderName}
                     </p>
                     <div
-                      className={`inline-block px-5 py-3 rounded-2xl smooth-transition ${
-                        isMe
-                          ? 'bg-black text-white rounded-br-none shadow-lg'
-                          : 'bg-gray-100 text-black border-2 border-gray-300 rounded-bl-none'
-                      }`}
+                      className={`inline-block px-5 py-3 rounded-2xl smooth-transition ${isMe
+                        ? 'bg-black text-white rounded-br-none shadow-lg'
+                        : 'bg-gray-100 text-black border-2 border-gray-300 rounded-bl-none'
+                        }`}
                     >
                       <p className="text-sm font-medium leading-relaxed break-words">{msg.text}</p>
                     </div>
@@ -169,7 +168,7 @@ export default function Chat() {
         </div>
       )}
 
-      <div className="p-6 border-t-2 border-gray-200 bg-white sticky bottom-0">
+      <div className="p-4 sm:p-6 border-t-2 border-gray-200 bg-white sticky bottom-0">
         <div className="max-w-2xl mx-auto">
           {error && <p className="mb-2 text-sm font-medium text-red-500">{error}</p>}
           <div className="flex gap-3">

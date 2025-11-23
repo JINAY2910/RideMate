@@ -116,8 +116,10 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-72 h-72 bg-gray-100 rounded-full -translate-y-1/2 -translate-x-1/3 opacity-20"></div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 relative">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-72 h-72 bg-gray-100 rounded-full -translate-y-1/2 -translate-x-1/3 opacity-20"></div>
+      </div>
 
       <button
         onClick={() => navigateTo('landing')}

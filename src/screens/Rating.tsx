@@ -15,8 +15,8 @@ export default function Rating() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-center opacity-10">
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 relative">
+      <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none overflow-hidden">
         <div className="w-96 h-96 bg-gray-100 rounded-full"></div>
       </div>
 
@@ -42,11 +42,10 @@ export default function Rating() {
                   >
                     <Star
                       size={48}
-                      className={`${
-                        star <= (hoveredRating || rating)
+                      className={`${star <= (hoveredRating || rating)
                           ? 'text-black fill-black'
                           : 'text-gray-300'
-                      } transition-colors duration-200`}
+                        } transition-colors duration-200`}
                     />
                   </button>
                 ))}

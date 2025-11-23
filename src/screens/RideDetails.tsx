@@ -244,7 +244,7 @@ export default function RideDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-6">
+    <div className="min-h-screen bg-white p-4 sm:p-6">
       <button onClick={() => navigateTo('dashboard')} className="mb-8 flex items-center text-black hover:opacity-70">
         <ArrowLeft size={24} className="mr-2" />
         Back to Dashboard

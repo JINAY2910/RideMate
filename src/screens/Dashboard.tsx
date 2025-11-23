@@ -64,9 +64,9 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-b from-white via-gray-50 to-gray-100 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[28rem] h-[28rem] bg-gray-200 rounded-full translate-x-1/3 -translate-y-1/3 opacity-20 blur-3xl" />
 
-      <div className="max-w-6xl mx-auto px-6 py-12 relative z-10">
-        <div className="grid gap-8 lg:grid-cols-[1.25fr,0.75fr] items-stretch mb-12">
-          <div className="rounded-3xl border border-gray-200 bg-white/85 p-8 shadow-lg backdrop-blur">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-[1.25fr,0.75fr] items-stretch mb-8 sm:mb-12">
+          <div className="rounded-3xl border border-gray-200 bg-white/85 p-6 sm:p-8 shadow-lg backdrop-blur">
             <div className="flex flex-col gap-3 animate-fade-in">
               <p className="text-sm uppercase tracking-[0.35em] text-gray-400">Dashboard</p>
               <h1 className="text-4xl md:text-5xl font-bold text-black leading-tight">
@@ -92,7 +92,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-black text-white p-8 flex flex-col justify-between shadow-xl animate-slide-in" style={{ animationDelay: '0.15s' }}>
+          <div className="rounded-3xl bg-black text-white p-6 sm:p-8 flex flex-col justify-between shadow-xl animate-slide-in" style={{ animationDelay: '0.15s' }}>
             <div className="flex items-center gap-5">
               <div className="p-5 bg-white/10 rounded-2xl border border-white/10">
                 <Car size={48} className="text-white" strokeWidth={1.5} />
