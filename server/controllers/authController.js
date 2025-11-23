@@ -100,9 +100,9 @@ const register = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
-        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
+        rating: user.rating,
       },
     });
   } catch (error) {
@@ -162,9 +162,9 @@ const login = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
-        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
+        rating: user.rating,
       },
     });
   } catch (error) {
@@ -193,9 +193,9 @@ const getMe = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
-        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
+        rating: user.rating,
       },
     });
   } catch (error) {
@@ -256,9 +256,9 @@ const updateProfile = async (req, res, next) => {
         emergencyName2: user.emergencyName2,
         emergencyPhone2: user.emergencyPhone2,
         emergencyName3: user.emergencyName3,
-        emergencyName3: user.emergencyName3,
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
+        rating: user.rating,
       },
     });
   } catch (error) {
@@ -272,4 +272,3 @@ module.exports = {
   getMe,
   updateProfile,
 };
-

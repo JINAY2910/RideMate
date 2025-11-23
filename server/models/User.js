@@ -58,8 +58,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-
-    // Driver location coordinates
+    rating: {
+      type: Number,
+      default: 5.0,
+    },
     location: {
       type: {
         type: String,

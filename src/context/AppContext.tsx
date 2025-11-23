@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { vehicleApi } from '../services/vehicles';
+import { authApi, User } from '../services/auth';
 
 export type EmergencyContact = {
   name: string;
@@ -46,6 +47,7 @@ interface AppContextType {
   userEmail: string;
   userPhone: string;
   authToken: string | null;
+  user: User | null;
   emergencyContacts: EmergencyContact[];
   activeRideId: string | null;
   rideSummaryInput: RideSummaryInput | null;
@@ -60,6 +62,7 @@ interface AppContextType {
   setUserEmail: (email: string) => void;
   setUserPhone: (phone: string) => void;
   setAuthToken: (token: string | null) => void;
+  setUser: (user: User | null) => void;
   setEmergencyContacts: (contacts: EmergencyContact[]) => void;
   setActiveRideId: (rideId: string | null) => void;
   setRideSummaryInput: (input: RideSummaryInput | null) => void;
@@ -69,6 +72,18 @@ interface AppContextType {
   deleteVehicle: (id: string) => Promise<void>;
   setRideVehicle: (rideId: string, vehicleId: string) => void;
   addRideSchedule: (schedule: RideSchedule) => void;
+  fetchUserProfile: () => Promise<void>;
+  updateProfile: (updates: {
+    name?: string;
+    phone?: string;
+    emergencyName1?: string;
+    emergencyPhone1?: string;
+    emergencyName2?: string;
+    emergencyPhone2?: string;
+    emergencyName3?: string;
+    emergencyPhone3?: string;
+    profilePhoto?: string;
+  }) => Promise<void>;
   logout: () => void;
 }
 
@@ -90,6 +105,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
   const [userPhone, setUserPhone] = useState(() => localStorage.getItem('userPhone') || '');
   const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('authToken'));
+  const [user, setUser] = useState<User | null>(null);
 
   const [activeRideId, setActiveRideId] = useState<string | null>(null);
   const [rideSummaryInput, setRideSummaryInput] = useState<RideSummaryInput | null>(null);
@@ -153,6 +169,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userRole, authToken]);
 
+  // Fetch user profile when token is available
+  useEffect(() => {
+    if (authToken) {
+      fetchUserProfile();
+    } else {
+      setUser(null);
+    }
+  }, [authToken]);
+
   const navigateTo = (screen: string) => {
     if (screen !== currentScreen) {
       setHistory(prev => [...prev, screen]);
@@ -181,6 +206,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUserName('');
     setUserEmail('');
     setUserPhone('');
+    setUser(null);
     setVehicles([]);
     setRideVehicles({});
     setRideSchedules([]);
@@ -237,6 +263,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRideVehicles(prev => ({ ...prev, [rideId]: vehicleId }));
   };
 
+  const fetchUserProfile = async () => {
+    if (!authToken) return;
+
+    try {
+      const response = await authApi.getMe(authToken);
+      if (response.success) {
+        setUser(response.user);
+        // Sync individual state variables for backward compatibility
+        setUserName(response.user.name);
+        setUserEmail(response.user.email);
+        setUserPhone(response.user.phone || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  };
+
+  const updateProfile = async (updates: {
+    name?: string;
+    phone?: string;
+    emergencyName1?: string;
+    emergencyPhone1?: string;
+    emergencyName2?: string;
+    emergencyPhone2?: string;
+    emergencyName3?: string;
+    emergencyPhone3?: string;
+    profilePhoto?: string;
+  }) => {
+    if (!authToken) throw new Error('Not authenticated');
+
+    try {
+      const response = await authApi.updateProfile(authToken, updates);
+      if (response.success) {
+        setUser(response.user);
+        // Sync individual state variables
+        if (updates.name !== undefined) setUserName(updates.name);
+        if (updates.phone !== undefined) setUserPhone(updates.phone);
+      }
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      throw error;
+    }
+  };
+
   const addRideSchedule = (schedule: RideSchedule) => {
     setRideSchedules(prev => [...prev, schedule]);
   };
@@ -251,6 +321,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         userEmail,
         userPhone,
         authToken,
+        user,
         emergencyContacts,
         activeRideId,
         rideSummaryInput,
@@ -263,6 +334,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setUserEmail,
         setUserPhone,
         setAuthToken,
+        setUser,
         setEmergencyContacts,
         setActiveRideId,
         setRideSummaryInput,
@@ -274,6 +346,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setRideVehicle,
         rideSchedules,
         addRideSchedule,
+        fetchUserProfile,
+        updateProfile,
         logout,
       }}
     >

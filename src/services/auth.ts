@@ -57,6 +57,7 @@ export type User = {
   emergencyName3?: string;
   emergencyPhone3?: string;
   profilePhoto?: string;
+  rating?: number;
 };
 
 export type AuthResponse = {

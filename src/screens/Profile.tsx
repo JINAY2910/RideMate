@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, LogOut, HelpCircle, Phone, Heart } from 'lucide-react';
+import { ArrowLeft, Camera, Heart, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
-import { rideApi } from '../services/rides';
 import Layout from '../components/Layout';
 
 export default function Profile() {
-  const { navigateTo, userName, userRole, logout, updateProfile, user } = useApp();
+  const { navigateTo, userName, userRole, updateProfile, user, fetchUserProfile } = useApp();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,8 +21,27 @@ export default function Profile() {
     profilePhoto: '',
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+  // Fetch user profile on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setInitialLoading(true);
+        await fetchUserProfile();
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        setMessage({ type: 'error', text: 'Failed to load profile data' });
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  // Update form when user data changes
   useEffect(() => {
     if (user) {
       setFormData({
@@ -60,10 +78,18 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigateTo('landing');
-  };
+  if (initialLoading) {
+    return (
+      <Layout fullWidth>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+            <p className="mt-4 text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout fullWidth>
@@ -111,7 +137,14 @@ export default function Profile() {
               ) : null}
 
               <h1 className="text-2xl font-bold text-black">{userName}</h1>
-              <p className="text-gray-500 capitalize">{userRole}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-gray-500 capitalize">{userRole}</p>
+                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                <div className="flex items-center text-yellow-500">
+                  <Star size={16} fill="currentColor" />
+                  <span className="ml-1 font-medium text-black">{user?.rating?.toFixed(1) || '5.0'}</span>
+                </div>
+              </div>
             </div>
 
             {message && (
@@ -206,6 +239,28 @@ export default function Profile() {
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 3 Name</label>
+                    <input
+                      type="text"
+                      name="emergencyName3"
+                      value={formData.emergencyName3}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact 3 Phone</label>
+                    <input
+                      type="tel"
+                      name="emergencyPhone3"
+                      value={formData.emergencyPhone3}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -226,20 +281,6 @@ export default function Profile() {
                 )}
               </div>
             </form>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <button className="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-200 hover:border-black transition-colors group w-full">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-black group-hover:text-white transition-colors">
-                  <HelpCircle size={24} />
-                </div>
-                <div className="text-left">
-                  <p className="font-semibold text-black">Help & Support</p>
-                  <p className="text-sm text-gray-500">Get assistance with your rides</p>
-                </div>
-              </div>
-            </button>
           </div>
         </div>
       </div>
