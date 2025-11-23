@@ -11,10 +11,26 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
 
+const http = require('http');
+const socketIo = require('socket.io');
+const socketHandler = require('./socketHandler');
+
 // Connect to database
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const io = socketIo(server, {
+  cors: {
+    origin: '*', // Allow all origins for development
+    methods: ['GET', 'POST'],
+  },
+});
+
+// Setup Socket.io handlers
+socketHandler(io);
 
 // Middleware
 app.use(cors());
@@ -42,6 +58,6 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

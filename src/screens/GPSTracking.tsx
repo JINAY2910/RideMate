@@ -1,9 +1,20 @@
-import { ArrowLeft, MapPin, Navigation } from 'lucide-react';
+import { ArrowLeft, Navigation } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
+import LiveMap from '../components/LiveMap';
+import DriverTracker from '../components/DriverTracker';
 
 export default function GPSTracking() {
-  const { navigateTo } = useApp();
+  const { navigateTo, userRole, activeRideId } = useApp();
+
+  if (!activeRideId) {
+    return (
+      <div className="min-h-screen bg-white p-4 sm:p-6 flex flex-col items-center justify-center">
+        <p className="text-lg font-semibold text-gray-600 mb-4">No active ride selected.</p>
+        <Button onClick={() => navigateTo('dashboard')}>Go to Dashboard</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4 sm:p-6">
@@ -13,29 +24,34 @@ export default function GPSTracking() {
       </button>
 
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 text-black">Live Tracking</h1>
+        <h1 className="text-4xl font-bold mb-8 text-black">
+          {userRole === 'driver' ? 'Start Trip & Share Location' : 'Live Tracking'}
+        </h1>
 
-        <div className="relative border-2 border-black rounded-lg overflow-hidden mb-6" style={{ height: '500px' }}>
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <MapPin size={64} className="text-black mx-auto mb-4" />
-              <p className="text-xl font-medium text-black">Map View</p>
-              <p className="text-sm text-gray-600 mt-2">Live location tracking</p>
+        <div className="mb-6">
+          {userRole === 'driver' ? (
+            <div className="space-y-6">
+              <DriverTracker rideId={activeRideId} />
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+                <p className="font-semibold">Driver Mode Active</p>
+                <p className="text-sm">Your location is being shared with riders in real-time.</p>
+              </div>
             </div>
-          </div>
-
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="relative">
-              <div className="w-6 h-6 bg-black rounded-full animate-ping absolute"></div>
-              <div className="w-6 h-6 bg-black rounded-full relative"></div>
+          ) : (
+            <div className="space-y-6">
+              <LiveMap rideId={activeRideId} />
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+                <p className="font-semibold">Live Tracking Active</p>
+                <p className="text-sm">You are viewing the driver's real-time location.</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="p-4 border-2 border-black rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Current Location</p>
-            <p className="font-bold text-black">Downtown Plaza</p>
+            <p className="font-bold text-black">Live Update</p>
           </div>
           <div className="p-4 border-2 border-black rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Destination</p>
@@ -43,11 +59,11 @@ export default function GPSTracking() {
           </div>
           <div className="p-4 border-2 border-black rounded-lg">
             <p className="text-sm text-gray-600 mb-1">ETA</p>
-            <p className="font-bold text-black">25 minutes</p>
+            <p className="font-bold text-black">Calculating...</p>
           </div>
           <div className="p-4 border-2 border-black rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Distance</p>
-            <p className="font-bold text-black">12.5 km</p>
+            <p className="font-bold text-black">-- km</p>
           </div>
         </div>
 
