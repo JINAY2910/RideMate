@@ -4,9 +4,10 @@ import DriverDashboard from '../components/DriverDashboard';
 import RiderDashboard from '../components/RiderDashboard';
 import Button from '../components/Button';
 import Layout from '../components/Layout';
+import GreenStatsCard from '../components/GreenStatsCard';
 
 export default function Dashboard() {
-  const { navigateTo, userRole, userName, logout } = useApp();
+  const { navigateTo, userRole, userName, logout, user } = useApp();
 
   const handleLogout = () => {
     logout();
@@ -71,14 +72,23 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
-        </div>
 
-        <div className="animate-slide-in-from-bottom-4 mb-12">
-          {userRole === 'driver' ? (
-            <DriverDashboard userName={userName || ''} />
-          ) : (
-            <RiderDashboard />
-          )}
+
+          {/* GreenMiles Stats */}
+          <div className="mb-8 animate-slide-in-from-bottom-2">
+            <GreenStatsCard
+              co2Saved={user?.co2Saved || 0}
+              greenPoints={user?.greenPoints || 0}
+            />
+          </div>
+
+          <div className="animate-slide-in-from-bottom-4 mb-12">
+            {userRole === 'driver' ? (
+              <DriverDashboard userName={userName || ''} />
+            ) : (
+              <RiderDashboard />
+            )}
+          </div>
         </div>
       </div>
     </Layout>

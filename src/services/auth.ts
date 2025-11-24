@@ -58,6 +58,8 @@ export type User = {
   emergencyPhone3?: string;
   profilePhoto?: string;
   rating?: number;
+  co2Saved?: number;
+  greenPoints?: number;
 };
 
 export type AuthResponse = {

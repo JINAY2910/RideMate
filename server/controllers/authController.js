@@ -107,6 +107,8 @@ const register = async (req, res, next) => {
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
         rating: user.rating,
+        co2Saved: user.co2Saved,
+        greenPoints: user.greenPoints,
       },
     });
   } catch (error) {
@@ -169,6 +171,8 @@ const login = async (req, res, next) => {
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
         rating: user.rating,
+        co2Saved: user.co2Saved,
+        greenPoints: user.greenPoints,
       },
     });
   } catch (error) {
@@ -200,6 +204,8 @@ const getMe = async (req, res, next) => {
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
         rating: user.rating,
+        co2Saved: user.co2Saved,
+        greenPoints: user.greenPoints,
       },
     });
   } catch (error) {
@@ -263,6 +269,8 @@ const updateProfile = async (req, res, next) => {
         emergencyPhone3: user.emergencyPhone3,
         profilePhoto: user.profilePhoto,
         rating: user.rating,
+        co2Saved: user.co2Saved,
+        greenPoints: user.greenPoints,
       },
     });
   } catch (error) {

@@ -654,6 +654,39 @@ const updateRide = async (req, res, next) => {
       isActive = true;
     }
 
+    // Check if ride is being completed (was active, now becoming inactive/completed)
+    if (ride.isActive && isActive === false) {
+      // Calculate distance
+      const start = {
+        lat: ride.startCoordinates.coordinates[1],
+        lng: ride.startCoordinates.coordinates[0]
+      };
+      const end = {
+        lat: ride.destCoordinates.coordinates[1],
+        lng: ride.destCoordinates.coordinates[0]
+      };
+      const distance = haversineDistanceKm(start, end);
+
+      if (distance > 0 && distance !== Number.POSITIVE_INFINITY) {
+        const co2Saved = Math.round(distance * 0.2 * 100) / 100; // 0.2 kg per km
+        const points = Math.round(distance * 10);
+
+        // Update Driver
+        await User.findByIdAndUpdate(ride.driver, {
+          $inc: { co2Saved: co2Saved, greenPoints: points }
+        });
+
+        // Update Participants
+        for (const participant of ride.participants) {
+          if (participant.rider) {
+            await User.findByIdAndUpdate(participant.rider, {
+              $inc: { co2Saved: co2Saved, greenPoints: points }
+            });
+          }
+        }
+      }
+    }
+
     // Update ride
     ride = await Ride.findByIdAndUpdate(
       req.params.id,

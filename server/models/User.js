@@ -62,6 +62,14 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 5.0,
     },
+    co2Saved: {
+      type: Number,
+      default: 0,
+    },
+    greenPoints: {
+      type: Number,
+      default: 0,
+    },
     location: {
       type: {
         type: String,
