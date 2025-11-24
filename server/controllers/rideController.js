@@ -523,13 +523,22 @@ const getRides = async (req, res, next) => {
 
     // Filter by participant if provided (for riders to see their booked rides)
     if (participantId) {
-      query['participants.rider'] = participantId;
+      query.$or = [
+        { 'participants.rider': participantId },
+        { 'requests.rider': participantId }
+      ];
     } else if (participant) {
       const participantUser = await User.findOne({ name: participant, role: 'rider' });
       if (participantUser) {
-        query['participants.rider'] = participantUser._id;
+        query.$or = [
+          { 'participants.rider': participantUser._id },
+          { 'requests.rider': participantUser._id }
+        ];
       } else {
-        query['participants.name'] = participant;
+        query.$or = [
+          { 'participants.name': participant },
+          { 'requests.name': participant }
+        ];
       }
     }
 
