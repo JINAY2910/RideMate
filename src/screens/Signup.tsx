@@ -8,6 +8,7 @@ import { authApi } from '../services/auth';
 
 export default function Signup() {
   const { navigateTo, setAuthToken, setRole, setUserId, setUserName, setUserEmail, setUserPhone, setEmergencyContacts } = useApp();
+  const [step, setStep] = useState(1); // Step 1 or 2
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -15,36 +16,66 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'driver' | 'rider'>('rider');
   const [gender, setGender] = useState('');
+  const [emergencyName1, setEmergencyName1] = useState('');
   const [emergency1, setEmergency1] = useState('');
+  const [emergencyName2, setEmergencyName2] = useState('');
   const [emergency2, setEmergency2] = useState('');
+  const [emergencyName3, setEmergencyName3] = useState('');
   const [emergency3, setEmergency3] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Validate Step 1 fields
+  const validateStep1 = () => {
     setError(null);
 
-    // Validation
-    if (!name || !email || !phone || !password) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    if (!email || !password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return false;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Please enter a valid email address');
+      return false;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Handle Next button (Step 1 to Step 2)
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateStep1()) {
+      setStep(2);
+      setError(null);
+    }
+  };
+
+  // Handle Back button (Step 2 to Step 1)
+  const handleBack = () => {
+    setStep(1);
+    setError(null);
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Step 2 Validation
+    if (!name || !phone) {
+      setError('Please fill in all required fields');
       return;
     }
 
@@ -57,16 +88,17 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      // Extract emergency contact names and phones from the emergency contact strings
-      // For now, we'll just store the phone numbers. Names can be added later in profile.
       const response = await authApi.register({
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         password,
         role: selectedRole,
+        emergencyName1: emergencyName1.trim() || '',
         emergencyPhone1: emergency1.trim() || '',
+        emergencyName2: emergencyName2.trim() || '',
         emergencyPhone2: emergency2.trim() || '',
+        emergencyName3: emergencyName3.trim() || '',
         emergencyPhone3: emergency3.trim() || '',
       });
 
@@ -132,121 +164,100 @@ export default function Signup() {
       <div className="max-w-md w-full relative z-10 animate-fade-in">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-black mb-2">Join RideMate</h1>
-          <p className="text-gray-600 font-medium">Create your account in seconds</p>
+          <p className="text-gray-600 font-medium">
+            {step === 1 ? 'Step 1 of 2 - Account Credentials' : 'Step 2 of 2 - Your Information'}
+          </p>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-5">
+        <form onSubmit={step === 1 ? handleNext : handleSignup} className="space-y-5">
           {error && (
             <div className="rounded-lg border-2 border-red-500 bg-red-50 p-4 text-red-700 font-semibold text-sm">
               {error}
             </div>
           )}
 
-          <Input
-            label="Full Name"
-            placeholder="Your full name"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setError(null);
-            }}
-            icon={<User size={20} />}
-            required
-            disabled={loading}
-          />
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="your@email.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null);
-            }}
-            icon={<Mail size={20} />}
-            required
-            disabled={loading}
-          />
-          <Input
-            label="Phone Number"
-            type="tel"
-            placeholder="+91 9876543210"
-            value={phone}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Allow digits, spaces, +, -, and parentheses
-              if (/^[\d+\s-()]*$/.test(value)) {
-                setPhone(value);
-                setError(null);
-              }
-            }}
-            icon={<Phone size={20} />}
-            required
-            disabled={loading}
-          />
-          <div className="pt-2 pb-1">
-            <label className="block text-sm font-semibold mb-3 text-black">I'm a</label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole('rider');
+          {/* Step 1: Email and Password */}
+          {step === 1 && (
+            <>
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
                   setError(null);
                 }}
+                icon={<Mail size={20} />}
+                required
                 disabled={loading}
-                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'rider'
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white text-black border-gray-300 hover:border-black'
-                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <LogOut size={18} /> Rider
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedRole('driver');
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="•••••••• (min 6 characters)"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
                   setError(null);
                 }}
+                icon={<Lock size={20} />}
+                required
                 disabled={loading}
-                className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'driver'
-                  ? 'bg-black text-white border-black'
-                  : 'bg-white text-black border-gray-300 hover:border-black'
-                  } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Car size={18} /> Driver
-              </button>
-            </div>
-          </div>
+              />
+              <Input
+                label="Confirm Password"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  setError(null);
+                }}
+                icon={<Lock size={20} />}
+                required
+                disabled={loading}
+              />
 
-          <Input
-            label="Password"
-            type="password"
-            placeholder="•••••••• (min 6 characters)"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null);
-            }}
-            icon={<Lock size={20} />}
-            required
-            disabled={loading}
-          />
-          <Input
-            label="Confirm Password"
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setError(null);
-            }}
-            icon={<Lock size={20} />}
-            required
-            disabled={loading}
-          />
+              <Button type="submit" fullWidth size="lg" className="mt-6" disabled={loading}>
+                Next
+              </Button>
+            </>
+          )}
 
-          <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-6 shadow-sm">
-            <div className="space-y-4">
+          {/* Step 2: Personal Information */}
+          {step === 2 && (
+            <>
+              <Input
+                label="Full Name"
+                placeholder="Your full name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
+                icon={<User size={20} />}
+                required
+                disabled={loading}
+              />
+              <Input
+                label="Phone Number"
+                type="tel"
+                placeholder="+91 9876543210"
+                value={phone}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow digits, spaces, +, -, and parentheses
+                  if (/^[\d+\s-()]*$/.test(value)) {
+                    setPhone(value);
+                    setError(null);
+                  }
+                }}
+                icon={<Phone size={20} />}
+                required
+                disabled={loading}
+              />
+
               <div>
                 <label className="block text-sm font-semibold mb-2.5 text-black">
                   Gender
@@ -268,12 +279,58 @@ export default function Signup() {
                 </select>
               </div>
 
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-black">
+              <div className="pt-2 pb-1">
+                <label className="block text-sm font-semibold mb-3 text-black">I'm a</label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole('rider');
+                      setError(null);
+                    }}
+                    disabled={loading}
+                    className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'rider'
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-black border-gray-300 hover:border-black'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <LogOut size={18} /> Rider
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole('driver');
+                      setError(null);
+                    }}
+                    disabled={loading}
+                    className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${selectedRole === 'driver'
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-black border-gray-300 hover:border-black'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Car size={18} /> Driver
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border-2 border-gray-200 bg-gray-50 p-6 shadow-sm">
+                <label className="block text-xl text-center font-semibold text-black">
                   Emergency Contact Numbers
                 </label>
+                <br />
                 <Input
-                  label="Emergency Contact 1"
+                  label="Emergency Contact 1 - Name"
+                  placeholder="Contact name"
+                  value={emergencyName1}
+                  onChange={(e) => {
+                    setEmergencyName1(e.target.value);
+                    setError(null);
+                  }}
+                  icon={<User size={20} />}
+                  disabled={loading}
+                />
+                <Input
+                  label="Emergency Contact 1 - Phone"
                   type="tel"
                   placeholder="+91 9876543210"
                   value={emergency1}
@@ -288,7 +345,18 @@ export default function Signup() {
                   disabled={loading}
                 />
                 <Input
-                  label="Emergency Contact 2"
+                  label="Emergency Contact 2 - Name"
+                  placeholder="Contact name"
+                  value={emergencyName2}
+                  onChange={(e) => {
+                    setEmergencyName2(e.target.value);
+                    setError(null);
+                  }}
+                  icon={<User size={20} />}
+                  disabled={loading}
+                />
+                <Input
+                  label="Emergency Contact 2 - Phone"
                   type="tel"
                   placeholder="+91 9876543211"
                   value={emergency2}
@@ -303,7 +371,18 @@ export default function Signup() {
                   disabled={loading}
                 />
                 <Input
-                  label="Emergency Contact 3"
+                  label="Emergency Contact 3 - Name"
+                  placeholder="Contact name"
+                  value={emergencyName3}
+                  onChange={(e) => {
+                    setEmergencyName3(e.target.value);
+                    setError(null);
+                  }}
+                  icon={<User size={20} />}
+                  disabled={loading}
+                />
+                <Input
+                  label="Emergency Contact 3 - Phone"
                   type="tel"
                   placeholder="+91 9876543212"
                   value={emergency3}
@@ -318,12 +397,24 @@ export default function Signup() {
                   disabled={loading}
                 />
               </div>
-            </div>
-          </div>
 
-          <Button type="submit" fullWidth size="lg" className="mt-6" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={handleBack}
+                  fullWidth
+                  size="lg"
+                  className="mt-6 bg-black text-white hover:bg-gray-300"
+                  disabled={loading}
+                >
+                  Back
+                </Button>
+                <Button type="submit" fullWidth size="lg" className="mt-6" disabled={loading}>
+                  {loading ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </div>
+            </>
+          )}
 
           <p className="text-center text-sm text-gray-600">
             Already have an account?{' '}
