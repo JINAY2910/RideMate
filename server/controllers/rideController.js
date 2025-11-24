@@ -295,7 +295,8 @@ const createRide = async (req, res, next) => {
       participants: [],
       isActive: true,
       vehicle: vehicleId,
-      driverLocation: driverLocationGeoJSON,
+      vehicle: vehicleId,
+      driverLocation: driverLocationGeoJSON || startCoordsGeoJSON,
     });
 
     const populatedRide = await Ride.findById(ride._id).populate({
@@ -399,6 +400,11 @@ const getRides = async (req, res, next) => {
       }
     }
 
+    // Hide full rides from public search (unless filtering by driver or participant for dashboard views)
+    if (!driver && !participant) {
+      query.seatsAvailable = { $gt: 0 };
+    }
+
     const rides = await Ride.find(query)
       .populate({
         path: 'driver',
@@ -407,7 +413,7 @@ const getRides = async (req, res, next) => {
       .populate('vehicle')
       .populate({
         path: 'requests.rider',
-        select: 'name email phone',
+        select: 'name email phone rating',
       })
       .populate({
         path: 'participants.rider',
@@ -438,7 +444,7 @@ const getRide = async (req, res, next) => {
       .populate('vehicle')
       .populate({
         path: 'requests.rider',
-        select: 'name email phone',
+        select: 'name email phone rating',
       })
       .populate({
         path: 'participants.rider',
@@ -687,11 +693,14 @@ const updateRequestStatus = async (req, res, next) => {
     // Find the request
     const request = ride.requests.id(req.params.requestId);
     if (!request) {
+      console.error(`Request not found: ${req.params.requestId} in ride ${req.params.id}`);
       return res.status(404).json({
         success: false,
         message: 'Request not found',
       });
     }
+
+    console.log(`Processing request ${req.params.requestId} for ride ${req.params.id}. Status: ${status}, Current: ${request.status}`);
 
     // Check if request is already processed
     if (request.status === 'Approved' && status === 'Approved') {
@@ -703,51 +712,45 @@ const updateRequestStatus = async (req, res, next) => {
 
     // If changing from Approved to Rejected, restore seats and remove from participants
     if (request.status === 'Approved' && status === 'Rejected') {
-      ride.seatsAvailable += request.seatsRequested;
+      const seatsToRestore = request.seatsRequested || 1;
+      ride.seatsAvailable += seatsToRestore;
       // Remove from participants
       ride.participants = ride.participants.filter(
         p => p.rider && p.rider.toString() !== request.rider.toString()
       );
     }
 
-    // If approving, check seats and update
-    if (status === 'Approved' && request.status !== 'Approved') {
-      if (ride.seatsAvailable < request.seatsRequested) {
-        return res.status(400).json({
-          success: false,
-          message: `Only ${ride.seatsAvailable} seat(s) available`,
-        });
-      }
-
-      // Reduce available seats
-      ride.seatsAvailable -= request.seatsRequested;
-
-      // Check if rider is already a participant (shouldn't happen, but safety check)
-      const existingParticipant = ride.participants.find(
-        p => p.rider && p.rider.toString() === request.rider.toString()
-      );
-
-      if (!existingParticipant) {
-        // Add to participants
-        ride.participants.push({
-          rider: request.rider,
-          name: request.name,
-          status: 'Confirmed',
-          seatsBooked: request.seatsRequested,
-        });
+    // Fix invalid driverLocation if present (legacy data issue)
+    if (ride.driverLocation && (!ride.driverLocation.coordinates || ride.driverLocation.coordinates.length === 0)) {
+      console.warn('Fixing invalid driverLocation for ride:', ride._id);
+      if (ride.startCoordinates && ride.startCoordinates.coordinates) {
+        ride.driverLocation = ride.startCoordinates;
+      } else {
+        ride.driverLocation = { type: 'Point', coordinates: [0, 0] };
       }
     }
 
-    // Update request status
-    request.status = status;
-    await ride.save();
+    try {
+      await ride.save();
+      console.log('Ride saved successfully');
+    } catch (saveError) {
+      console.error('Error saving ride:', saveError);
+      throw saveError;
+    }
 
     // Update the corresponding Booking record
     // We match by ride ID and rider ID since we don't store booking ID in the request object yet
-    await Booking.findOneAndUpdate(
+    const bookingUpdate = await Booking.findOneAndUpdate(
       { ride: ride._id, rider: request.rider },
-      { status: status }
+      { status: status },
+      { new: true }
     );
+
+    if (!bookingUpdate) {
+      console.warn(`No booking found for ride ${ride._id} and rider ${request.rider}`);
+    } else {
+      console.log(`Booking updated: ${bookingUpdate._id}`);
+    }
 
     // Populate and return updated ride
     const populatedRide = await Ride.findById(ride._id).populate({

@@ -9,11 +9,51 @@ interface DriverDashboardProps {
     userName: string;
 }
 
+const RiderProfileModal = ({ rider, onClose }: { rider: any, onClose: () => void }) => {
+    if (!rider) return null;
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-md relative animate-in fade-in zoom-in duration-200">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+                >
+                    <XCircle size={24} />
+                </button>
+
+                <div className="text-center mb-6">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <User size={40} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-black">{rider.name}</h3>
+                    <div className="flex items-center justify-center gap-1 text-yellow-500 mt-1">
+                        <span className="font-bold">{rider.rating || 5.0}</span>
+                        <span className="text-xs">★</span>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                        <p className="text-xs text-gray-500 uppercase font-bold mb-1">Contact Info</p>
+                        <p className="text-black font-medium">{rider.email}</p>
+                        <p className="text-black font-medium">{rider.phone || 'No phone number'}</p>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex gap-2">
+                    <Button fullWidth onClick={onClose}>Close</Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default function DriverDashboard({ userName }: DriverDashboardProps) {
     const { navigateTo, userId, setActiveRideId, setRideSummaryInput } = useApp();
     const [activeTab, setActiveTab] = useState<'my-rides' | 'requests'>('my-rides');
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedRider, setSelectedRider] = useState<any>(null);
 
     useEffect(() => {
         if (userId) {
@@ -200,6 +240,13 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <button
+                                                            onClick={() => setSelectedRider(request.rider)}
+                                                            className="w-full mb-2 bg-gray-100 text-gray-700 py-1.5 px-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
+                                                        >
+                                                            <User size={14} />
+                                                            View Profile
+                                                        </button>
                                                         <div className="flex gap-2">
                                                             <button
                                                                 onClick={() => handleAcceptRequest(ride._id, request._id)}
@@ -240,6 +287,9 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                     </>
                 )}
             </div>
+            {selectedRider && (
+                <RiderProfileModal rider={selectedRider} onClose={() => setSelectedRider(null)} />
+            )}
         </div>
     );
 }

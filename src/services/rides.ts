@@ -43,6 +43,7 @@ export type RideRequest = {
     name: string;
     email?: string;
     phone?: string;
+    rating?: number;
   } | null;
   name: string;
   rating: number;

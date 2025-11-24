@@ -1,11 +1,60 @@
 import { useState, useEffect } from 'react';
 import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
-import { Clock, User, Car } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { User, Car } from 'lucide-react';
+
+
+const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
+    const [timeLeft, setTimeLeft] = useState<{
+        days: number;
+        hours: number;
+        minutes: number;
+        seconds: number;
+    } | null>(null);
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const difference = +targetDate - +new Date();
+            if (difference > 0) {
+                return {
+                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((difference / 1000 / 60) % 60),
+                    seconds: Math.floor((difference / 1000) % 60),
+                };
+            }
+            return null;
+        };
+
+        setTimeLeft(calculateTimeLeft());
+
+        const timer = setInterval(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    if (!timeLeft) return <span className="text-red-600 font-bold">Ride Started</span>;
+
+    return (
+        <div className="flex gap-2 text-center">
+            {Object.entries(timeLeft).map(([unit, value]) => {
+                if (unit === 'days' && value === 0) return null;
+                return (
+                    <div key={unit} className="bg-black text-white px-2 py-1 rounded-md min-w-[3rem]">
+                        <div className="text-lg font-bold leading-none">{value}</div>
+                        <div className="text-[10px] uppercase opacity-75">{unit}</div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+
 
 export default function RiderDashboard() {
-    const { navigateTo } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'Requests' | 'History'>('Requests');
@@ -35,7 +84,11 @@ export default function RiderDashboard() {
     const otherBookings = bookings.filter(b => {
         if (!b.ride) return false;
         const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
-        const isPast = rideDate <= new Date();
+        // Calculate end time based on duration (default 2 hours if not specified)
+        const durationHours = b.ride.duration || 2;
+        const rideEndTime = new Date(rideDate.getTime() + durationHours * 60 * 60 * 1000);
+
+        const isPast = rideEndTime <= new Date();
 
         if (activeTab === 'History') {
             return isPast;
@@ -52,17 +105,11 @@ export default function RiderDashboard() {
             <div>
                 <h2 className="text-2xl font-bold text-black mb-4 flex items-center gap-2">
                     <Car size={24} />
-                    Upcoming Trips
+                    My Rides
                 </h2>
                 {upcomingRides.length === 0 ? (
                     <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center">
                         <p className="text-gray-500 mb-4">No upcoming trips confirmed yet.</p>
-                        <button
-                            onClick={() => navigateTo('search-ride')}
-                            className="text-black font-bold underline hover:text-gray-700"
-                        >
-                            Find a ride now
-                        </button>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1">
@@ -98,6 +145,10 @@ export default function RiderDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
+                                        <div className="mb-2">
+                                            <p className="text-xs text-gray-500 mb-1 text-right">Starts in:</p>
+                                            <CountdownTimer targetDate={new Date(`${booking.ride.date}T${booking.ride.time}`)} />
+                                        </div>
                                         <div className="text-right">
                                             <p className="text-2xl font-bold text-black">₹{booking.totalPrice}</p>
                                             <p className="text-xs text-gray-500">{booking.seatsBooked} seat(s)</p>

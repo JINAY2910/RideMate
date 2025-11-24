@@ -29,6 +29,7 @@ export type Booking = {
         to: string;
         date: string;
         time: string;
+        duration?: number;
         driver: {
             name: string;
             phone?: string;

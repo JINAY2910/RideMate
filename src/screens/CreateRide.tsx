@@ -123,7 +123,6 @@ export default function CreateRide() {
         },
         date,
         time: formattedTime || time,
-        duration: Number((e.target as any).duration?.value || 2),
         seats: seatsNumber,
         notes,
         vehicleId: selectedVehicle || undefined,
@@ -231,20 +230,6 @@ export default function CreateRide() {
                   <Clock size={20} className="text-gray-500" />
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2.5 text-black">Duration (Hours)</label>
-              <select
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg smooth-transition focus:outline-none focus:border-black focus:ring-1 focus:ring-black bg-white"
-                defaultValue="2"
-                name="duration"
-              >
-                {[0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12].map(h => (
-                  <option key={h} value={h}>{h} Hour{h !== 1 ? 's' : ''}</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">Ride will be automatically deleted after this duration.</p>
             </div>
 
             <PickerModal

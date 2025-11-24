@@ -42,7 +42,9 @@ export default function RideDetails() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatchComplete, setDispatchComplete] = useState(false);
   const [rideCancelled, setRideCancelled] = useState(false);
+
   const [selectedRequest, setSelectedRequest] = useState<RideRequest | null>(null);
+  const [seatsRequested, setSeatsRequested] = useState(1);
 
   useEffect(() => {
     if (!activeRideId) {
@@ -223,7 +225,7 @@ export default function RideDetails() {
       const updatedRide = await rideApi.addRequest(activeRideId, {
         name: userName || 'Rider',
         rating: 5,
-        seatsRequested: 1, // Default to 1 seat, can be made configurable later
+        seatsRequested: seatsRequested,
       });
       setRide(updatedRide);
       setRideSummaryInput({
@@ -383,14 +385,38 @@ export default function RideDetails() {
 
                 {/* Non-Driver / Non-Participant Actions */}
                 {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
-                  <Button
-                    fullWidth
-                    onClick={handleBookRideFromDetails}
-                    disabled={hasRequested || ride.seats.available === 0}
-                    variant={hasRequested ? 'secondary' : 'primary'}
-                  >
-                    {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : 'Request Ride'}
-                  </Button>
+                  <div className="space-y-3">
+                    {!hasRequested && ride.seats.available > 0 && (
+                      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <span className="font-medium text-black">Seats needed:</span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
+                            disabled={seatsRequested <= 1}
+                          >
+                            -
+                          </button>
+                          <span className="font-bold text-lg w-4 text-center">{seatsRequested}</span>
+                          <button
+                            onClick={() => setSeatsRequested(Math.min(ride.seats.available, seatsRequested + 1))}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
+                            disabled={seatsRequested >= ride.seats.available}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <Button
+                      fullWidth
+                      onClick={handleBookRideFromDetails}
+                      disabled={hasRequested || ride.seats.available === 0}
+                      variant={hasRequested ? 'secondary' : 'primary'}
+                    >
+                      {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : `Request ${seatsRequested} Seat${seatsRequested > 1 ? 's' : ''}`}
+                    </Button>
+                  </div>
                 )}
               </div>
             </Card>
