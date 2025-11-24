@@ -44,7 +44,6 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
             alert('Failed to accept request');
         }
     };
-
     const handleRejectRequest = async (rideId: string, requestId: string) => {
         if (window.confirm('Are you sure you want to reject this request?')) {
             try {
@@ -55,6 +54,30 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                 alert('Failed to reject request');
             }
         }
+    };
+
+    const handleDeleteRide = async (rideId: string) => {
+        if (window.confirm('Are you sure you want to delete this ride? This action cannot be undone.')) {
+            try {
+                console.log('Attempting to delete ride:', rideId);
+                const response = await rideApi.delete(rideId);
+
+                if (response.success) {
+                    setMyRides(prev => prev.filter(r => r._id !== rideId));
+                } else {
+                    console.error('Delete failed with response:', response);
+                    alert('Failed to delete ride: Server returned error');
+                }
+            } catch (error) {
+                console.error('Error deleting ride:', error);
+                alert(`Failed to delete ride: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+    };
+
+    const handleViewRide = (ride: Ride) => {
+        setActiveRideId(ride._id);
+        navigateTo('ride-details');
     };
 
     return (

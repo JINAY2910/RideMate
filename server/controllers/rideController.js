@@ -287,6 +287,7 @@ const createRide = async (req, res, next) => {
       destCoordinates: destCoordsGeoJSON,
       date: req.body.date,
       time: req.body.time,
+      duration: parseFloat(req.body.duration || 2),
       price: parseFloat(price),
       seatsAvailable: parseInt(seats),
       notes: req.body.notes || '',

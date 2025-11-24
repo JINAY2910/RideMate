@@ -87,6 +87,11 @@ const rideSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Time is required'],
     },
+    duration: {
+      type: Number,
+      default: 2, // Default duration in hours
+      min: [0.5, 'Duration must be at least 30 minutes'],
+    },
     price: {
       type: Number,
       required: [true, 'Price is required'],

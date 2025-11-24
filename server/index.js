@@ -18,6 +18,10 @@ const socketHandler = require('./socketHandler');
 // Connect to database
 connectDB();
 
+// Start Cron Jobs
+const cleanupExpiredRides = require('./utils/cron');
+cleanupExpiredRides();
+
 const app = express();
 const server = http.createServer(app);
 

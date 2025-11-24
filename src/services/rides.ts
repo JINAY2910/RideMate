@@ -74,6 +74,7 @@ export type Ride = {
   };
   date: string;
   time: string;
+  duration?: number;
   status: 'Active' | 'Pending' | 'Completed' | 'Confirmed';
   seats: {
     total: number;
@@ -125,6 +126,7 @@ export type RideCreatePayload = {
   };
   date: string;
   time: string;
+  duration?: number;
   seats: number;
   notes?: string;
   vehicleId?: string;
