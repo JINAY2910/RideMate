@@ -93,7 +93,7 @@ export default function Login() {
 
       <div className="max-w-md w-full relative z-10 animate-fade-in">
         <div className="flex justify-center mb-6">
-          <Logo className="h-16 w-16 shadow-xl" />
+          <Logo className="h-16 w-16 shadow-xl border !border-black" />
         </div>
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-black mb-2">Welcome Back</h1>
