@@ -189,6 +189,11 @@ const transformRide = (ride) => {
       rating: req.rating || 5,
       status: req.status || 'Pending',
       seatsRequested: req.seatsRequested || 1,
+      addons: req.addons,
+      addonCharges: req.addonCharges,
+      finalCost: req.finalCost,
+      riderReview: req.riderReview,
+      driverReview: req.driverReview,
       createdAt: req.createdAt ? req.createdAt.toISOString() : new Date().toISOString(),
     })),
     participants: (rideObj.participants || []).map(part => ({
@@ -201,6 +206,8 @@ const transformRide = (ride) => {
       name: part.rider?.name || part.name || 'Unknown',
       status: part.status || 'Confirmed',
       seatsBooked: part.seatsBooked || 1,
+      addons: part.addons,
+      finalCost: part.finalCost,
     })),
     vehicle: vehicleDetails,
     driverLocation: rideObj.driverLocation?.coordinates ? {
@@ -766,6 +773,14 @@ const addRequest = async (req, res, next) => {
       });
     }
 
+    // Calculate add-on charges
+    const addons = req.body.addons || { firstAid: false, doorToDoor: false };
+    let addonCharges = 0;
+    if (addons.firstAid) addonCharges += 15;
+    if (addons.doorToDoor) addonCharges += 25;
+
+    const finalCost = (ride.price * seatsRequested) + addonCharges;
+
     // Add request to ride
     const newRequest = {
       rider: req.user.id,
@@ -773,6 +788,9 @@ const addRequest = async (req, res, next) => {
       rating: req.body.rating || 5,
       status: 'Pending',
       seatsRequested: seatsRequested,
+      addons,
+      addonCharges,
+      finalCost,
     };
 
     ride.requests.push(newRequest);
@@ -783,7 +801,7 @@ const addRequest = async (req, res, next) => {
       ride: ride._id,
       rider: req.user.id,
       seatsBooked: seatsRequested,
-      totalPrice: ride.price * seatsRequested,
+      totalPrice: finalCost,
       status: 'Pending',
     });
 
@@ -878,6 +896,9 @@ const updateRequestStatus = async (req, res, next) => {
           name: request.name,
           status: 'Confirmed',
           seatsBooked: seatsToBook,
+          addons: request.addons,
+          addonCharges: request.addonCharges,
+          finalCost: request.finalCost,
         });
       }
     }
@@ -1082,8 +1103,187 @@ const findRideMatches = async (req, res, next) => {
         nearby: categorized.nearby.length,
       },
     };
-
     res.json(responsePayload);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Rate a ride (driver or rider)
+// @route   POST /api/rides/:id/rate
+// @access  Private
+const rateRide = async (req, res, next) => {
+  try {
+    const { rating, review, type, targetUserId } = req.body;
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({ success: false, message: 'Ride not found' });
+    }
+
+    if (type === 'driver') {
+      // Rider rating the driver
+      // Find the request for this rider
+      const request = ride.requests.find(r => r.rider && r.rider.toString() === req.user.id);
+      if (!request) {
+        return res.status(403).json({ success: false, message: 'You are not a participant of this ride' });
+      }
+
+      request.driverReview = { rating, text: review };
+
+      // Update driver's average rating
+      const driver = await User.findById(ride.driver);
+      if (driver) {
+        const totalReviews = driver.totalReviews || 0;
+        const currentRating = driver.rating || 5;
+        const newRating = ((currentRating * totalReviews) + rating) / (totalReviews + 1);
+        driver.rating = parseFloat(newRating.toFixed(1));
+        driver.totalReviews = totalReviews + 1;
+        await driver.save();
+      }
+
+    } else if (type === 'rider') {
+      // Driver rating a rider
+      if (ride.driver.toString() !== req.user.id) {
+        return res.status(403).json({ success: false, message: 'Only the driver can rate riders' });
+      }
+
+      if (!targetUserId) {
+        return res.status(400).json({ success: false, message: 'Target user ID required for rider rating' });
+      }
+
+      const request = ride.requests.find(r => r.rider && r.rider.toString() === targetUserId);
+      if (!request) {
+        return res.status(404).json({ success: false, message: 'Rider request not found' });
+      }
+
+      request.riderReview = { rating, text: review };
+
+      // Update rider's average rating
+      const rider = await User.findById(targetUserId);
+      if (rider) {
+        const totalReviews = rider.totalReviews || 0;
+        const currentRating = rider.rating || 5;
+        const newRating = ((currentRating * totalReviews) + rating) / (totalReviews + 1);
+        rider.rating = parseFloat(newRating.toFixed(1));
+        rider.totalReviews = totalReviews + 1;
+        await rider.save();
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid rating type' });
+    }
+
+    await ride.save();
+
+    // Return updated ride
+    const populatedRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate('vehicle').populate({
+      path: 'requests.rider',
+      select: 'name email phone rating',
+    });
+
+    res.json(transformRide(populatedRide));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete a ride request (Rider only)
+// @route   DELETE /api/rides/:id/requests
+// @access  Private
+const deleteRequest = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({ success: false, message: 'Ride not found' });
+    }
+
+    // Find the request for this rider
+    const requestIndex = ride.requests.findIndex(
+      (r) => r.rider && r.rider.toString() === req.user.id
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    const request = ride.requests[requestIndex];
+
+    // Only allow deleting Pending or Rejected requests
+    // Approved requests must be cancelled via cancelBooking
+    if (request.status === 'Approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete an approved request. Please cancel the booking instead.'
+      });
+    }
+
+    // Remove request
+    ride.requests.splice(requestIndex, 1);
+    await ride.save();
+
+    // Also remove any associated booking (Pending or Rejected)
+    await Booking.findOneAndDelete({
+      ride: ride._id,
+      rider: req.user.id,
+      status: { $in: ['Pending', 'Rejected'] }
+    });
+
+    res.json({ success: true, message: 'Request deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Cancel a booking (Rider only)
+// @route   POST /api/rides/:id/cancel
+// @access  Private
+const cancelBooking = async (req, res, next) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({ success: false, message: 'Ride not found' });
+    }
+
+    // Check if rider is a participant
+    const participantIndex = ride.participants.findIndex(
+      (p) => p.rider && p.rider.toString() === req.user.id
+    );
+
+    if (participantIndex === -1) {
+      return res.status(404).json({ success: false, message: 'You are not a participant of this ride' });
+    }
+
+    const participant = ride.participants[participantIndex];
+    const seatsToRestore = participant.seatsBooked || 1;
+
+    // Remove from participants
+    ride.participants.splice(participantIndex, 1);
+
+    // Restore seats
+    ride.seatsAvailable += seatsToRestore;
+
+    // Remove the request
+    const requestIndex = ride.requests.findIndex(
+      (r) => r.rider && r.rider.toString() === req.user.id
+    );
+    if (requestIndex !== -1) {
+      ride.requests.splice(requestIndex, 1);
+    }
+
+    await ride.save();
+
+    // Update Booking status to Cancelled
+    await Booking.findOneAndUpdate(
+      { ride: ride._id, rider: req.user.id },
+      { status: 'Cancelled' }
+    );
+
+    res.json({ success: true, message: 'Booking cancelled successfully' });
   } catch (error) {
     next(error);
   }
@@ -1098,5 +1298,7 @@ module.exports = {
   addRequest,
   updateRequestStatus,
   findRideMatches,
+  rateRide,
+  deleteRequest,
+  cancelBooking,
 };
-

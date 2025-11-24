@@ -49,6 +49,20 @@ export type RideRequest = {
   rating: number;
   status: 'Approved' | 'Pending' | 'Rejected';
   seatsRequested: number;
+  addons?: {
+    firstAid: boolean;
+    doorToDoor: boolean;
+  };
+  addonCharges?: number;
+  finalCost?: number;
+  riderReview?: {
+    rating: number;
+    text?: string;
+  };
+  driverReview?: {
+    rating: number;
+    text?: string;
+  };
   createdAt: string;
 };
 
@@ -94,6 +108,11 @@ export type Ride = {
     name: string;
     status: string;
     seatsBooked: number;
+    addons?: {
+      firstAid: boolean;
+      doorToDoor: boolean;
+    };
+    finalCost?: number;
   }>;
   vehicleId?: string | null;
   driverLocation?: {
@@ -130,6 +149,7 @@ export type RideCreatePayload = {
   time: string;
   duration?: number;
   seats: number;
+  price?: number;
   notes?: string;
   vehicleId?: string;
   driverLocation?: {
@@ -272,7 +292,7 @@ export const rideApi = {
     return handleResponse<Ride>(response);
   },
 
-  async addRequest(id: string, payload: { name?: string; rating?: number; seatsRequested?: number }) {
+  async addRequest(id: string, payload: { name?: string; rating?: number; seatsRequested?: number; addons?: { firstAid: boolean; doorToDoor: boolean } }) {
     const token = getAuthToken();
     if (!token) {
       throw new Error('Authentication required. Please log in to add a request.');
@@ -313,6 +333,48 @@ export const rideApi = {
       body: JSON.stringify(payload),
     });
     return handleResponse<RideMatchResponse>(response);
+  },
+
+  async rateRide(id: string, payload: { rating: number; review?: string; type: 'driver' | 'rider'; targetUserId?: string }) {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Authentication required.');
+    }
+    const response = await fetch(`${API_BASE}/rides/${id}/rate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<Ride>(response);
+  },
+
+  async deleteRequest(id: string) {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required.');
+    const response = await fetch(`${API_BASE}/rides/${id}/requests`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<{ success: true; message: string }>(response);
+  },
+
+  async cancelBooking(id: string) {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required.');
+    const response = await fetch(`${API_BASE}/rides/${id}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<{ success: true; message: string }>(response);
   },
 };
 

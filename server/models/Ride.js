@@ -68,6 +68,20 @@ const rideSchema = new mongoose.Schema(
       rating: { type: Number, default: 5 },
       status: { type: String, enum: ['Approved', 'Pending', 'Rejected'], default: 'Pending' },
       seatsRequested: { type: Number, default: 1, min: 1 },
+      addons: {
+        firstAid: { type: Boolean, default: false },
+        doorToDoor: { type: Boolean, default: false },
+      },
+      addonCharges: { type: Number, default: 0 },
+      finalCost: { type: Number, default: 0 },
+      riderReview: {
+        rating: Number,
+        text: String,
+      },
+      driverReview: {
+        rating: Number,
+        text: String,
+      },
       createdAt: { type: Date, default: Date.now },
     }],
     participants: [{
@@ -78,6 +92,12 @@ const rideSchema = new mongoose.Schema(
       name: String,
       status: String,
       seatsBooked: { type: Number, default: 1 },
+      addons: {
+        firstAid: { type: Boolean, default: false },
+        doorToDoor: { type: Boolean, default: false },
+      },
+      addonCharges: { type: Number, default: 0 },
+      finalCost: { type: Number, default: 0 },
     }],
     date: {
       type: String,

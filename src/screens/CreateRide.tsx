@@ -11,6 +11,7 @@ import RollerTimePicker from '../components/RollerPicker/RollerTimePicker';
 import CalendarDatePicker from '../components/RollerPicker/CalendarDatePicker';
 import PickerModal from '../components/RollerPicker/PickerModal';
 import { Calendar, Clock } from 'lucide-react';
+import { calculateRideDetails } from '../utils/rideCalculations';
 
 const formatTimeLabel = (timeValue: string) => {
   if (!timeValue) return '';
@@ -108,6 +109,21 @@ export default function CreateRide() {
         }
       }
 
+      let estimatedPrice = 0;
+      if (startLocation && destinationLocation) {
+        try {
+          const details = await calculateRideDetails(
+            startLocation.lat,
+            startLocation.lng,
+            destinationLocation.lat,
+            destinationLocation.lng
+          );
+          estimatedPrice = details.cost;
+        } catch (err) {
+          console.warn('Could not calculate price:', err);
+        }
+      }
+
       const newRide = await rideApi.create({
         driverName: userName || 'RideMate Driver',
         driverRating: userRole === 'driver' ? 4.9 : 4.8,
@@ -124,6 +140,7 @@ export default function CreateRide() {
         date,
         time: formattedTime || time,
         seats: seatsNumber,
+        price: estimatedPrice,
         notes,
         vehicleId: selectedVehicle || undefined,
         driverLocation: driverLocation,

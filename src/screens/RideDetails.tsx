@@ -17,6 +17,8 @@ import Card from '../components/Card';
 import { clearRideChat } from '../utils/chatStorage';
 import { rideApi, Ride, RideRequest } from '../services/rides';
 import RiderProfileModal from '../components/RiderProfileModal';
+import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
+import { generateRideTicketPDF } from '../utils/ticketPdf';
 
 export default function RideDetails() {
   const {
@@ -44,7 +46,10 @@ export default function RideDetails() {
   const [rideCancelled, setRideCancelled] = useState(false);
 
   const [selectedRequest, setSelectedRequest] = useState<RideRequest | null>(null);
+  const [rideMetrics, setRideMetrics] = useState<RideMetrics | null>(null);
   const [seatsRequested, setSeatsRequested] = useState(1);
+  const [wantsFirstAid, setWantsFirstAid] = useState(false);
+  const [wantsDoorToDoor, setWantsDoorToDoor] = useState(false);
 
   useEffect(() => {
     if (!activeRideId) {
@@ -85,10 +90,10 @@ export default function RideDetails() {
     // Initial fetch
     fetchRide(true);
 
-    // Polling interval (every 15 seconds)
+    // Polling interval (every 5 seconds)
     const intervalId = setInterval(() => {
       fetchRide(false);
-    }, 15000);
+    }, 5000);
 
     return () => {
       cancelled = true;
@@ -99,6 +104,15 @@ export default function RideDetails() {
   useEffect(() => {
     if (ride?.status === 'Completed') {
       clearRideChat(ride._id);
+    }
+
+    if (ride) {
+      calculateRideDetails(
+        ride.start.coordinates.lat,
+        ride.start.coordinates.lng,
+        ride.destination.coordinates.lat,
+        ride.destination.coordinates.lng
+      ).then(setRideMetrics).catch(console.error);
     }
   }, [ride]);
 
@@ -132,18 +146,56 @@ export default function RideDetails() {
     setRiderRatings((prev) => ({ ...prev, [riderId]: rating }));
   };
 
-  const handleSubmitRatings = () => {
-    if (!canSubmitRatings) return;
-    navigateTo('dashboard');
+  const handleSubmitRatings = async () => {
+    if (!canSubmitRatings || !ride) return;
+    try {
+      // Submit ratings for all approved riders
+      await Promise.all(approvedRequests.map(req =>
+        rideApi.rateRide(ride._id, {
+          rating: riderRatings[req._id],
+          type: 'rider',
+          targetUserId: req.rider?.id
+        })
+      ));
+      alert('Ratings submitted successfully!');
+      navigateTo('dashboard');
+    } catch (err) {
+      setActionError('Failed to submit ratings');
+    }
+  };
+
+  const handleRateDriver = async (rating: number) => {
+    if (!ride) return;
+    try {
+      await rideApi.rateRide(ride._id, {
+        rating,
+        type: 'driver'
+      });
+      alert('Driver rated successfully!');
+      // Refresh ride to show updated state if needed
+    } catch (err) {
+      setActionError('Failed to rate driver');
+    }
   };
 
   const handleMarkRideComplete = async () => {
     if (!ride) return;
-    // User requested that the ride be deleted after completion
-    if (window.confirm('Are you sure you want to complete and delete this ride? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to mark this ride as completed?')) {
+      try {
+        const updatedRide = await rideApi.updateStatus(ride._id, 'Completed');
+        setRide(updatedRide);
+        // Trigger review modal or logic here if needed
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Unable to complete ride.');
+      }
+    }
+  };
+
+  const handleDeleteRide = async () => {
+    if (!ride) return;
+    if (window.confirm('Are you sure you want to delete this ride from your history?')) {
       try {
         await rideApi.delete(ride._id);
-        clearRideChat(ride._id);
         navigateTo('dashboard');
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Unable to delete ride.');
@@ -216,6 +268,50 @@ export default function RideDetails() {
     );
   }, [showEmergencyPanel, userLocation, locationStatus]);
 
+  const handleDownloadTicket = () => {
+    if (!ride || !rideMetrics) {
+      alert('Unable to generate ticket. Ride details not available.');
+      return;
+    }
+
+    const myRequest = ride.requests?.find(r => r.rider?.id === userId);
+    const myParticipant = ride.participants?.find(p => p.rider?.id === userId);
+
+    const seatsBooked = myParticipant?.seatsBooked || myRequest?.seatsRequested || 1;
+    const totalFare = myRequest?.finalCost || myParticipant?.finalCost || rideMetrics.cost;
+    const addons = myRequest?.addons || myParticipant?.addons;
+
+    const fellowRiders = ride.participants
+      ?.filter(p => p.rider?.id !== userId)
+      .map(p => ({
+        name: p.name,
+        rating: 'N/A' as string | number
+      })) || [];
+
+    generateRideTicketPDF({
+      invoiceNumber: ride._id.substring(ride._id.length - 8).toUpperCase(),
+      generatedOn: new Date().toLocaleDateString(),
+      passengerName: userName || 'Rider',
+      driverName: ride.driver.name,
+      rideDate: ride.date,
+      rideTime: ride.time,
+      seats: seatsBooked.toString(),
+      vehicleDetails: ride.vehicle
+        ? `${ride.vehicle.make || ''} ${ride.vehicle.model || ''} (${ride.vehicle.registrationNumber})`.trim()
+        : 'Not specified',
+      startLabel: ride.start.label,
+      destinationLabel: ride.destination.label,
+      distanceKm: rideMetrics.distanceKm,
+      durationMinutes: rideMetrics.durationMinutes,
+      fareBreakdown: `Distance (${rideMetrics.distanceKm.toFixed(2)} km) × Rs 10/km`,
+      totalFare: totalFare,
+      addons: addons,
+      fellowRiders: fellowRiders,
+    });
+
+    alert('Ticket Downloaded!');
+  };
+
   const handleBookRideFromDetails = async () => {
     if (!ride || !activeRideId) {
       alert('Select a ride from Find Ride to book this trip.');
@@ -226,6 +322,10 @@ export default function RideDetails() {
         name: userName || 'Rider',
         rating: 5,
         seatsRequested: seatsRequested,
+        addons: {
+          firstAid: wantsFirstAid,
+          doorToDoor: wantsDoorToDoor,
+        },
       });
       setRide(updatedRide);
       setRideSummaryInput({
@@ -329,6 +429,23 @@ export default function RideDetails() {
                     <p className="text-lg font-medium text-black">{ride.destination.label}</p>
                   </div>
                 </div>
+                {rideMetrics && (
+                  <>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Distance</p>
+                        <p className="text-lg font-bold text-black">{rideMetrics.distanceKm} km</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-gray-600">Est. Price</p>
+                        <p className="text-lg font-bold text-black">Rs {rideMetrics.cost}</p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Est. Time: {rideMetrics.durationMinutes} mins
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
@@ -366,7 +483,7 @@ export default function RideDetails() {
                     <Button
                       fullWidth
                       variant="secondary"
-                      onClick={() => alert('Ticket Downloaded!')}
+                      onClick={handleDownloadTicket}
                     >
                       <ShieldAlert size={20} className="inline mr-2" />
                       Download Ticket
@@ -380,6 +497,26 @@ export default function RideDetails() {
                       <AlertTriangle size={20} className="inline mr-2 text-red-600" />
                       SOS
                     </Button>
+
+                    {rideStatus === 'Completed' && (
+                      <div className="mt-4 p-4 border-2 border-black rounded-lg bg-white">
+                        <p className="text-sm font-semibold text-black mb-2 text-center">Rate your Driver</p>
+                        <div className="flex justify-center gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={`driver-rate-${star}`}
+                              onClick={() => handleRateDriver(star)}
+                              className="hover:scale-110 transition-transform"
+                            >
+                              <Star
+                                size={32}
+                                className={ride.requests?.find(r => r.rider?.id === userId)?.driverReview?.rating && (ride.requests.find(r => r.rider?.id === userId)?.driverReview?.rating || 0) >= star ? 'text-black fill-black' : 'text-gray-300'}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -387,26 +524,65 @@ export default function RideDetails() {
                 {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
                   <div className="space-y-3">
                     {!hasRequested && ride.seats.available > 0 && (
-                      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <span className="font-medium text-black">Seats needed:</span>
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
-                            disabled={seatsRequested <= 1}
-                          >
-                            -
-                          </button>
-                          <span className="font-bold text-lg w-4 text-center">{seatsRequested}</span>
-                          <button
-                            onClick={() => setSeatsRequested(Math.min(ride.seats.available, seatsRequested + 1))}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
-                            disabled={seatsRequested >= ride.seats.available}
-                          >
-                            +
-                          </button>
+                      <>
+                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <span className="font-medium text-black">Seats needed:</span>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
+                              disabled={seatsRequested <= 1}
+                            >
+                              -
+                            </button>
+                            <span className="font-bold text-lg w-4 text-center">{seatsRequested}</span>
+                            <button
+                              onClick={() => setSeatsRequested(Math.min(ride.seats.available, seatsRequested + 1))}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
+                              disabled={seatsRequested >= ride.seats.available}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
-                      </div>
+
+                        <div className="space-y-2 mt-3 mb-3">
+                          <p className="text-sm font-semibold text-black">Add-ons (Optional)</p>
+                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={wantsFirstAid}
+                                onChange={(e) => setWantsFirstAid(e.target.checked)}
+                                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                              />
+                              <span className="ml-2 text-sm text-black">First Aid Kit</span>
+                            </div>
+                            <span className="text-sm font-bold text-black">+ Rs 15</span>
+                          </label>
+                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={wantsDoorToDoor}
+                                onChange={(e) => setWantsDoorToDoor(e.target.checked)}
+                                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                              />
+                              <span className="ml-2 text-sm text-black">Door-to-Door Service</span>
+                            </div>
+                            <span className="text-sm font-bold text-black">+ Rs 25</span>
+                          </label>
+                        </div>
+
+                        {rideMetrics && (
+                          <div className="mb-4 p-3 bg-black text-white rounded-lg flex justify-between items-center">
+                            <span className="font-medium">Total Cost:</span>
+                            <span className="text-xl font-bold">
+                              Rs {(rideMetrics.cost + (wantsFirstAid ? 15 : 0) + (wantsDoorToDoor ? 25 : 0)).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                     <Button
                       fullWidth
@@ -545,8 +721,13 @@ export default function RideDetails() {
                   Mark Ride Complete
                 </Button>
               ) : (
-                <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
-                  Ride marked as complete. Chat history cleared.
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
+                    Ride marked as complete. Chat history cleared.
+                  </div>
+                  <Button fullWidth variant="outline" onClick={handleDeleteRide} className="border-red-500 text-red-600 hover:bg-red-50">
+                    Delete Ride from History
+                  </Button>
                 </div>
               )}
             </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Car, Plus, Trash2, Edit2 } from 'lucide-react';
 import { useApp, Vehicle } from '../context/AppContext';
 import Button from '../components/Button';
@@ -6,7 +6,7 @@ import Input from '../components/Input';
 import Card from '../components/Card';
 
 export default function Vehicles() {
-  const { navigateTo, vehicles, addVehicle, updateVehicle, deleteVehicle } = useApp();
+  const { navigateTo, vehicles, addVehicle, updateVehicle, deleteVehicle, userRole } = useApp();
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
@@ -89,6 +89,12 @@ export default function Vehicles() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (userRole !== 'driver') {
+      navigateTo('dashboard');
+    }
+  }, [userRole, navigateTo]);
 
   const handleDelete = async (vehicleId: string) => {
     if (!confirm('Are you sure you want to delete this vehicle?')) {

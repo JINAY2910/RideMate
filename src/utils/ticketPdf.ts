@@ -15,6 +15,10 @@ export type RideTicketDetails = {
   durationMinutes: number;
   fareBreakdown: string;
   totalFare: number;
+  addons?: {
+    firstAid: boolean;
+    doorToDoor: boolean;
+  };
   fellowRiders?: Array<{ name: string; rating?: string | number }>;
 };
 
@@ -86,11 +90,22 @@ export const generateRideTicketPDF = (details: RideTicketDetails) => {
   doc.setCharSpace(0);
   doc.setLineHeightFactor(1.2);
 
-  const fareBreakdownLine = `Fare Breakdown: Distance (${details.distanceKm.toFixed(2)} km) × Rs 10/km`;
-  const totalFareLine = `Total Fare: Rs ${details.totalFare.toFixed(2)}`;
-
+  const fareBreakdownLine = `Fare Breakdown: Distance (${details.distanceKm.toFixed(2)} km) × Rs 10/km = Rs ${(details.distanceKm * 10).toFixed(2)}`;
   doc.text(fareBreakdownLine, 22, currentY);
   currentY += 8;
+
+  if (details.addons) {
+    if (details.addons.firstAid) {
+      doc.text('Add-on: First Aid Kit (+ Rs 15)', 22, currentY);
+      currentY += 8;
+    }
+    if (details.addons.doorToDoor) {
+      doc.text('Add-on: Door-to-Door Service (+ Rs 25)', 22, currentY);
+      currentY += 8;
+    }
+  }
+
+  const totalFareLine = `Total Fare: Rs ${details.totalFare.toFixed(2)}`;
   doc.text(totalFareLine, 22, currentY);
 
   doc.setFont('helvetica', 'normal');

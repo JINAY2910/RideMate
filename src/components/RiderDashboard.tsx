@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
 import { User, Car } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 
 const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
@@ -55,6 +56,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
 
 
 export default function RiderDashboard() {
+    const { navigateTo } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'Requests' | 'History'>('Requests');
@@ -103,14 +105,24 @@ export default function RiderDashboard() {
         <div className="space-y-8 relative">
             {/* Upcoming Trips Section - Always Visible at Top */}
             <div>
-                <h2 className="text-2xl font-bold text-black mb-4 flex items-center gap-2">
+                <button
+                    onClick={() => navigateTo('my-rides')}
+                    className="text-2xl font-bold text-black mb-4 flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                >
                     <Car size={24} />
                     My Rides
-                </h2>
+                </button>
                 {upcomingRides.length === 0 ? (
-                    <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center">
-                        <p className="text-gray-500 mb-4">No upcoming trips confirmed yet.</p>
-                    </div>
+                    <button
+                        onClick={() => navigateTo('my-rides')}
+                        className="w-full bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 hover:border-black p-8 text-center transition-all hover:bg-gray-100"
+                    >
+                        <p className="text-gray-600 mb-3 font-medium">View all your rides, requests, and history</p>
+                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg font-semibold">
+                            <Car size={18} />
+                            Go to My Rides
+                        </div>
+                    </button>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1">
                         {upcomingRides.map((booking) => (

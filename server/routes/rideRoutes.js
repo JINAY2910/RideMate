@@ -9,14 +9,19 @@ const {
   addRequest,
   updateRequestStatus,
   findRideMatches,
+  rateRide,
+  deleteRequest,
+  cancelBooking,
 } = require('../controllers/rideController');
 const { authMiddleware, driverMiddleware } = require('../middleware/authMiddleware');
 
 router.route('/').get(getRides).post(authMiddleware, driverMiddleware, createRide);
 router.route('/match').post(findRideMatches);
 router.route('/:id').get(getRide).put(authMiddleware, driverMiddleware, updateRide).patch(authMiddleware, driverMiddleware, updateRide).delete(authMiddleware, driverMiddleware, deleteRide);
-router.route('/:id/requests').post(authMiddleware, addRequest);
+router.route('/:id/requests').post(authMiddleware, addRequest).delete(authMiddleware, deleteRequest);
 router.route('/:id/requests/:requestId').patch(authMiddleware, driverMiddleware, updateRequestStatus);
+router.route('/:id/rate').post(authMiddleware, rateRide);
+router.route('/:id/cancel').post(authMiddleware, cancelBooking);
 
 module.exports = router;
 

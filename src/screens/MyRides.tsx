@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Users, Clock, Car } from 'lucide-react';
+import { ArrowLeft, Users, Clock, Car, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Card from '../components/Card';
 import { rideApi, Ride } from '../services/rides';
@@ -35,16 +35,29 @@ export default function MyRides() {
     fetchRides();
   }, [isDriver, userName, userId]);
 
-  // Filter rides for riders
-  const confirmedRides = !isDriver ? rides.filter(ride =>
-    ride.requests?.some(req => req.status === 'Approved') ||
-    ride.participants?.some(p => p.name === userName)
-  ) : [];
+  // Filter rides for riders - check if THIS user has approved/pending requests
+  const confirmedRides = !isDriver ? rides.filter(ride => {
+    const myRequest = ride.requests?.find(req =>
+      req.name === userName ||
+      req.rider?.name === userName ||
+      (userId && req.rider?.id === userId)
+    );
+    const isParticipant = ride.participants?.some(p =>
+      p.name === userName ||
+      p.rider?.name === userName ||
+      (userId && p.rider?.id === userId)
+    );
+    return myRequest?.status === 'Approved' || isParticipant;
+  }) : [];
 
-  const pendingRides = !isDriver ? rides.filter(ride =>
-    ride.requests?.some(req => req.status === 'Pending') &&
-    !ride.requests?.some(req => req.status === 'Approved')
-  ) : [];
+  const pendingRides = !isDriver ? rides.filter(ride => {
+    const myRequest = ride.requests?.find(req =>
+      req.name === userName ||
+      req.rider?.name === userName ||
+      (userId && req.rider?.id === userId)
+    );
+    return myRequest && (myRequest.status === 'Pending' || myRequest.status === 'Rejected');
+  }) : [];
 
   // Check for newly approved requests to show notification
   useEffect(() => {
@@ -104,12 +117,64 @@ export default function MyRides() {
               </span>
             </div>
           </div>
-          <span
-            className={`px-3 py-1 text-sm font-medium border-2 border-black rounded-full ${highlightStatus ? 'bg-black text-white' : 'bg-white text-black'
-              }`}
-          >
-            {ride.status}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span
+              className={`px-3 py-1 text-sm font-medium border-2 border-black rounded-full ${highlightStatus ? 'bg-black text-white' : 'bg-white text-black'
+                }`}
+            >
+              {ride.status}
+            </span>
+            {!isDriver && (
+              <>
+                {ride.status === 'Completed' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Delete this ride from your history?')) {
+                        rideApi.delete(ride._id).then(() => {
+                          setRides(prev => prev.filter(r => r._id !== ride._id));
+                        });
+                      }
+                    }}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete from history"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+                {(myStatus === 'Pending' || myStatus === 'Rejected') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(myStatus === 'Pending' ? 'Cancel this request?' : 'Remove this rejected request?')) {
+                        rideApi.deleteRequest(ride._id).then(() => {
+                          setRides(prev => prev.filter(r => r._id !== ride._id));
+                        });
+                      }
+                    }}
+                    className="px-3 py-1 text-xs font-bold text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    {myStatus === 'Pending' ? 'Cancel Request' : 'Remove'}
+                  </button>
+                )}
+                {myStatus === 'Approved' && ride.status !== 'Completed' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Are you sure you want to cancel your booking?')) {
+                        rideApi.cancelBooking(ride._id).then(() => {
+                          setRides(prev => prev.filter(r => r._id !== ride._id));
+                        });
+                      }
+                    }}
+                    className="px-3 py-1 text-xs font-bold text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    Cancel Ride
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -218,7 +283,7 @@ export default function MyRides() {
               <section>
                 <h2 className="text-2xl font-bold mb-4 text-gray-700 flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                  Pending Requests
+                  Pending & Rejected Requests
                 </h2>
                 <div className="space-y-4">
                   {pendingRides.map(renderRideCard)}
