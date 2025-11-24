@@ -56,6 +56,7 @@ export type Ride = {
   _id: string;
   id: string;
   driver: {
+    id: string;
     name: string;
     rating: number;
   };
