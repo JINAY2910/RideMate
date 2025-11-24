@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -35,6 +35,20 @@ export default function CreateRide() {
 
   // ... inside component ...
   const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
+
+  useEffect(() => {
+    // Check for navigation state
+    const navState = (window as any).__navigationState;
+    if (navState) {
+      if (navState.startLocation) setStartLocation(navState.startLocation);
+      if (navState.destinationLocation) setDestinationLocation(navState.destinationLocation);
+      if (navState.date) setDate(navState.date);
+      if (navState.time) setTime(navState.time);
+
+      // Clear state after use
+      (window as any).__navigationState = null;
+    }
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -280,9 +280,24 @@ export default function SearchRide() {
           ) : rides.length === 0 ? (
             <div className="rounded-2xl border-2 border-black p-6 text-center">
               <p className="text-lg font-semibold text-black mb-2">No rides found</p>
-              <p className="text-sm text-gray-600">
-                {hasSearched ? 'Try adjusting your filters and search again.' : 'Be the first to create a ride!'}
+              <p className="text-sm text-gray-600 mb-4">
+                {hasSearched ? 'Try adjusting your filters or create this ride yourself!' : 'Be the first to create a ride!'}
               </p>
+              {hasSearched && startLocation && destinationLocation && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    navigateTo('create-ride', {
+                      startLocation,
+                      destinationLocation,
+                      date,
+                      time
+                    });
+                  }}
+                >
+                  Create this Ride
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

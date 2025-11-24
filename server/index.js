@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const rideRoutes = require('./routes/rideRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const vehicleRoutes = require('./routes/vehicleRoutes');
+const locationRoutes = require('./routes/locationRoutes');
 
 const http = require('http');
 const socketIo = require('socket.io');
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/locations', locationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

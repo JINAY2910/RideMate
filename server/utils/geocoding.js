@@ -9,6 +9,7 @@ const axios = require('axios');
  * - positionstack: PositionStack API (FREE: 25,000 requests/month)
  * 
  * PAID PROVIDERS (Require API keys and billing):
+ * - locationiq: LocationIQ (Free tier available, requires API key)
  * - google: Google Maps Geocoding API (Requires billing, $200/month free credit)
  * - mapbox: Mapbox Geocoding API (Requires billing, free tier available)
  */
@@ -410,6 +411,81 @@ const searchPositionStack = async (query) => {
 };
 
 /**
+ * Geocode using LocationIQ (Free tier available)
+ * Sign up at: https://locationiq.com/
+ */
+const geocodeLocationIQ = async (query) => {
+  const apiKey = process.env.LOCATIONIQ_API_KEY;
+  if (!apiKey) {
+    throw new Error('LOCATIONIQ_API_KEY not configured. Get key at https://locationiq.com/');
+  }
+
+  try {
+    const response = await axios.get('https://us1.locationiq.com/v1/search.php', {
+      params: {
+        key: apiKey,
+        q: query,
+        format: 'json',
+        limit: 1,
+      },
+      timeout: 5000,
+    });
+
+    if (!response.data || response.data.length === 0) {
+      return null;
+    }
+
+    const result = response.data[0];
+    return {
+      name: result.display_name,
+      lat: parseFloat(result.lat),
+      lng: parseFloat(result.lon),
+      address: result.display_name,
+      placeId: result.place_id,
+    };
+  } catch (error) {
+    console.error('LocationIQ geocoding error:', error.message);
+    throw new Error('Failed to geocode location using LocationIQ');
+  }
+};
+
+/**
+ * Search for location autocomplete using LocationIQ
+ */
+const searchLocationIQ = async (query) => {
+  const apiKey = process.env.LOCATIONIQ_API_KEY;
+  if (!apiKey) {
+    return [];
+  }
+
+  try {
+    const response = await axios.get('https://api.locationiq.com/v1/autocomplete.php', {
+      params: {
+        key: apiKey,
+        q: query,
+        limit: 10,
+      },
+      timeout: 5000,
+    });
+
+    if (!response.data || response.data.length === 0) {
+      return [];
+    }
+
+    return response.data.map((item) => ({
+      name: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      address: item.display_name,
+      placeId: item.place_id,
+    }));
+  } catch (error) {
+    console.error('LocationIQ search error:', error.message);
+    return [];
+  }
+};
+
+/**
  * Main geocoding function - uses configured provider
  */
 const geocode = async (query) => {
@@ -419,6 +495,8 @@ const geocode = async (query) => {
 
   try {
     switch (GEOCODING_PROVIDER.toLowerCase()) {
+      case 'locationiq':
+        return await geocodeLocationIQ(query);
       case 'google':
         return await geocodeGoogle(query);
       case 'mapbox':
@@ -455,6 +533,8 @@ const search = async (query) => {
 
   try {
     switch (GEOCODING_PROVIDER.toLowerCase()) {
+      case 'locationiq':
+        return await searchLocationIQ(query);
       case 'google':
         return await searchGoogle(query);
       case 'mapbox':

@@ -54,7 +54,7 @@ interface AppContextType {
   vehicles: Vehicle[];
   rideVehicles: Record<string, string>; // Maps rideId to vehicleId
   rideSchedules: RideSchedule[]; // Weekly schedules
-  navigateTo: (screen: string) => void;
+  navigateTo: (screen: string, state?: any) => void;
   goBack: () => void;
   setRole: (role: 'driver' | 'rider') => void;
   setUserId: (id: string | null) => void;
@@ -174,10 +174,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authToken]);
 
-  const navigateTo = (screen: string) => {
+  const navigateTo = (screen: string, state?: any) => {
     if (screen !== currentScreen) {
       setHistory(prev => [...prev, screen]);
       setCurrentScreen(screen);
+      if (state) {
+        // Store state in a temporary way or extend currentScreen to support it
+        // For simplicity, we'll attach it to the window object or use a separate state
+        // A better approach would be to have a navigation state object
+        (window as any).__navigationState = state;
+      }
     }
   };
 
