@@ -30,6 +30,7 @@ export type Booking = {
         date: string;
         time: string;
         duration?: number;
+        isActive?: boolean;
         driver: {
             name: string;
             phone?: string;

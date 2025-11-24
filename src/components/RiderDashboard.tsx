@@ -79,8 +79,17 @@ export default function RiderDashboard() {
 
     const upcomingRides = bookings.filter(b => {
         if (!b.ride) return false;
+
+        // Check if confirmed
+        const isConfirmed = b.status === 'Accepted' || b.status === 'Approved';
+        if (!isConfirmed) return false;
+
+        // If ride is explicitly active, show it
+        if (b.ride.isActive) return true;
+
+        // Otherwise check date
         const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
-        return (b.status === 'Accepted' || b.status === 'Approved') && rideDate > new Date();
+        return rideDate > new Date();
     });
 
     const otherBookings = bookings.filter(b => {
@@ -105,24 +114,20 @@ export default function RiderDashboard() {
         <div className="space-y-8 relative">
             {/* Upcoming Trips Section - Always Visible at Top */}
             <div>
-                <button
-                    onClick={() => navigateTo('my-rides')}
-                    className="text-2xl font-bold text-black mb-4 flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
-                >
+                <h2 className="text-2xl font-bold text-black mb-4 flex items-center gap-2">
                     <Car size={24} />
-                    My Rides
-                </button>
+                    My Confirmed Rides
+                </h2>
                 {upcomingRides.length === 0 ? (
-                    <button
-                        onClick={() => navigateTo('my-rides')}
-                        className="w-full bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 hover:border-black p-8 text-center transition-all hover:bg-gray-100"
-                    >
-                        <p className="text-gray-600 mb-3 font-medium">View all your rides, requests, and history</p>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg font-semibold">
-                            <Car size={18} />
-                            Go to My Rides
-                        </div>
-                    </button>
+                    <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-8 text-center">
+                        <p className="text-gray-500 font-medium">No confirmed upcoming rides.</p>
+                        <button
+                            onClick={() => navigateTo('search-ride')}
+                            className="mt-4 text-black font-bold hover:underline"
+                        >
+                            Find a ride now
+                        </button>
+                    </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1">
                         {upcomingRides.map((booking) => (
@@ -165,7 +170,6 @@ export default function RiderDashboard() {
                                             <p className="text-2xl font-bold text-black">₹{booking.totalPrice}</p>
                                             <p className="text-xs text-gray-500">{booking.seatsBooked} seat(s)</p>
                                         </div>
-                                        {/* Add Track Ride / View Details button here if needed */}
                                     </div>
                                 </div>
                             </Card>
