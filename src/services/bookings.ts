@@ -47,7 +47,7 @@ export type Booking = {
     };
     seatsBooked: number;
     totalPrice: number;
-    status: 'Pending' | 'Accepted' | 'Rejected' | 'Cancelled';
+    status: 'Pending' | 'Accepted' | 'Approved' | 'Rejected' | 'Cancelled';
     bookingDate: string;
 };
 

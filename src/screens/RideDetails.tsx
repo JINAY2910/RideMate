@@ -237,7 +237,8 @@ export default function RideDetails() {
         },
       });
       setActionError(null);
-      navigateTo('ride-confirmation');
+      alert('Ride requested successfully! You will be notified when the driver accepts.');
+      navigateTo('dashboard');
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Unable to book this ride.');
     }
@@ -353,8 +354,8 @@ export default function RideDetails() {
                   </Button>
                 )}
 
-                {/* Rider Actions - Only if Confirmed */}
-                {ride.participants?.some(p => p.rider?.id === userId) && (
+                {/* Rider Actions - Only if Confirmed/Accepted */}
+                {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && (
                   <>
                     <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
                       <MapPin size={20} className="inline mr-2" />

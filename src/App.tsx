@@ -48,11 +48,14 @@ function AppRouter() {
   return screens[currentScreen] || <Landing />;
 }
 
+import VoiceControl from './components/VoiceControl';
+
 function App() {
   return (
     <AppProvider>
       <AppRouter />
       <ChatbotWrapper />
+      <VoiceControl />
     </AppProvider>
   );
 }
