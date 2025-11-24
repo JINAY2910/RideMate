@@ -146,8 +146,59 @@ export type RideQueryParams = {
   date?: string;
   status?: string;
   driver?: string;
+  driverId?: string;
   participant?: string;
+  participantId?: string;
   limit?: number;
+};
+
+export type RideMatchPoint = {
+  label?: string;
+  name?: string;
+  lat: number;
+  lng: number;
+};
+
+export type RideMatchPayload = {
+  pickup: RideMatchPoint | string;
+  drop: RideMatchPoint | string;
+  preferredTime?: string; // ISO string
+  seatsRequired?: number;
+};
+
+export type RideMatchMetrics = {
+  pickupDistanceKm: number;
+  dropDistanceKm: number;
+  timeDiffMinutes: number | null;
+  seatsAvailable: number;
+  routeSimilarity: number;
+};
+
+export type RideMatch = {
+  ride: Ride;
+  metrics: RideMatchMetrics;
+  score: number;
+  matchQuality: 'perfect' | 'good' | 'nearby';
+};
+
+export type RideMatchResponse = {
+  success: boolean;
+  rider: {
+    pickup: RideMatchPoint;
+    drop: RideMatchPoint;
+    preferredTime: string | null;
+    seatsRequired: number;
+  };
+  matches: {
+    perfect: RideMatch[];
+    good: RideMatch[];
+    nearby: RideMatch[];
+  };
+  totals: {
+    perfect: number;
+    good: number;
+    nearby: number;
+  };
 };
 
 export const rideApi = {
@@ -250,6 +301,17 @@ export const rideApi = {
       body: JSON.stringify({ status }),
     });
     return handleResponse<Ride>(response);
+  },
+
+  async match(payload: RideMatchPayload) {
+    const response = await fetch(`${API_BASE}/rides/match`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<RideMatchResponse>(response);
   },
 };
 

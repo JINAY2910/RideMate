@@ -6,7 +6,7 @@ import { rideApi, Ride } from '../services/rides';
 import Layout from '../components/Layout';
 
 export default function RideHistory() {
-  const { navigateTo, userName, userRole } = useApp();
+  const { navigateTo, userName, userRole, userId } = useApp();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function RideHistory() {
   useEffect(() => {
     const fetchRides = async () => {
       try {
-        if (!userName) return;
+        if (!userName && !userId) return;
 
         // Fetch completed rides where the user is either the driver or a participant
         const params: any = {
@@ -22,9 +22,17 @@ export default function RideHistory() {
         };
 
         if (userRole === 'driver') {
-          params.driver = userName;
+          if (userId) {
+            params.driverId = userId;
+          } else {
+            params.driver = userName;
+          }
         } else {
-          params.participant = userName;
+          if (userId) {
+            params.participantId = userId;
+          } else {
+            params.participant = userName;
+          }
         }
 
         const data = await rideApi.list(params);
@@ -36,7 +44,7 @@ export default function RideHistory() {
       }
     };
     fetchRides();
-  }, [userName, userRole]);
+  }, [userName, userRole, userId]);
 
   return (
     <Layout fullWidth className="bg-white">

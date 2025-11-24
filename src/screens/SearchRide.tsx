@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Star, Users, Car } from 'lucide-react';
+import { ArrowLeft, Star, Users, Car, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Card from '../components/Card';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { Location } from '../services/locations';
-import { rideApi, Ride } from '../services/rides';
+import { rideApi, Ride, RideMatch, RideMatchMetrics, RideMatchResponse } from '../services/rides';
 import RollerTimePicker from '../components/RollerPicker/RollerTimePicker';
 import CalendarDatePicker from '../components/RollerPicker/CalendarDatePicker';
 import PickerModal from '../components/RollerPicker/PickerModal';
@@ -21,6 +21,8 @@ export default function SearchRide() {
   const [requiredSeats, setRequiredSeats] = useState('');
   const [sameGender, setSameGender] = useState(false);
   const [rides, setRides] = useState<Ride[]>([]);
+  const [matchGroups, setMatchGroups] = useState<RideMatchResponse['matches'] | null>(null);
+  const [matchTotals, setMatchTotals] = useState<RideMatchResponse['totals'] | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +34,8 @@ export default function SearchRide() {
     try {
       setLoading(true);
       setError(null);
+      setMatchGroups(null);
+      setMatchTotals(null);
       const results = await rideApi.list(params);
       setRides(results);
     } catch (err) {
@@ -74,44 +78,63 @@ export default function SearchRide() {
 
 
 
-  const handleSearch = async () => {
-    if (loading) return; // Debounce: Prevent search if already loading
+  const buildPreferredTimeISO = () => {
+    if (!date || !time) return undefined;
+    const normalizedTime = time.length === 5 ? `${time}:00` : time;
+    const candidate = new Date(`${date}T${normalizedTime}`);
+    if (Number.isNaN(candidate.getTime())) {
+      return undefined;
+    }
+    return candidate.toISOString();
+  };
 
+  const handleSearch = async () => {
     if (!startLocation || !destinationLocation) {
       setError('Please select both a starting point and destination.');
       return;
     }
 
-    if (requiredSeats && (isNaN(Number(requiredSeats)) || Number(requiredSeats) <= 0)) {
+    if (!date || !time) {
+      setError('Please select both date and preferred time.');
+      return;
+    }
+
+    const seats = requiredSeats ? Number(requiredSeats) : 1;
+    if (Number.isNaN(seats) || seats <= 0) {
       setError('Please enter a valid number of required seats.');
       return;
     }
 
-    const normalizedDate = date ? date : '';
-
-    // Use geo-based search with location names
     try {
-      // Set loading true immediately to block subsequent clicks
       setLoading(true);
-
-      await loadRides({
-        nearStart: startLocation.name,
-        nearDest: destinationLocation.name,
-        date: normalizedDate,
-        limit: 50,
-      });
+      setError(null);
       setHasSearched(true);
 
-      // Debounce: Keep loading state true for at least 5 seconds total
-      // This prevents spamming the search button
-      setTimeout(() => {
-        setLoading(false);
-      }, 5000);
+      const payload = {
+        pickup: {
+          label: startLocation.name,
+          lat: startLocation.lat,
+          lng: startLocation.lng,
+        },
+        drop: {
+          label: destinationLocation.name,
+          lat: destinationLocation.lat,
+          lng: destinationLocation.lng,
+        },
+        preferredTime: buildPreferredTimeISO(),
+        seatsRequired: seats,
+      };
 
+      const response = await rideApi.match(payload);
+      setMatchGroups(response.matches);
+      setMatchTotals(response.totals);
+      setRides([]);
     } catch (err) {
-      // Error is already handled in loadRides
       console.error('Search error:', err);
-      setLoading(false); // Reset on error
+      const message = err instanceof Error ? err.message : 'Unable to find rides.';
+      setError(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,6 +159,165 @@ export default function SearchRide() {
     setActiveRideId(ride._id);
     prepareRideSummaryInput(ride);
     navigateTo('ride-details');
+  };
+
+  const totalResults = matchTotals
+    ? matchTotals.perfect + matchTotals.good + matchTotals.nearby
+    : rides.length;
+
+  const renderMatchBadge = (quality: RideMatch['matchQuality']) => {
+    const config = {
+      perfect: {
+        text: 'Perfect Match',
+        classes: 'bg-green-100 text-green-800 border-green-200',
+      },
+      good: {
+        text: 'Good Match',
+        classes: 'bg-blue-100 text-blue-800 border-blue-200',
+      },
+      nearby: {
+        text: 'Nearby Ride',
+        classes: 'bg-gray-100 text-gray-700 border-gray-200',
+      },
+    } as const;
+
+    const data = config[quality];
+    return (
+      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wide ${data.classes}`}>
+        <Sparkles size={14} />
+        {data.text}
+      </span>
+    );
+  };
+
+  const renderMetrics = (metrics?: RideMatchMetrics | null) => {
+    if (!metrics) return null;
+    return (
+      <div className="mt-4 grid gap-3 rounded-xl bg-gray-50 p-3 text-sm text-gray-700 md:grid-cols-3">
+        <div>
+          <p className="text-xs uppercase font-semibold text-gray-500">Pickup distance</p>
+          <p className="font-bold text-black">{metrics.pickupDistanceKm === Infinity ? 'N/A' : `${metrics.pickupDistanceKm.toFixed(1)} km`}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase font-semibold text-gray-500">Drop distance</p>
+          <p className="font-bold text-black">{metrics.dropDistanceKm === Infinity ? 'N/A' : `${metrics.dropDistanceKm.toFixed(1)} km`}</p>
+        </div>
+        <div>
+          <p className="text-xs uppercase font-semibold text-gray-500">Time difference</p>
+          <p className="font-bold text-black">
+            {metrics.timeDiffMinutes === null ? 'Flexible' : `${Math.round(metrics.timeDiffMinutes)} min`}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRideCard = (ride: Ride, match?: RideMatch) => {
+    const handleViewDetails = () => {
+      setActiveRideId(ride._id);
+      prepareRideSummaryInput(ride);
+      navigateTo('ride-details');
+    };
+
+    return (
+      <Card
+        key={`${ride._id}-${match?.matchQuality || 'generic'}`}
+        className="animate-slide-in"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-black">{ride.driver.name}</h3>
+            <div className="flex items-center mt-2">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={16}
+                  className={`${i < Math.floor(ride.driver.rating) ? 'text-black fill-black' : 'text-gray-300'} mr-1`}
+                />
+              ))}
+              <span className="text-sm font-semibold ml-1">{ride.driver.rating.toFixed(1)}</span>
+            </div>
+          </div>
+          {match ? renderMatchBadge(match.matchQuality) : (
+            <span className="rounded-full border-2 border-black px-3 py-1 text-xs font-bold uppercase tracking-wide text-black">
+              Featured Ride
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mb-5">
+          <div>
+            <p className="text-xs text-gray-600 font-medium uppercase mb-1">Route</p>
+            <p className="font-semibold text-black">{ride.start.label}</p>
+            <p className="text-sm text-gray-600">→ {ride.destination.label}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-600 font-medium uppercase mb-1">Schedule</p>
+            <p className="font-semibold text-black">{formatDisplayDate(ride.date)}</p>
+            <p className="text-sm text-gray-600">{ride.time}</p>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-600 font-medium uppercase mb-1">Vehicle</p>
+            {ride.vehicle ? (
+              <div className="text-sm text-gray-600">
+                <div className="flex items-center mb-1">
+                  <Car size={14} className="mr-1" />
+                  <span className="font-semibold">
+                    {ride.vehicle.make} {ride.vehicle.model}
+                  </span>
+                </div>
+                <div className="pl-5">
+                  <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: ride.vehicle.color || '#000' }}></span>
+                  {ride.vehicle.color} • {ride.vehicle.registrationNumber}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Vehicle TBD</p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end">
+            <div className="px-4 py-2 bg-black rounded-lg text-white font-bold flex items-center gap-2">
+              <Users size={18} />
+              <span>{Math.max(ride.seats.available, 0)}</span>
+            </div>
+          </div>
+        </div>
+
+        {renderMetrics(match?.metrics)}
+
+        <div className="pt-4 border-t-2 border-gray-200">
+          <Button fullWidth size="sm" onClick={handleViewDetails}>
+            More Info
+          </Button>
+        </div>
+      </Card>
+    );
+  };
+
+  const renderMatchSection = (
+    key: keyof RideMatchResponse['matches'],
+    title: string,
+    subtitle: string
+  ) => {
+    if (!matchGroups || matchGroups[key].length === 0) return null;
+    return (
+      <section key={key} className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold text-black">
+              {title} ({matchGroups[key].length})
+            </h3>
+            <p className="text-sm text-gray-500">{subtitle}</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {matchGroups[key].map((match) => renderRideCard(match.ride, match))}
+        </div>
+      </section>
+    );
   };
 
   return (
@@ -257,7 +439,7 @@ export default function SearchRide() {
 
         <div className="animate-slide-in" style={{ animationDelay: '0.2s' }}>
           <h2 className="text-2xl font-bold text-black mb-6">
-            Available Rides ({rides.length})
+            Available Rides ({totalResults})
           </h2>
 
           {error && (
@@ -277,6 +459,36 @@ export default function SearchRide() {
             <div className="rounded-2xl border-2 border-dashed border-gray-300 p-6 text-center text-sm font-semibold text-gray-600">
               Loading rides...
             </div>
+          ) : matchGroups ? (
+            matchTotals && totalResults === 0 ? (
+              <div className="rounded-2xl border-2 border-black p-6 text-center">
+                <p className="text-lg font-semibold text-black mb-2">No perfect matches yet</p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Try broadening your pickup/drop radius or adjust the preferred time.
+                </p>
+                {startLocation && destinationLocation && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      navigateTo('create-ride', {
+                        startLocation,
+                        destinationLocation,
+                        date,
+                        time
+                      });
+                    }}
+                  >
+                    Create this Ride
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {renderMatchSection('perfect', 'Perfect Matches', 'Ideal rides within 5 km & 1 hour of your schedule.')}
+                {renderMatchSection('good', 'Good Matches', 'Slight detours that still meet your timing needs.')}
+                {renderMatchSection('nearby', 'Nearby Rides', 'Other active rides close to your route.')}
+              </div>
+            )
           ) : rides.length === 0 ? (
             <div className="rounded-2xl border-2 border-black p-6 text-center">
               <p className="text-lg font-semibold text-black mb-2">No rides found</p>

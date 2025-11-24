@@ -5,19 +5,21 @@ import Card from '../components/Card';
 import { rideApi, Ride } from '../services/rides';
 
 export default function MyRides() {
-  const { navigateTo, userRole, userName, setActiveRideId, vehicles, rideVehicles } = useApp();
+  const { navigateTo, userRole, userName, userId, setActiveRideId, vehicles, rideVehicles } = useApp();
   const isDriver = userRole === 'driver';
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userName) {
+    if (!userName && !userId) {
       setRides([]);
       setLoading(false);
       return;
     }
-    const params = isDriver ? { driver: userName } : { participant: userName };
+    const params = isDriver
+      ? (userId ? { driverId: userId } : { driver: userName })
+      : (userId ? { participantId: userId } : { participant: userName });
     const fetchRides = async () => {
       try {
         setLoading(true);
@@ -31,7 +33,7 @@ export default function MyRides() {
       }
     };
     fetchRides();
-  }, [isDriver, userName]);
+  }, [isDriver, userName, userId]);
 
   // Filter rides for riders
   const confirmedRides = !isDriver ? rides.filter(ride =>

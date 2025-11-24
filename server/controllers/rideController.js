@@ -5,6 +5,122 @@ const Vehicle = require('../models/Vehicle');
 const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
 
+const toRadians = (deg) => (deg * Math.PI) / 180;
+
+const haversineDistanceKm = (a, b) => {
+  if (!a || !b || (a.lat === 0 && a.lng === 0) || (b.lat === 0 && b.lng === 0)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const R = 6371; // Earth radius in km
+  const dLat = toRadians(b.lat - a.lat);
+  const dLng = toRadians(b.lng - a.lng);
+  const lat1 = toRadians(a.lat);
+  const lat2 = toRadians(b.lat);
+
+  const sinLat = Math.sin(dLat / 2);
+  const sinLng = Math.sin(dLng / 2);
+
+  const aVal = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+  const c = 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal));
+  return R * c;
+};
+
+const parseRideDateTime = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return null;
+  const isoTime = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+  const candidate = new Date(`${dateStr}T${isoTime}Z`);
+  if (isNaN(candidate.getTime())) {
+    // Try without forcing UTC
+    const fallback = new Date(`${dateStr}T${isoTime}`);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+  return candidate;
+};
+
+const normalizeScore = (value, max) => {
+  if (value === null || value === undefined || !isFinite(value)) {
+    return 0;
+  }
+  const clamped = Math.min(Math.max(value, 0), max);
+  return 1 - clamped / max;
+};
+
+const computeMatchScore = ({ pickupDistanceKm, dropDistanceKm, timeDiffMinutes, routeSimilarity }) => {
+  const pickupScore = normalizeScore(pickupDistanceKm, 20);
+  const dropScore = normalizeScore(dropDistanceKm, 20);
+  const timeScore = timeDiffMinutes === null ? 0.5 : normalizeScore(timeDiffMinutes, 180);
+  const similarityScore = routeSimilarity ?? ((pickupScore + dropScore) / 2);
+  // Weighted sum prioritizing pickup/drop proximity
+  return (
+    pickupScore * 0.35 +
+    dropScore * 0.35 +
+    timeScore * 0.2 +
+    similarityScore * 0.1
+  );
+};
+
+const classifyMatch = ({ pickupDistanceKm, dropDistanceKm, timeDiffMinutes }) => {
+  const withinPerfect =
+    pickupDistanceKm <= 5 && dropDistanceKm <= 5 && (timeDiffMinutes ?? 0) <= 60;
+  if (withinPerfect) return 'perfect';
+
+  const withinGood =
+    pickupDistanceKm <= 8 && dropDistanceKm <= 8 && (timeDiffMinutes ?? 0) <= 90;
+  if (withinGood) return 'good';
+
+  const withinNearby =
+    pickupDistanceKm <= 15 && dropDistanceKm <= 15 && (timeDiffMinutes ?? 0) <= 120;
+  return withinNearby ? 'nearby' : null;
+};
+
+const resolveLocationInput = async (input, fieldName) => {
+  if (!input) {
+    throw new Error(`Missing ${fieldName} location`);
+  }
+
+  if (typeof input === 'string') {
+    const geocoded = await geocode(input);
+    if (!geocoded) {
+      throw new Error(`Could not geocode ${fieldName}: ${input}`);
+    }
+    return {
+      label: geocoded.name || input,
+      coordinates: { lat: geocoded.lat, lng: geocoded.lng },
+    };
+  }
+
+  const lat =
+    input.lat ??
+    input.latitude ??
+    input.coordinates?.lat ??
+    input.coordinates?.latitude;
+  const lng =
+    input.lng ??
+    input.longitude ??
+    input.coordinates?.lng ??
+    input.coordinates?.longitude;
+
+  if (lat === undefined || lng === undefined) {
+    // Attempt to geocode using human-friendly label
+    const fallbackName = input.label || input.name;
+    if (fallbackName) {
+      const geocoded = await geocode(fallbackName);
+      if (geocoded) {
+        return {
+          label: geocoded.name || fallbackName,
+          coordinates: { lat: geocoded.lat, lng: geocoded.lng },
+        };
+      }
+    }
+    throw new Error(`Incomplete coordinates for ${fieldName}`);
+  }
+
+  return {
+    label: input.label || input.name || fieldName,
+    coordinates: { lat: parseFloat(lat), lng: parseFloat(lng) },
+  };
+};
+
 // Transform ride to match frontend format
 const transformRide = (ride) => {
   if (!ride) return null;
@@ -315,7 +431,19 @@ const createRide = async (req, res, next) => {
 // @access  Public
 const getRides = async (req, res, next) => {
   try {
-    const { from, to, date, isActive, nearStart, nearDest, radius, driver, participant } = req.query;
+    const {
+      from,
+      to,
+      date,
+      isActive,
+      nearStart,
+      nearDest,
+      radius,
+      driver,
+      driverId,
+      participant,
+      participantId,
+    } = req.query;
 
     // Build query
     const query = {};
@@ -383,8 +511,9 @@ const getRides = async (req, res, next) => {
       query.isActive = isActive === 'true';
     }
 
-    // Filter by driver name if provided (for "My Rides" view)
-    if (driver) {
+    if (driverId) {
+      query.driver = driverId;
+    } else if (driver) {
       // Find user by name and filter rides by driver ID
       const driverUser = await User.findOne({ name: driver, role: 'driver' });
       if (driverUser) {
@@ -393,9 +522,13 @@ const getRides = async (req, res, next) => {
     }
 
     // Filter by participant if provided (for riders to see their booked rides)
-    if (participant) {
+    if (participantId) {
+      query['participants.rider'] = participantId;
+    } else if (participant) {
       const participantUser = await User.findOne({ name: participant, role: 'rider' });
       if (participantUser) {
+        query['participants.rider'] = participantUser._id;
+      } else {
         query['participants.name'] = participant;
       }
     }
@@ -710,6 +843,36 @@ const updateRequestStatus = async (req, res, next) => {
       });
     }
 
+    // Handle "Approved" status
+    if (status === 'Approved' && request.status !== 'Approved') {
+      const seatsToBook = request.seatsRequested || 1;
+
+      // Check if enough seats are available
+      if (ride.seatsAvailable < seatsToBook) {
+        return res.status(400).json({
+          success: false,
+          message: `Not enough seats available. Requested: ${seatsToBook}, Available: ${ride.seatsAvailable}`,
+        });
+      }
+
+      // Decrement available seats
+      ride.seatsAvailable -= seatsToBook;
+
+      // Add to participants if not already there
+      const existingParticipant = ride.participants.find(
+        p => p.rider && p.rider.toString() === request.rider.toString()
+      );
+
+      if (!existingParticipant) {
+        ride.participants.push({
+          rider: request.rider,
+          name: request.name,
+          status: 'Confirmed',
+          seatsBooked: seatsToBook,
+        });
+      }
+    }
+
     // If changing from Approved to Rejected, restore seats and remove from participants
     if (request.status === 'Approved' && status === 'Rejected') {
       const seatsToRestore = request.seatsRequested || 1;
@@ -719,6 +882,9 @@ const updateRequestStatus = async (req, res, next) => {
         p => p.rider && p.rider.toString() !== request.rider.toString()
       );
     }
+
+    // Update the request status
+    request.status = status;
 
     // Fix invalid driverLocation if present (legacy data issue)
     if (ride.driverLocation && (!ride.driverLocation.coordinates || ride.driverLocation.coordinates.length === 0)) {
@@ -770,6 +936,150 @@ const updateRequestStatus = async (req, res, next) => {
   }
 };
 
+const findRideMatches = async (req, res, next) => {
+  try {
+    const { pickup, drop, preferredTime, seatsRequired = 1 } = req.body || {};
+
+    if (!pickup || !drop) {
+      return res.status(400).json({
+        success: false,
+        message: 'pickup and drop are required to find rides',
+      });
+    }
+
+    const riderPickup = await resolveLocationInput(pickup, 'pickup');
+    const riderDrop = await resolveLocationInput(drop, 'drop');
+    const seatsNeeded = Math.max(parseInt(seatsRequired, 10) || 1, 1);
+
+    let preferredDateTime = null;
+    if (preferredTime) {
+      const parsed = new Date(preferredTime);
+      if (isNaN(parsed.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'preferredTime must be a valid date string or ISO timestamp',
+        });
+      }
+      preferredDateTime = parsed;
+    }
+
+    const query = {
+      isActive: true,
+      seatsAvailable: { $gt: 0 },
+    };
+
+    if (preferredDateTime) {
+      query.date = preferredDateTime.toISOString().split('T')[0];
+    }
+
+    const rides = await Ride.find(query)
+      .populate({
+        path: 'driver',
+        select: 'name email phone role rating',
+      })
+      .populate('vehicle')
+      .populate({
+        path: 'requests.rider',
+        select: 'name email phone rating',
+      })
+      .populate({
+        path: 'participants.rider',
+        select: 'name email phone',
+      })
+      .limit(200);
+
+    const categorized = {
+      perfect: [],
+      good: [],
+      nearby: [],
+    };
+
+    rides.forEach((rideDoc) => {
+      if (rideDoc.seatsAvailable < seatsNeeded) return;
+
+      const ride = transformRide(rideDoc);
+      const pickupCoordinates = ride.start?.coordinates;
+      const dropCoordinates = ride.destination?.coordinates;
+      if (!pickupCoordinates || !dropCoordinates) return;
+
+      const pickupDistanceKm = haversineDistanceKm(riderPickup.coordinates, pickupCoordinates);
+      const dropDistanceKm = haversineDistanceKm(riderDrop.coordinates, dropCoordinates);
+      const rideDateTime = parseRideDateTime(ride.date, ride.time);
+      const timeDiffMinutes =
+        preferredDateTime && rideDateTime
+          ? Math.abs(preferredDateTime.getTime() - rideDateTime.getTime()) / 60000
+          : null;
+
+      // Enforce base time window when preferredTime provided
+      if (preferredDateTime && timeDiffMinutes !== null && timeDiffMinutes > 120) {
+        return;
+      }
+
+      const routeSimilarity = (normalizeScore(pickupDistanceKm, 25) + normalizeScore(dropDistanceKm, 25)) / 2;
+      const metrics = {
+        pickupDistanceKm,
+        dropDistanceKm,
+        timeDiffMinutes,
+        seatsAvailable: rideDoc.seatsAvailable,
+        routeSimilarity,
+      };
+
+      const bucket = classifyMatch(metrics);
+      if (!bucket) return;
+
+      const score = computeMatchScore({
+        pickupDistanceKm,
+        dropDistanceKm,
+        timeDiffMinutes,
+        routeSimilarity,
+      });
+
+      categorized[bucket].push({
+        ride,
+        metrics,
+        score,
+        matchQuality: bucket,
+      });
+    });
+
+    const sortMatches = (list) =>
+      list.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        if (a.metrics.pickupDistanceKm !== b.metrics.pickupDistanceKm) {
+          return a.metrics.pickupDistanceKm - b.metrics.pickupDistanceKm;
+        }
+        if (a.metrics.dropDistanceKm !== b.metrics.dropDistanceKm) {
+          return a.metrics.dropDistanceKm - b.metrics.dropDistanceKm;
+        }
+        return (a.metrics.timeDiffMinutes || 0) - (b.metrics.timeDiffMinutes || 0);
+      });
+
+    const responsePayload = {
+      success: true,
+      rider: {
+        pickup: riderPickup,
+        drop: riderDrop,
+        preferredTime: preferredDateTime ? preferredDateTime.toISOString() : null,
+        seatsRequired: seatsNeeded,
+      },
+      matches: {
+        perfect: sortMatches(categorized.perfect),
+        good: sortMatches(categorized.good),
+        nearby: sortMatches(categorized.nearby),
+      },
+      totals: {
+        perfect: categorized.perfect.length,
+        good: categorized.good.length,
+        nearby: categorized.nearby.length,
+      },
+    };
+
+    res.json(responsePayload);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createRide,
   getRides,
@@ -778,5 +1088,6 @@ module.exports = {
   deleteRide,
   addRequest,
   updateRequestStatus,
+  findRideMatches,
 };
 

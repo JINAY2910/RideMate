@@ -65,7 +65,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
         try {
             setLoading(true);
             // Fetch rides where current user is the driver
-            const rides = await rideApi.list({ driver: userId || undefined });
+            const rides = await rideApi.list(userId ? { driverId: userId } : undefined);
             setMyRides(rides);
         } catch (error) {
             console.error('Error fetching my rides:', error);
