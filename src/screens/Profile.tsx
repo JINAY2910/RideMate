@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, Heart, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 import Button from '../components/Button';
 import Layout from '../components/Layout';
 
 export default function Profile() {
   const { navigateTo, userName, userRole, updateProfile, user, fetchUserProfile } = useApp();
+  const { isSeniorMode, toggleSeniorMode } = useAccessibility();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -145,6 +147,23 @@ export default function Profile() {
                   <span className="ml-1 font-medium text-black">{user?.rating?.toFixed(1) || '5.0'}</span>
                 </div>
               </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg">Senior Mode</h3>
+                <p className="text-sm text-gray-500">Simplify the interface and increase text size</p>
+              </div>
+              <button
+                onClick={toggleSeniorMode}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isSeniorMode ? 'bg-black' : 'bg-gray-300'
+                  }`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isSeniorMode ? 'translate-x-7' : 'translate-x-1'
+                    }`}
+                />
+              </button>
             </div>
 
             {message && (
