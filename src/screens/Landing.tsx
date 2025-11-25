@@ -374,59 +374,40 @@ export default function Landing() {
         )}
 
         {activeTab === 'about' && (
-          <div className="pt-24 pb-20 px-6">
+          <div className="pt-28 pb-20 px-6">
             <div className="max-w-5xl mx-auto">
               <AnimatedSection>
-                <div className="text-center mb-20">
-                  <h1 className="hero-title mb-6">About<br />RideMate</h1>
+                <div className="text-center mb-12">
+                  <h1 className="text-5xl md:text-6xl font-bold mb-6">
+                    About <span className="border-b-4 border-black">RideMate</span>
+                  </h1>
                   <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                    We're on a mission to revolutionize urban mobility and make transportation accessible, sustainable, and delightful for everyone.
+                    We're not just developers - we're mobility revolutionists! 🚗
                   </p>
                 </div>
               </AnimatedSection>
 
               <div className="space-y-16">
+                {/* Our Mission Section */}
+                <AnimatedSection delay={150}>
+                  <div className="bg-black text-white rounded-3xl p-10 md:p-16">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <h2 className="text-3xl font-bold">Our Mission</h2>
+                    </div>
+                    <p className="text-gray-300 leading-relaxed text-lg">
+                      To revolutionize urban mobility by creating a seamless, sustainable, and community-driven carpooling platform
+                      that reduces traffic congestion, lowers carbon emissions, and makes transportation accessible and affordable for everyone.
+                      We believe in the power of shared rides to transform cities and build stronger communities.
+                    </p>
+                  </div>
+                </AnimatedSection>
+
                 <AnimatedSection delay={200}>
-                  <div className="bg-white border border-black/10 rounded-3xl p-10 md:p-16">
-                    <h2 className="text-3xl font-bold mb-6">Our Story</h2>
-                    <p className="text-gray-600 leading-relaxed text-lg mb-4">
-                      Founded in 2024, RideMate emerged from a simple observation: urban transportation needed a complete reimagining.
-                      We saw cities struggling with congestion, commuters frustrated with unreliable services, and an urgent need for sustainable solutions.
-                    </p>
-                    <p className="text-gray-600 leading-relaxed text-lg">
-                      Today, we're proud to serve thousands of riders across major cities, connecting them with verified drivers through
-                      cutting-edge technology that prioritizes safety, efficiency, and user experience above all else.
-                    </p>
-                  </div>
-                </AnimatedSection>
-
-                <AnimatedSection delay={400}>
-                  <div className="grid md:grid-cols-3 gap-8">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Users size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">50K+</h3>
-                      <p className="text-gray-600">Active Users</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <MapPin size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">6</h3>
-                      <p className="text-gray-600">Cities Served</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Zap size={32} />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">1M+</h3>
-                      <p className="text-gray-600">Rides Completed</p>
-                    </div>
-                  </div>
-                </AnimatedSection>
-
-                <AnimatedSection delay={600}>
                   <div className="bg-black text-white rounded-3xl p-10 md:p-16">
                     <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">Our Values</h2>
                     <div className="grid md:grid-cols-2 gap-8">
@@ -465,6 +446,141 @@ export default function Landing() {
                         <p className="text-gray-400">
                           Building a trusted network of riders and drivers who support and respect each other.
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedSection>
+
+                <AnimatedSection delay={700}>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="bg-black border-2 border-white/20 rounded-2xl p-8 text-center hover:shadow-xl hover:border-white/40 transition-all">
+                      <h3 className="text-4xl font-bold text-white mb-2">50K+</h3>
+                      <p className="text-white/70">Active Users</p>
+                    </div>
+                    <div className="bg-black border-2 border-white/20 rounded-2xl p-8 text-center hover:shadow-xl hover:border-white/40 transition-all">
+                      <h3 className="text-4xl font-bold text-white mb-2">6</h3>
+                      <p className="text-white/70">Cities Served</p>
+                    </div>
+                    <div className="bg-black border-2 border-white/20 rounded-2xl p-8 text-center hover:shadow-xl hover:border-white/40 transition-all">
+                      <h3 className="text-4xl font-bold text-white mb-2">1M+</h3>
+                      <p className="text-white/70">Rides Completed</p>
+                    </div>
+                  </div>
+                </AnimatedSection>
+
+                {/* Meet Our Team Section */}
+                <AnimatedSection delay={800}>
+                  <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold mb-4">Meet Our Team</h2>
+                    <p className="text-gray-600 text-lg">The amazing humans behind the magic 🚀</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Jinay Shah */}
+                    <div className="bg-white border border-black/10 rounded-3xl p-8 hover:shadow-xl transition-all">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <img src="/team/jinay.png" alt="Jinay Shah" className="w-16 h-16 rounded-full object-cover" />
+                          <div>
+                            <h3 className="text-xl font-bold text-black">Jinay Shah</h3>
+                            <p className="text-gray-600 text-sm">"The Full-Stack Maestro"</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href="mailto:jinay2910@gmail.com" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </a>
+                          <a href="https://linkedin.com/in/jinay-shah" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                          </a>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed mb-4">Bringing ideas to life, one line of code at a time. Jinay is the architect who turns complex problems into elegant solutions.</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">React</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Node.js</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">MongoDB</span>
+                      </div>
+                    </div>
+
+                    {/* Yug Yadav */}
+                    <div className="bg-white border border-black/10 rounded-3xl p-8 hover:shadow-xl transition-all">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <img src="/team/yug.png" alt="Yug Yadav" className="w-16 h-16 rounded-full object-cover" />
+                          <div>
+                            <h3 className="text-xl font-bold text-black">Yug Yadav</h3>
+                            <p className="text-gray-600 text-sm">"The Creative Engine"</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href="mailto:yugyadav2510@gmail.com" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </a>
+                          <a href="https://linkedin.com/in/yug-yadav" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                          </a>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed mb-4">Designs intuitive experiences and ensures everything looks polished. Yug turns complex problems into beautiful solutions.</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">UI/UX</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Design</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Frontend</span>
+                      </div>
+                    </div>
+
+                    {/* Smit Goyani */}
+                    <div className="bg-white border border-black/10 rounded-3xl p-8 hover:shadow-xl transition-all">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <img src="/team/smit.png" alt="Smit Goyani" className="w-16 h-16 rounded-full object-cover" />
+                          <div>
+                            <h3 className="text-xl font-bold text-black">Smit Goyani</h3>
+                            <p className="text-gray-600 text-sm">"The Backend Wizard"</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href="mailto:goyanismit04@gmail.com" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </a>
+                          <a href="https://linkedin.com/in/smit-goyani" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                          </a>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed mb-4">Building the logic behind the magic. Smit maintains the core foundation ensuring everything works seamlessly.</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">APIs</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Database</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Backend</span>
+                      </div>
+                    </div>
+
+                    {/* Tirth Bhatt */}
+                    <div className="bg-white border border-black/10 rounded-3xl p-8 hover:shadow-xl transition-all">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                          <img src="/team/tirth.png" alt="Tirth Bhatt" className="w-16 h-16 rounded-full object-cover" />
+                          <div>
+                            <h3 className="text-xl font-bold text-black">Tirth Bhatt</h3>
+                            <p className="text-gray-600 text-sm">"The Integration Expert"</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a href="mailto:bhatttirth18@gmail.com" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </a>
+                          <a href="https://linkedin.com/in/tirth-bhatt" target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                          </a>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 leading-relaxed mb-4">Connecting all the pieces together. Tirth ensures smooth integration between frontend and backend.</p>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Integration</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Testing</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">DevOps</span>
                       </div>
                     </div>
                   </div>
