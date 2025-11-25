@@ -10,6 +10,7 @@ import {
   ShieldAlert,
   Send,
   X,
+  Car,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -387,7 +388,7 @@ export default function RideDetails() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-black mb-2">{ride.driver.name}</h2>
+                    <h2 className="text-2xl font-bold text-black mb-1">{ride.driver.name}</h2>
                     <span
                       className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full border ${rideStatus === 'Completed' ? 'border-green-600 text-green-600' : 'border-black text-black'
                         }`}
@@ -395,10 +396,23 @@ export default function RideDetails() {
                       {rideStatus}
                     </span>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center mb-2">
                     <Star size={20} className="text-black fill-black mr-1" />
                     <span className="font-medium">{ride.driver.rating.toFixed(1)}</span>
                   </div>
+
+                  {ride.vehicle && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded-lg border border-gray-200">
+                      <Car size={16} />
+                      <span className="font-semibold">{ride.vehicle.make} {ride.vehicle.model}</span>
+                      <span className="text-gray-500">•</span>
+                      <span>{ride.vehicle.color}</span>
+                      <span className="text-gray-500">•</span>
+                      <span className="font-mono font-bold bg-white px-1.5 py-0.5 rounded border border-gray-300 text-xs">
+                        {ride.vehicle.registrationNumber}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center">
                   <Users size={24} className="text-black mr-2" />

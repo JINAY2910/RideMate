@@ -119,6 +119,7 @@ export default function Login() {
             icon={<Mail size={20} />}
             required
             disabled={loading}
+            autoFocus
           />
           <Input
             label="Password"
@@ -133,10 +134,6 @@ export default function Login() {
             required
             disabled={loading}
           />
-
-          <button type="button" className="text-sm font-medium text-gray-600 hover:text-black transition-colors">
-            Forgot your password?
-          </button>
 
           <Button type="submit" fullWidth size="lg" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}

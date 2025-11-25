@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
 import { User, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { rideApi } from '../services/rides';
 import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
+import Button from './Button';
+import { parseRideDate } from '../utils/dateUtils';
 
 
 const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
@@ -61,8 +63,9 @@ export default function RiderDashboard() {
     const { navigateTo, setActiveRideId } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'Requests' | 'History'>('Requests');
     const [rideMetrics, setRideMetrics] = useState<Record<string, RideMetrics>>({});
+
+    const fetchingRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -83,7 +86,8 @@ export default function RiderDashboard() {
     // Calculate ride metrics for bookings with totalPrice of 0
     useEffect(() => {
         bookings.forEach(async (booking) => {
-            if (booking.totalPrice === 0 && !rideMetrics[booking.ride._id]) {
+            if (booking.ride && booking.totalPrice === 0 && !rideMetrics[booking.ride._id] && !fetchingRef.current.has(booking.ride._id)) {
+                fetchingRef.current.add(booking.ride._id);
                 try {
                     // Fetch full ride details to get coordinates
                     const rideDetails = await rideApi.getById(booking.ride._id);
@@ -99,51 +103,102 @@ export default function RiderDashboard() {
                     }));
                 } catch (err) {
                     console.error(`Failed to calculate price for ride ${booking.ride._id}:`, err);
+                    fetchingRef.current.delete(booking.ride._id); // Allow retry on failure
                 }
             }
         });
     }, [bookings, rideMetrics]);
 
+    const ongoingRide = bookings.find(b => b.ride && b.ride.isActive && (b.status === 'Accepted' || b.status === 'Approved'));
+
     const upcomingRides = bookings.filter(b => {
         if (!b.ride) return false;
-
         // Check if confirmed
         const isConfirmed = b.status === 'Accepted' || b.status === 'Approved';
         if (!isConfirmed) return false;
+        // If ride is explicitly active, it's ongoing, not upcoming (unless we want to show it in both, but usually separate is better)
+        if (b.ride.isActive) return false;
 
-        // If ride is explicitly active, show it
-        if (b.ride.isActive) return true;
-
-        // Otherwise check date
-        const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
-        return rideDate > new Date();
+        // Otherwise check date - actually, show all confirmed rides that aren't active/completed yet
+        // const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
+        // return rideDate > new Date();
+        return true;
     });
 
-    const otherBookings = bookings.filter(b => {
-        if (!b.ride) return false;
-        const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
-        // Calculate end time based on duration (default 2 hours if not specified)
-        const durationHours = b.ride.duration || 2;
-        const rideEndTime = new Date(rideDate.getTime() + durationHours * 60 * 60 * 1000);
-
-        const isPast = rideEndTime <= new Date();
-
-        if (activeTab === 'History') {
-            return isPast;
-        }
-        // Requests tab shows Pending and Rejected
-        return !isPast && (b.status === 'Pending' || b.status === 'Rejected');
-    });
+    const pendingRequests = bookings.filter(b => b.ride && !b.ride.isActive && b.status === 'Pending');
 
     if (loading) return <div className="text-center py-8">Loading your rides...</div>;
 
     return (
         <div className="space-y-8 relative">
-            {/* Upcoming Trips Section - Always Visible at Top */}
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-black">Rider Dashboard</h2>
+                <div className="flex gap-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigateTo('ride-history')}
+                        className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
+                    >
+                        <Car size={16} />
+                        Ride History
+                    </Button>
+                    <Button
+                        size="sm"
+                        onClick={() => navigateTo('search-ride')}
+                        className="flex items-center gap-2"
+                    >
+                        <User size={16} />
+                        Find a Ride
+                    </Button>
+                </div>
+            </div>
+
+            {/* Ongoing Ride Section */}
+            {ongoingRide && (
+                <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                    <h3 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
+                        <span className="relative flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                        </span>
+                        Ongoing Ride
+                    </h3>
+                    <Card
+                        className="border-2 border-green-500 bg-green-50/30 shadow-lg mb-6 cursor-pointer"
+                        onClick={() => {
+                            setActiveRideId(ongoingRide.ride._id);
+                            navigateTo('ride-details');
+                        }}
+                    >
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h3 className="font-bold text-2xl text-black mb-2">
+                                    {ongoingRide.ride.from} → {ongoingRide.ride.to}
+                                </h3>
+                                <div className="flex items-center gap-4 text-sm text-gray-700">
+                                    <div className="flex items-center">
+                                        <User size={16} className="mr-1" />
+                                        Driver: {ongoingRide.ride.driver?.name}
+                                    </div>
+                                    <div className="flex items-center">
+                                        <Car size={16} className="mr-1" />
+                                        {ongoingRide.ride.vehicle?.model} ({ongoingRide.ride.vehicle?.registrationNumber})
+                                    </div>
+                                </div>
+                            </div>
+                            <Button className="bg-green-600 hover:bg-green-700 border-green-700">
+                                Track Ride
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* Upcoming Trips Section */}
             <div>
-                <h2 className="text-2xl font-bold text-black mb-4 flex items-center gap-2">
-                    <Car size={24} />
-                    My Confirmed Rides
+                <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
+                    Upcoming Rides
                 </h2>
                 {upcomingRides.length === 0 ? (
                     <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-8 text-center">
@@ -198,7 +253,7 @@ export default function RiderDashboard() {
                                     <div className="flex flex-col items-end gap-2">
                                         <div className="mb-2">
                                             <p className="text-xs text-gray-500 mb-1 text-right">Starts in:</p>
-                                            <CountdownTimer targetDate={new Date(`${booking.ride.date}T${booking.ride.time}`)} />
+                                            <CountdownTimer targetDate={parseRideDate(booking.ride.date, booking.ride.time)} />
                                         </div>
                                         <div className="text-right">
                                             {(() => {
@@ -227,62 +282,41 @@ export default function RiderDashboard() {
                 )}
             </div>
 
-            {/* Tabs for Requests & History */}
-            <div>
-                <div className="flex items-center gap-6 border-b-2 border-gray-100 mb-6">
-                    {(['Requests', 'History'] as const).map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab as any)}
-                            className={`pb-2 text-lg font-bold transition-colors relative ${activeTab === tab ? 'text-black' : 'text-gray-400 hover:text-gray-600'
-                                }`}
-                        >
-                            {tab}
-                            {activeTab === tab && (
-                                <span className="absolute bottom-[-2px] left-0 w-full h-0.5 bg-black rounded-full" />
-                            )}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="space-y-4">
-                    {otherBookings.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            No {activeTab.toLowerCase()} found.
-                        </div>
-                    ) : (
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {otherBookings.map((booking) => (
-                                <Card key={booking._id} className="hover:border-black transition-colors">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <h4 className="font-bold text-black">
-                                                {booking.ride.from} → {booking.ride.to}
-                                            </h4>
-                                            <p className="text-sm text-gray-500 mt-1">
-                                                {booking.ride.date} • {booking.ride.time}
-                                            </p>
-                                        </div>
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${booking.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
-                                            }`}>
-                                            {booking.status}
-                                        </span>
+            {/* Pending Requests Section */}
+            {pendingRequests.length > 0 && (
+                <div>
+                    <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
+                        Pending Requests
+                    </h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {pendingRequests.map((booking) => (
+                            <Card key={booking._id} className="hover:border-black transition-colors">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 className="font-bold text-black">
+                                            {booking.ride.from} → {booking.ride.to}
+                                        </h4>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {booking.ride.date} • {booking.ride.time}
+                                        </p>
                                     </div>
-                                    <div className="flex justify-between items-end text-sm">
-                                        <div className="text-gray-600">
-                                            {booking.seatsBooked} seat(s) • ₹{booking.totalPrice}
-                                        </div>
-                                        <div className="text-gray-500 text-xs">
-                                            {new Date(booking.bookingDate).toLocaleDateString()}
-                                        </div>
+                                    <span className="px-2 py-1 rounded text-xs font-bold bg-yellow-100 text-yellow-800">
+                                        Pending
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-end text-sm">
+                                    <div className="text-gray-600">
+                                        {booking.seatsBooked} seat(s) • ₹{booking.totalPrice}
                                     </div>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
+                                    <div className="text-gray-500 text-xs">
+                                        {new Date(booking.bookingDate).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
