@@ -21,34 +21,34 @@ export default function Footer() {
 
                     <div className="footer-col">
                         <h4>Platform</h4>
-                        <button onClick={() => navigateTo('platform')} className="footer-link">How it Works</button>
-                        <button onClick={() => navigateTo('safety')} className="footer-link">Safety Standards</button>
-                        <button onClick={() => navigateTo('cities')} className="footer-link">Cities</button>
-                        <button onClick={() => navigateTo('vehicles')} className="footer-link">Fleet</button>
+                        <button onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">How it Works</button>
+                        <button onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Safety Standards</button>
+                        <button onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Cities</button>
+                        <button onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Fleet</button>
                     </div>
 
                     <div className="footer-col">
                         <h4>Company</h4>
-                        <a href="#" className="footer-link">About Us</a>
-                        <a href="#" className="footer-link">Careers</a>
-                        <a href="#" className="footer-link">Press</a>
-                        <a href="#" className="footer-link">Contact</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">About Us</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Careers</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Press</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Contact</a>
                     </div>
 
                     <div className="footer-col">
                         <h4>Legal</h4>
-                        <a href="#" className="footer-link">Terms of Service</a>
-                        <a href="#" className="footer-link">Privacy Policy</a>
-                        <a href="#" className="footer-link">Cookie Policy</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Terms of Service</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Privacy Policy</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="footer-link cursor-default opacity-50">Cookie Policy</a>
                     </div>
                 </div>
 
                 <div className="footer-bottom">
                     <p>&copy; {new Date().getFullYear()} RideMate Inc. All rights reserved.</p>
                     <div className="flex gap-6">
-                        <a href="#" className="hover:text-white transition-colors">Twitter</a>
-                        <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
-                        <a href="#" className="hover:text-white transition-colors">Instagram</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors cursor-default opacity-50">Twitter</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors cursor-default opacity-50">LinkedIn</a>
+                        <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-white transition-colors cursor-default opacity-50">Instagram</a>
                     </div>
                 </div>
             </div>
