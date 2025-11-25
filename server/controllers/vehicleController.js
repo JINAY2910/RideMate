@@ -51,13 +51,15 @@ const getVehicles = async (req, res, next) => {
 };
 
 // @desc    Update a vehicle
-// @route   PUT /api/vehicles/:id
+// @route   PUT /api/vehicles/:vehicleId
 // @access  Private (Driver only)
 const updateVehicle = async (req, res, next) => {
   try {
-    let vehicle = await Vehicle.findById(req.params.id);
+    console.log(`[Vehicle] Update request for ID: ${req.params.vehicleId} by User: ${req.user.id}`);
+    let vehicle = await Vehicle.findById(req.params.vehicleId);
 
     if (!vehicle) {
+      console.log(`[Vehicle] Vehicle not found: ${req.params.vehicleId}`);
       return res.status(404).json({
         success: false,
         message: 'Vehicle not found',
@@ -66,34 +68,40 @@ const updateVehicle = async (req, res, next) => {
 
     // Make sure user owns the vehicle
     if (vehicle.driver.toString() !== req.user.id) {
+      console.log(`[Vehicle] Unauthorized update attempt by ${req.user.id} on ${req.params.vehicleId}`);
       return res.status(401).json({
         success: false,
         message: 'Not authorized to update this vehicle',
       });
     }
 
-    vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, {
+    vehicle = await Vehicle.findByIdAndUpdate(req.params.vehicleId, req.body, {
       new: true,
       runValidators: true,
     });
+
+    console.log(`[Vehicle] Updated successfully: ${vehicle._id}`);
 
     res.status(200).json({
       success: true,
       vehicle,
     });
   } catch (error) {
+    console.error(`[Vehicle] Update error:`, error);
     next(error);
   }
 };
 
 // @desc    Delete a vehicle
-// @route   DELETE /api/vehicles/:id
+// @route   DELETE /api/vehicles/:vehicleId
 // @access  Private (Driver only)
 const deleteVehicle = async (req, res, next) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id);
+    console.log(`[Vehicle] Delete request for ID: ${req.params.vehicleId} by User: ${req.user.id}`);
+    const vehicle = await Vehicle.findById(req.params.vehicleId);
 
     if (!vehicle) {
+      console.log(`[Vehicle] Vehicle not found for deletion: ${req.params.vehicleId}`);
       return res.status(404).json({
         success: false,
         message: 'Vehicle not found',
@@ -102,6 +110,7 @@ const deleteVehicle = async (req, res, next) => {
 
     // Make sure user owns the vehicle
     if (vehicle.driver.toString() !== req.user.id) {
+      console.log(`[Vehicle] Unauthorized delete attempt by ${req.user.id} on ${req.params.vehicleId}`);
       return res.status(401).json({
         success: false,
         message: 'Not authorized to delete this vehicle',
@@ -109,12 +118,14 @@ const deleteVehicle = async (req, res, next) => {
     }
 
     await vehicle.deleteOne();
+    console.log(`[Vehicle] Deleted successfully: ${req.params.vehicleId}`);
 
     res.status(200).json({
       success: true,
       message: 'Vehicle removed',
     });
   } catch (error) {
+    console.error(`[Vehicle] Delete error:`, error);
     next(error);
   }
 };

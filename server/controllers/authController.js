@@ -14,6 +14,7 @@ const generateToken = (id) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
+    console.log(`[Auth] Register request for email: ${req.body.email}`);
     const {
       name,
       email,
@@ -31,6 +32,7 @@ const register = async (req, res, next) => {
 
     // Validation
     if (!name || !email || !password || !role) {
+      console.log(`[Auth] Register failed: Missing required fields for ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Please provide name, email, password, and role',
@@ -38,6 +40,7 @@ const register = async (req, res, next) => {
     }
 
     if (!validateEmail(email)) {
+      console.log(`[Auth] Register failed: Invalid email format ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email',
@@ -45,6 +48,7 @@ const register = async (req, res, next) => {
     }
 
     if (password.length < 6) {
+      console.log(`[Auth] Register failed: Password too short for ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Password must be at least 6 characters',
@@ -52,6 +56,7 @@ const register = async (req, res, next) => {
     }
 
     if (!validateRole(role)) {
+      console.log(`[Auth] Register failed: Invalid role ${role} for ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Role must be either "driver" or "rider"',
@@ -61,6 +66,7 @@ const register = async (req, res, next) => {
     // Check if user already exists
     const userExists = await User.findOne({ email: email.toLowerCase() });
     if (userExists) {
+      console.log(`[Auth] Register failed: User already exists ${email}`);
       return res.status(400).json({
         success: false,
         message: 'User already exists with this email',
@@ -90,6 +96,8 @@ const register = async (req, res, next) => {
     // Generate token
     const token = generateToken(user._id);
 
+    console.log(`[Auth] Registered successfully: ${user._id} (${user.email})`);
+
     res.status(201).json({
       success: true,
       token,
@@ -112,6 +120,7 @@ const register = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error(`[Auth] Register error:`, error);
     next(error);
   }
 };
@@ -121,10 +130,12 @@ const register = async (req, res, next) => {
 // @access  Public
 const login = async (req, res, next) => {
   try {
+    console.log(`[Auth] Login request for email: ${req.body.email}`);
     const { email, password } = req.body;
 
     // Validation
     if (!email || !password) {
+      console.log(`[Auth] Login failed: Missing credentials`);
       return res.status(400).json({
         success: false,
         message: 'Please provide email and password',
@@ -135,6 +146,7 @@ const login = async (req, res, next) => {
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user) {
+      console.log(`[Auth] Login failed: User not found ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
@@ -145,6 +157,7 @@ const login = async (req, res, next) => {
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
+      console.log(`[Auth] Login failed: Invalid password for ${email}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
@@ -153,6 +166,8 @@ const login = async (req, res, next) => {
 
     // Generate token
     const token = generateToken(user._id);
+
+    console.log(`[Auth] Login successful: ${user._id} (${user.email})`);
 
     res.json({
       success: true,
@@ -176,6 +191,7 @@ const login = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error(`[Auth] Login error:`, error);
     next(error);
   }
 };
@@ -185,6 +201,7 @@ const login = async (req, res, next) => {
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
+    // console.log(`[Auth] GetMe request for user: ${req.user.id}`); // Commented out to reduce noise on every page load
     const user = await User.findById(req.user.id);
 
     res.json({
@@ -209,6 +226,7 @@ const getMe = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error(`[Auth] GetMe error:`, error);
     next(error);
   }
 };
@@ -218,6 +236,7 @@ const getMe = async (req, res, next) => {
 // @access  Private
 const updateProfile = async (req, res, next) => {
   try {
+    console.log(`[Auth] UpdateProfile request for user: ${req.user.id}`);
     const {
       name,
       phone,
@@ -233,6 +252,7 @@ const updateProfile = async (req, res, next) => {
     const user = await User.findById(req.user.id);
 
     if (!user) {
+      console.log(`[Auth] UpdateProfile failed: User not found ${req.user.id}`);
       return res.status(404).json({
         success: false,
         message: 'User not found',
@@ -252,6 +272,8 @@ const updateProfile = async (req, res, next) => {
 
     await user.save();
 
+    console.log(`[Auth] Profile updated successfully for user: ${user._id}`);
+
     res.json({
       success: true,
       user: {
@@ -274,6 +296,7 @@ const updateProfile = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error(`[Auth] UpdateProfile error:`, error);
     next(error);
   }
 };

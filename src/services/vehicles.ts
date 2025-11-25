@@ -79,6 +79,7 @@ export const vehicleApi = {
   },
 
   async update(vehicleId: string, payload: VehicleUpdatePayload) {
+    console.log('[VehicleService] Updating vehicle:', vehicleId, payload);
     const token = getAuthToken();
     const response = await fetch(`${API_BASE}/vehicles/${vehicleId}`, {
       method: 'PUT',
@@ -92,6 +93,7 @@ export const vehicleApi = {
   },
 
   async delete(vehicleId: string) {
+    console.log('[VehicleService] Deleting vehicle:', vehicleId);
     const token = getAuthToken();
     const response = await fetch(`${API_BASE}/vehicles/${vehicleId}`, {
       method: 'DELETE',

@@ -7,6 +7,7 @@ const { validateBookingInput } = require('../utils/validate');
 // @access  Private (Rider only)
 const createBooking = async (req, res, next) => {
   try {
+    console.log(`[Booking] Create request by user: ${req.user.id}`);
     const validation = validateBookingInput(req.body);
     if (!validation.isValid) {
       return res.status(400).json({
@@ -74,11 +75,14 @@ const createBooking = async (req, res, next) => {
       .populate('ride')
       .populate('rider', 'name email phone role');
 
+    console.log(`[Booking] Created successfully: ${booking._id}`);
+
     res.status(201).json({
       success: true,
       data: populatedBooking,
     });
   } catch (error) {
+    console.error(`[Booking] Create error:`, error);
     next(error);
   }
 };
@@ -88,6 +92,7 @@ const createBooking = async (req, res, next) => {
 // @access  Private
 const getMyBookings = async (req, res, next) => {
   try {
+    // console.log(`[Booking] GetMyBookings request for user: ${req.user.id}`);
     const bookings = await Booking.find({ rider: req.user.id })
       .populate({
         path: 'ride',
@@ -104,6 +109,7 @@ const getMyBookings = async (req, res, next) => {
       data: bookings,
     });
   } catch (error) {
+    console.error(`[Booking] GetMyBookings error:`, error);
     next(error);
   }
 };
@@ -113,6 +119,7 @@ const getMyBookings = async (req, res, next) => {
 // @access  Private
 const getBooking = async (req, res, next) => {
   try {
+    // console.log(`[Booking] GetBooking request for ID: ${req.params.id}`);
     const booking = await Booking.findById(req.params.id)
       .populate({
         path: 'ride',
@@ -146,6 +153,7 @@ const getBooking = async (req, res, next) => {
       data: booking,
     });
   } catch (error) {
+    console.error(`[Booking] GetBooking error:`, error);
     next(error);
   }
 };

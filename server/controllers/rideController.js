@@ -224,6 +224,7 @@ const transformRide = (ride) => {
 // @access  Private (Driver only)
 const createRide = async (req, res, next) => {
   try {
+    console.log(`[Ride] Create request by user: ${req.user.id}`);
     let from, to, startCoordsGeoJSON, destCoordsGeoJSON;
 
     // Handle location input - can be place name (string) or object with coordinates
@@ -427,8 +428,11 @@ const createRide = async (req, res, next) => {
       select: 'name email phone role',
     }).populate('vehicle');
 
+    console.log(`[Ride] Created successfully: ${ride._id}`);
+
     res.status(201).json(transformRide(populatedRide));
   } catch (error) {
+    console.error(`[Ride] Create error:`, error);
     next(error);
   }
 };
@@ -438,6 +442,7 @@ const createRide = async (req, res, next) => {
 // @access  Public
 const getRides = async (req, res, next) => {
   try {
+    // console.log(`[Ride] GetRides request with query:`, req.query); // Commented out to reduce noise
     const {
       from,
       to,
@@ -576,6 +581,7 @@ const getRides = async (req, res, next) => {
 
     res.json(transformedRides);
   } catch (error) {
+    console.error(`[Ride] GetRides error:`, error);
     next(error);
   }
 };
@@ -585,6 +591,7 @@ const getRides = async (req, res, next) => {
 // @access  Public
 const getRide = async (req, res, next) => {
   try {
+    // console.log(`[Ride] GetRide request for ID: ${req.params.id}`);
     const ride = await Ride.findById(req.params.id)
       .populate({
         path: 'driver',
@@ -618,6 +625,7 @@ const getRide = async (req, res, next) => {
 // @access  Private (Driver only)
 const updateRide = async (req, res, next) => {
   try {
+    console.log(`[Ride] Update request for ID: ${req.params.id} by User: ${req.user.id}`);
     let ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -708,8 +716,10 @@ const updateRide = async (req, res, next) => {
       select: 'name email phone role',
     }).populate('vehicle');
 
+    console.log(`[Ride] Updated successfully: ${ride._id}`);
     res.json(transformRide(ride));
   } catch (error) {
+    console.error(`[Ride] Update error:`, error);
     next(error);
   }
 };
@@ -719,6 +729,7 @@ const updateRide = async (req, res, next) => {
 // @access  Private (Driver only)
 const deleteRide = async (req, res, next) => {
   try {
+    console.log(`[Ride] Delete request for ID: ${req.params.id} by User: ${req.user.id}`);
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -738,11 +749,14 @@ const deleteRide = async (req, res, next) => {
 
     await ride.deleteOne();
 
+    console.log(`[Ride] Deleted successfully: ${req.params.id}`);
+
     res.json({
       success: true,
       message: 'Ride deleted successfully',
     });
   } catch (error) {
+    console.error(`[Ride] Delete error:`, error);
     next(error);
   }
 };
@@ -752,6 +766,7 @@ const deleteRide = async (req, res, next) => {
 // @access  Private (Rider only)
 const addRequest = async (req, res, next) => {
   try {
+    console.log(`[Ride] AddRequest for ride: ${req.params.id} by user: ${req.user.id}`);
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -847,8 +862,11 @@ const addRequest = async (req, res, next) => {
       select: 'name email phone',
     });
 
+    console.log(`[Ride] Request added successfully: ${newRequest.rider} to ride ${ride._id}`);
+
     res.status(201).json(transformRide(populatedRide));
   } catch (error) {
+    console.error(`[Ride] AddRequest error:`, error);
     next(error);
   }
 };
@@ -858,6 +876,7 @@ const addRequest = async (req, res, next) => {
 // @access  Private (Driver only, owner only)
 const updateRequestStatus = async (req, res, next) => {
   try {
+    console.log(`[Ride] UpdateRequestStatus for ride: ${req.params.id}, request: ${req.params.requestId}`);
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -993,14 +1012,17 @@ const updateRequestStatus = async (req, res, next) => {
       select: 'name email phone',
     });
 
+    console.log(`[Ride] Request status updated successfully: ${status}`);
     res.json(transformRide(populatedRide));
   } catch (error) {
+    console.error(`[Ride] UpdateRequestStatus error:`, error);
     next(error);
   }
 };
 
 const findRideMatches = async (req, res, next) => {
   try {
+    console.log(`[Ride] FindMatches request`);
     const { pickup, drop, preferredTime, seatsRequired = 1 } = req.body || {};
 
     if (!pickup || !drop) {
@@ -1138,6 +1160,7 @@ const findRideMatches = async (req, res, next) => {
     };
     res.json(responsePayload);
   } catch (error) {
+    console.error(`[Ride] FindMatches error:`, error);
     next(error);
   }
 };
@@ -1147,6 +1170,7 @@ const findRideMatches = async (req, res, next) => {
 // @access  Private
 const rateRide = async (req, res, next) => {
   try {
+    console.log(`[Ride] RateRide request for ride: ${req.params.id} by user: ${req.user.id}`);
     const { rating, review, type, targetUserId } = req.body;
     const ride = await Ride.findById(req.params.id);
 
@@ -1217,8 +1241,10 @@ const rateRide = async (req, res, next) => {
       select: 'name email phone rating',
     });
 
+    console.log(`[Ride] Rated successfully`);
     res.json(transformRide(populatedRide));
   } catch (error) {
+    console.error(`[Ride] RateRide error:`, error);
     next(error);
   }
 };
@@ -1228,6 +1254,7 @@ const rateRide = async (req, res, next) => {
 // @access  Private
 const deleteRequest = async (req, res, next) => {
   try {
+    console.log(`[Ride] DeleteRequest for ride: ${req.params.id} by user: ${req.user.id}`);
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -1265,8 +1292,10 @@ const deleteRequest = async (req, res, next) => {
       status: { $in: ['Pending', 'Rejected'] }
     });
 
+    console.log(`[Ride] Request deleted successfully`);
     res.json({ success: true, message: 'Request deleted successfully' });
   } catch (error) {
+    console.error(`[Ride] DeleteRequest error:`, error);
     next(error);
   }
 };
@@ -1276,6 +1305,7 @@ const deleteRequest = async (req, res, next) => {
 // @access  Private
 const cancelBooking = async (req, res, next) => {
   try {
+    console.log(`[Ride] CancelBooking for ride: ${req.params.id} by user: ${req.user.id}`);
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
@@ -1316,8 +1346,10 @@ const cancelBooking = async (req, res, next) => {
       { status: 'Cancelled' }
     );
 
+    console.log(`[Ride] Booking cancelled successfully`);
     res.json({ success: true, message: 'Booking cancelled successfully' });
   } catch (error) {
+    console.error(`[Ride] CancelBooking error:`, error);
     next(error);
   }
 };
