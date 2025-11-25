@@ -233,7 +233,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'platform' && (
-          <div className="pt-40 pb-20 px-6">
+          <div className="pt-24 pb-20 px-6">
             <div className="max-w-4xl mx-auto">
               <AnimatedSection>
                 <h1 className="hero-title text-center mb-16">The RideMate<br />Architecture</h1>
@@ -284,7 +284,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'cities' && (
-          <div className="pt-40 pb-20 px-6">
+          <div className="pt-24 pb-20 px-6">
             <div className="max-w-6xl mx-auto">
               <AnimatedSection>
                 <h1 className="hero-title text-center mb-8">Global Reach,<br />Local Impact.</h1>
@@ -318,7 +318,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'safety' && (
-          <div className="pt-40 pb-20 px-6">
+          <div className="pt-24 pb-20 px-6">
             <div className="max-w-5xl mx-auto">
               <AnimatedSection>
                 <div className="text-center mb-20">
@@ -374,7 +374,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'about' && (
-          <div className="pt-40 pb-20 px-6">
+          <div className="pt-24 pb-20 px-6">
             <div className="max-w-5xl mx-auto">
               <AnimatedSection>
                 <div className="text-center mb-20">
