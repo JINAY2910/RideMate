@@ -3,6 +3,8 @@ import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
 import { User, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { rideApi } from '../services/rides';
+import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
 
 
 const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
@@ -60,6 +62,7 @@ export default function RiderDashboard() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'Requests' | 'History'>('Requests');
+    const [rideMetrics, setRideMetrics] = useState<Record<string, RideMetrics>>({});
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -76,6 +79,30 @@ export default function RiderDashboard() {
 
         fetchBookings();
     }, []);
+
+    // Calculate ride metrics for bookings with totalPrice of 0
+    useEffect(() => {
+        bookings.forEach(async (booking) => {
+            if (booking.totalPrice === 0 && !rideMetrics[booking.ride._id]) {
+                try {
+                    // Fetch full ride details to get coordinates
+                    const rideDetails = await rideApi.getById(booking.ride._id);
+                    const metrics = await calculateRideDetails(
+                        rideDetails.start.coordinates.lat,
+                        rideDetails.start.coordinates.lng,
+                        rideDetails.destination.coordinates.lat,
+                        rideDetails.destination.coordinates.lng
+                    );
+                    setRideMetrics(prev => ({
+                        ...prev,
+                        [booking.ride._id]: metrics
+                    }));
+                } catch (err) {
+                    console.error(`Failed to calculate price for ride ${booking.ride._id}:`, err);
+                }
+            }
+        });
+    }, [bookings, rideMetrics]);
 
     const upcomingRides = bookings.filter(b => {
         if (!b.ride) return false;
@@ -174,8 +201,23 @@ export default function RiderDashboard() {
                                             <CountdownTimer targetDate={new Date(`${booking.ride.date}T${booking.ride.time}`)} />
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-2xl font-bold text-black">₹{booking.totalPrice}</p>
-                                            <p className="text-xs text-gray-500">{booking.seatsBooked} seat(s)</p>
+                                            {(() => {
+                                                const displayPrice = booking.totalPrice > 0
+                                                    ? booking.totalPrice
+                                                    : rideMetrics[booking.ride._id]?.cost;
+
+                                                return displayPrice ? (
+                                                    <>
+                                                        <p className="text-2xl font-bold text-black">₹{displayPrice.toFixed(2)}</p>
+                                                        <p className="text-xs text-gray-500">{booking.seatsBooked} seat(s)</p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <p className="text-sm font-medium text-gray-400">Calculating...</p>
+                                                        <p className="text-xs text-gray-500">{booking.seatsBooked} seat(s)</p>
+                                                    </>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </div>

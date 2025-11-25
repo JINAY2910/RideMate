@@ -10,7 +10,7 @@ import { useState } from 'react';
 
 export default function Landing() {
   const { navigateTo, authToken } = useApp();
-  const [activeTab, setActiveTab] = useState<'home' | 'platform' | 'cities' | 'safety'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'platform' | 'cities' | 'safety' | 'about'>('home');
 
   const cities = [
     { name: 'Mumbai', status: 'Live', rides: '12K+' },
@@ -27,8 +27,9 @@ export default function Landing() {
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-hover" onClick={() => setActiveTab('home')}>
+        <div className="max-w-7xl mx-auto grid grid-cols-3 items-center">
+          {/* Logo - Left */}
+          <div className="flex items-center gap-3 cursor-hover justify-start" onClick={() => setActiveTab('home')}>
             <img
               src="/ridemate_logo.png"
               alt="RideMate - Mobility, Reimagined"
@@ -36,17 +37,34 @@ export default function Landing() {
             />
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Tab Navigation in Header - Center */}
+          <div className="flex items-center justify-center gap-2">
+            {(['home', 'platform', 'cities', 'safety', 'about'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`text-sm font-medium px-3 py-2 rounded-full transition-all capitalize whitespace-nowrap ${activeTab === tab
+                  ? 'bg-black text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+              >
+                {tab === 'about' ? 'About Us' : tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Auth Buttons - Right */}
+          <div className="flex items-center gap-3 justify-end">
             {authToken ? (
               <Button onClick={() => { }} size="sm" className="cursor-default opacity-50">
                 Dashboard
               </Button>
             ) : (
               <>
-                <button onClick={() => navigateTo('login')} className="text-lg font-medium hover:text-gray-600 transition-colors cursor-hover px-4 py-2">
+                <button onClick={() => navigateTo('login')} className="text-base font-medium hover:text-gray-600 transition-colors cursor-hover px-3 py-2">
                   Log in
                 </button>
-                <Button onClick={() => navigateTo('signup')} size="lg" className="bg-black text-white hover:bg-gray-800 cursor-hover px-6 py-3 text-lg">
+                <Button onClick={() => navigateTo('signup')} size="lg" className="bg-black text-white hover:bg-gray-800 cursor-hover px-5 py-2.5 text-base">
                   Sign up
                 </Button>
               </>
@@ -55,30 +73,12 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Tab Navigation */}
-      <div className="fixed top-[96px] left-0 right-0 z-30 bg-white/90 backdrop-blur-sm border-b border-black/5 py-2">
-        <div className="max-w-7xl mx-auto flex justify-center gap-8">
-          {(['home', 'platform', 'cities', 'safety'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`text-sm font-medium px-4 py-2 rounded-full transition-all capitalize ${activeTab === tab
-                ? 'bg-black text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="pt-40"> {/* Added padding for fixed header and tabs */}
+      <div className="pt-8"> {/* Further reduced padding to bring hero section much closer to header */}
         {activeTab === 'home' && (
           <>
             {/* Hero Section */}
             <section className="hero-section">
-              <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12 items-center">
+              <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-6 items-center">
                 <div className="flex flex-col justify-center">
                   <AnimatedSection delay={200}>
                     <h1 className="hero-title">
@@ -369,6 +369,107 @@ export default function Landing() {
                   </button>
                 </div>
               </AnimatedSection>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="pb-20 px-6">
+            <div className="max-w-5xl mx-auto">
+              <AnimatedSection>
+                <div className="text-center mb-20">
+                  <h1 className="hero-title mb-6">About<br />RideMate</h1>
+                  <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                    We're on a mission to revolutionize urban mobility and make transportation accessible, sustainable, and delightful for everyone.
+                  </p>
+                </div>
+              </AnimatedSection>
+
+              <div className="space-y-16">
+                <AnimatedSection delay={200}>
+                  <div className="bg-white border border-black/10 rounded-3xl p-10 md:p-16">
+                    <h2 className="text-3xl font-bold mb-6">Our Story</h2>
+                    <p className="text-gray-600 leading-relaxed text-lg mb-4">
+                      Founded in 2024, RideMate emerged from a simple observation: urban transportation needed a complete reimagining.
+                      We saw cities struggling with congestion, commuters frustrated with unreliable services, and an urgent need for sustainable solutions.
+                    </p>
+                    <p className="text-gray-600 leading-relaxed text-lg">
+                      Today, we're proud to serve thousands of riders across major cities, connecting them with verified drivers through
+                      cutting-edge technology that prioritizes safety, efficiency, and user experience above all else.
+                    </p>
+                  </div>
+                </AnimatedSection>
+
+                <AnimatedSection delay={400}>
+                  <div className="grid md:grid-cols-3 gap-8">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Users size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">50K+</h3>
+                      <p className="text-gray-600">Active Users</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <MapPin size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">6</h3>
+                      <p className="text-gray-600">Cities Served</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Zap size={32} />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">1M+</h3>
+                      <p className="text-gray-600">Rides Completed</p>
+                    </div>
+                  </div>
+                </AnimatedSection>
+
+                <AnimatedSection delay={600}>
+                  <div className="bg-black text-white rounded-3xl p-10 md:p-16">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-8 text-center">Our Values</h2>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div>
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                          <Shield size={24} className="text-green-400" />
+                          Safety First
+                        </h3>
+                        <p className="text-gray-400">
+                          Every decision we make prioritizes the safety and security of our riders and drivers.
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                          <Globe size={24} className="text-blue-400" />
+                          Sustainability
+                        </h3>
+                        <p className="text-gray-400">
+                          We're committed to reducing our carbon footprint and promoting eco-friendly transportation options.
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                          <Zap size={24} className="text-yellow-400" />
+                          Innovation
+                        </h3>
+                        <p className="text-gray-400">
+                          Leveraging cutting-edge technology to deliver seamless, efficient mobility solutions.
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
+                          <Users size={24} className="text-purple-400" />
+                          Community
+                        </h3>
+                        <p className="text-gray-400">
+                          Building a trusted network of riders and drivers who support and respect each other.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedSection>
+              </div>
             </div>
           </div>
         )}

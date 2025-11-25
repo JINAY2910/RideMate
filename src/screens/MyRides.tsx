@@ -3,6 +3,7 @@ import { ArrowLeft, Users, Clock, Car, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Card from '../components/Card';
 import { rideApi, Ride } from '../services/rides';
+import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
 
 export default function MyRides() {
   const { navigateTo, userRole, userName, userId, setActiveRideId, vehicles, rideVehicles } = useApp();
@@ -10,6 +11,7 @@ export default function MyRides() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rideMetrics, setRideMetrics] = useState<Record<string, RideMetrics>>({});
 
   useEffect(() => {
     if (!userName && !userId) {
@@ -73,6 +75,30 @@ export default function MyRides() {
     }
   }, [rides, isDriver, loading]);
 
+  // Calculate ride metrics for price fallback
+  useEffect(() => {
+    if (isDriver || rides.length === 0) return;
+
+    rides.forEach(ride => {
+      // Only calculate if we don't already have metrics for this ride
+      if (!rideMetrics[ride._id]) {
+        calculateRideDetails(
+          ride.start.coordinates.lat,
+          ride.start.coordinates.lng,
+          ride.destination.coordinates.lat,
+          ride.destination.coordinates.lng
+        ).then(metrics => {
+          setRideMetrics(prev => ({
+            ...prev,
+            [ride._id]: metrics
+          }));
+        }).catch(err => {
+          console.error(`Failed to calculate metrics for ride ${ride._id}:`, err);
+        });
+      }
+    });
+  }, [rides, isDriver, rideMetrics]);
+
   const renderRideCard = (ride: Ride) => {
     const highlightStatus = ride.status === 'Active' || ride.status === 'Confirmed';
     const riderCount = ride.requests?.filter((r) => r.status === 'Approved').length ?? 0;
@@ -85,9 +111,17 @@ export default function MyRides() {
       navigateTo('ride-details');
     };
 
-    // For riders, check their specific request status
-    const myRequest = !isDriver ? ride.requests?.find(r => r.name === userName || r.rider?.name === userName) : null;
+    // For riders, check their specific request status and get price
+    // Use userId first (like RideDetails does), then fall back to userName
+    const myRequest = !isDriver ? ride.requests?.find(r => (userId && r.rider?.id === userId) || r.name === userName || r.rider?.name === userName) : null;
+    const myParticipant = !isDriver ? ride.participants?.find(p => (userId && p.rider?.id === userId) || p.name === userName || p.rider?.name === userName) : null;
     const myStatus = myRequest?.status;
+
+    // Get price from finalCost or fallback to calculated metrics
+    // Treat 0 as invalid (use calculated cost instead)
+    const finalCost = myRequest?.finalCost || myParticipant?.finalCost;
+    const calculatedCost = rideMetrics[ride._id]?.cost;
+    const myPrice = (finalCost !== undefined && finalCost > 0) ? finalCost : calculatedCost;
 
     return (
       <Card key={ride._id} onClick={handleNavigateToRide}>
@@ -124,6 +158,12 @@ export default function MyRides() {
             >
               {ride.status}
             </span>
+            {!isDriver && myPrice !== undefined && (
+              <div className="text-right">
+                <p className="text-xs text-gray-500">Total Cost</p>
+                <p className="text-lg font-bold text-black">₹{myPrice}</p>
+              </div>
+            )}
             {!isDriver && (
               <>
                 {ride.status === 'Completed' && (
