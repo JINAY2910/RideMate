@@ -21,48 +21,57 @@ const GreenStatsCard: React.FC<GreenStatsCardProps> = ({ co2Saved, greenPoints }
     const progress = Math.min(100, (greenPoints / level.nextLevel) * 100);
 
     return (
-        <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl p-6 shadow-sm border border-green-100 mb-6 relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute -right-10 -top-10 opacity-10">
-                <TreeDeciduous size={150} className="text-green-800" />
+        <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-8 shadow-lg border-2 border-green-200/50 mb-6 relative overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            {/* Background decorations */}
+            <div className="absolute -right-12 -top-12 opacity-[0.07]">
+                <TreeDeciduous size={200} className="text-green-900" />
+            </div>
+            <div className="absolute -left-8 -bottom-8 opacity-[0.05]">
+                <Leaf size={160} className="text-emerald-900" />
             </div>
 
-            <div className="flex items-start justify-between relative z-10">
+            <div className="flex items-start justify-between relative z-10 mb-6">
                 <div>
-                    <h3 className="text-green-800 font-bold text-lg flex items-center gap-2">
-                        <Leaf className="w-5 h-5" />
+                    <h3 className="text-green-900 font-bold text-xl flex items-center gap-2.5">
+                        <div className="p-2 bg-green-600 rounded-lg">
+                            <Leaf className="w-5 h-5 text-white" />
+                        </div>
                         GreenMiles Impact
                     </h3>
-                    <p className="text-green-600 text-sm mt-1">Your contribution to a greener planet</p>
+                    <p className="text-green-700 text-sm mt-2 font-medium">Your contribution to a greener planet</p>
                 </div>
-                <div className={`bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold ${level.color} border border-green-200 shadow-sm`}>
+                <div className={`bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold ${level.color} border-2 border-green-300 shadow-md flex items-center gap-2`}>
+                    <LevelIcon className="w-4 h-4" />
                     {level.name}
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6 relative z-10">
-                <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-green-100">
-                    <p className="text-xs text-green-600 font-medium uppercase tracking-wide">CO2 Saved</p>
-                    <p className="text-2xl font-bold text-green-800 mt-1">{co2Saved.toFixed(1)} <span className="text-sm font-normal text-green-600">kg</span></p>
+            <div className="grid grid-cols-2 gap-5 mt-7 relative z-10">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-green-200/60 shadow-sm hover:shadow-md transition-shadow">
+                    <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2">CO2 Saved</p>
+                    <p className="text-3xl font-bold text-green-900 mt-1">
+                        {co2Saved.toFixed(1)}
+                        <span className="text-base font-semibold text-green-600 ml-1">kg</span>
+                    </p>
                 </div>
-                <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-green-100">
-                    <p className="text-xs text-green-600 font-medium uppercase tracking-wide">Green Points</p>
-                    <p className="text-2xl font-bold text-green-800 mt-1">{greenPoints}</p>
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-green-200/60 shadow-sm hover:shadow-md transition-shadow">
+                    <p className="text-xs text-green-700 font-bold uppercase tracking-wider mb-2">Green Points</p>
+                    <p className="text-3xl font-bold text-green-900 mt-1">{greenPoints}</p>
                 </div>
             </div>
 
-            <div className="mt-6 relative z-10">
-                <div className="flex justify-between text-xs text-green-700 mb-1 font-medium">
+            <div className="mt-7 relative z-10">
+                <div className="flex justify-between text-sm text-green-800 mb-2 font-semibold">
                     <span>Level Progress</span>
                     <span>{greenPoints} / {level.nextLevel} pts</span>
                 </div>
-                <div className="h-2.5 bg-green-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-green-200/70 rounded-full overflow-hidden shadow-inner">
                     <div
-                        className="h-full bg-gradient-to-r from-green-400 to-emerald-600 rounded-full transition-all duration-1000 ease-out"
+                        className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-teal-600 rounded-full transition-all duration-1000 ease-out shadow-sm"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
-                <p className="text-xs text-green-600 mt-2 text-center italic">
+                <p className="text-sm text-green-700 mt-3 text-center font-medium">
                     Ride more to grow your forest! 🌱
                 </p>
             </div>

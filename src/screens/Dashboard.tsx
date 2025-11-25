@@ -78,7 +78,7 @@ export default function Dashboard() {
 
           {/* GreenMiles Stats - Hidden in Senior Mode */}
           {!isSeniorMode && (
-            <div className="mb-8 animate-slide-in-from-bottom-2">
+            <div className="mt-8 mb-8 animate-slide-in-from-bottom-2">
               <GreenStatsCard
                 co2Saved={user?.co2Saved || 0}
                 greenPoints={user?.greenPoints || 0}

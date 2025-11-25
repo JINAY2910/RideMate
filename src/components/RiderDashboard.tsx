@@ -56,7 +56,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
 
 
 export default function RiderDashboard() {
-    const { navigateTo } = useApp();
+    const { navigateTo, setActiveRideId } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'Requests' | 'History'>('Requests');
@@ -131,7 +131,14 @@ export default function RiderDashboard() {
                 ) : (
                     <div className="grid gap-4 md:grid-cols-1">
                         {upcomingRides.map((booking) => (
-                            <Card key={booking._id} className="border-2 border-green-500 bg-green-50/30 shadow-md">
+                            <Card
+                                key={booking._id}
+                                className="border-2 border-green-500 bg-green-50/30 shadow-md cursor-pointer hover:shadow-xl transition-all"
+                                onClick={() => {
+                                    setActiveRideId(booking.ride._id);
+                                    navigateTo('ride-details');
+                                }}
+                            >
                                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">

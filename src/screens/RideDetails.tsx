@@ -48,8 +48,6 @@ export default function RideDetails() {
   const [selectedRequest, setSelectedRequest] = useState<RideRequest | null>(null);
   const [rideMetrics, setRideMetrics] = useState<RideMetrics | null>(null);
   const [seatsRequested, setSeatsRequested] = useState(1);
-  const [wantsFirstAid, setWantsFirstAid] = useState(false);
-  const [wantsDoorToDoor, setWantsDoorToDoor] = useState(false);
 
   useEffect(() => {
     if (!activeRideId) {
@@ -322,10 +320,6 @@ export default function RideDetails() {
         name: userName || 'Rider',
         rating: 5,
         seatsRequested: seatsRequested,
-        addons: {
-          firstAid: wantsFirstAid,
-          doorToDoor: wantsDoorToDoor,
-        },
       });
       setRide(updatedRide);
       setRideSummaryInput({
@@ -459,8 +453,32 @@ export default function RideDetails() {
                 </div>
               </div>
 
+              {/* Non-Driver / Non-Participant - Seats Selector (Above Chat and Total Cost) */}
+              {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && !hasRequested && ride.seats.available > 0 && (
+                <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border-2 border-gray-200 mb-4">
+                  <span className="font-semibold text-black text-lg">Seats needed:</span>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-gray-300 text-black font-bold hover:bg-gray-100 disabled:opacity-50 transition-all"
+                      disabled={seatsRequested <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="font-bold text-2xl w-8 text-center">{seatsRequested}</span>
+                    <button
+                      onClick={() => setSeatsRequested(Math.min(ride.seats.available, seatsRequested + 1))}
+                      className="w-10 h-10 flex items-center justify-center rounded-full bg-white border-2 border-gray-300 text-black font-bold hover:bg-gray-100 disabled:opacity-50 transition-all"
+                      disabled={seatsRequested >= ride.seats.available}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button fullWidth onClick={() => navigateTo('chat')}>
+                <Button fullWidth onClick={() => navigateTo('chat')} className="bg-black text-white hover:bg-gray-800 border-2 border-black">
                   <MessageCircle size={20} className="inline mr-2" />
                   Chat
                 </Button>
@@ -520,81 +538,31 @@ export default function RideDetails() {
                   </>
                 )}
 
-                {/* Non-Driver / Non-Participant Actions */}
-                {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
-                  <div className="space-y-3">
-                    {!hasRequested && ride.seats.available > 0 && (
-                      <>
-                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
-                          <span className="font-medium text-black">Seats needed:</span>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
-                              className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
-                              disabled={seatsRequested <= 1}
-                            >
-                              -
-                            </button>
-                            <span className="font-bold text-lg w-4 text-center">{seatsRequested}</span>
-                            <button
-                              onClick={() => setSeatsRequested(Math.min(ride.seats.available, seatsRequested + 1))}
-                              className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-300 text-black hover:bg-gray-100 disabled:opacity-50"
-                              disabled={seatsRequested >= ride.seats.available}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mt-3 mb-3">
-                          <p className="text-sm font-semibold text-black">Add-ons (Optional)</p>
-                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={wantsFirstAid}
-                                onChange={(e) => setWantsFirstAid(e.target.checked)}
-                                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-                              />
-                              <span className="ml-2 text-sm text-black">First Aid Kit</span>
-                            </div>
-                            <span className="text-sm font-bold text-black">+ Rs 15</span>
-                          </label>
-                          <label className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                checked={wantsDoorToDoor}
-                                onChange={(e) => setWantsDoorToDoor(e.target.checked)}
-                                className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-                              />
-                              <span className="ml-2 text-sm text-black">Door-to-Door Service</span>
-                            </div>
-                            <span className="text-sm font-bold text-black">+ Rs 25</span>
-                          </label>
-                        </div>
-
-                        {rideMetrics && (
-                          <div className="mb-4 p-3 bg-black text-white rounded-lg flex justify-between items-center">
-                            <span className="font-medium">Total Cost:</span>
-                            <span className="text-xl font-bold">
-                              Rs {(rideMetrics.cost + (wantsFirstAid ? 15 : 0) + (wantsDoorToDoor ? 25 : 0)).toFixed(2)}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    <Button
-                      fullWidth
-                      onClick={handleBookRideFromDetails}
-                      disabled={hasRequested || ride.seats.available === 0}
-                      variant={hasRequested ? 'secondary' : 'primary'}
-                    >
-                      {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : `Request ${seatsRequested} Seat${seatsRequested > 1 ? 's' : ''}`}
-                    </Button>
+                {/* Non-Driver / Non-Participant - Total Cost beside Chat */}
+                {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && rideMetrics && (
+                  <div className="bg-black text-white rounded-xl flex justify-between items-center px-6 py-4 border-2 border-black h-full">
+                    <span className="font-semibold text-base">Total Cost:</span>
+                    <span className="text-xl font-bold">
+                      Rs {rideMetrics.cost.toFixed(2)}
+                    </span>
                   </div>
                 )}
               </div>
+
+              {/* Non-Driver / Non-Participant - Request Button */}
+              {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
+                <div className="mt-4">
+                  <Button
+                    fullWidth
+                    onClick={handleBookRideFromDetails}
+                    disabled={hasRequested || ride.seats.available === 0}
+                    variant={hasRequested ? 'secondary' : 'primary'}
+                    className="text-lg py-4"
+                  >
+                    {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : `Request ${seatsRequested} Seat${seatsRequested > 1 ? 's' : ''}`}
+                  </Button>
+                </div>
+              )}
             </Card>
 
             {userRole === 'driver' && (
@@ -715,12 +683,7 @@ export default function RideDetails() {
             )}
 
             <div className="mt-6 flex flex-col gap-3">
-
-              {rideStatus !== 'Completed' ? (
-                <Button fullWidth variant="secondary" onClick={handleMarkRideComplete}>
-                  Mark Ride Complete
-                </Button>
-              ) : (
+              {rideStatus === 'Completed' && (
                 <div className="space-y-3">
                   <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
                     Ride marked as complete. Chat history cleared.
