@@ -7,7 +7,7 @@ import Card from '../components/Card';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { Location } from '../services/locations';
 import { rideApi } from '../services/rides';
-import RollerTimePicker from '../components/RollerPicker/RollerTimePicker';
+import ClockTimePicker from '../components/ClockPicker/ClockTimePicker';
 import CalendarDatePicker from '../components/RollerPicker/CalendarDatePicker';
 import PickerModal from '../components/RollerPicker/PickerModal';
 import { Calendar, Clock } from 'lucide-react';
@@ -64,6 +64,25 @@ export default function CreateRide() {
     if (!date || !time || !seats) {
       alert('Please complete all required fields.');
       return;
+    }
+
+    // Time validation
+    const today = new Date();
+    const selectedDate = new Date(date);
+
+    // Reset time parts for date comparison
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+
+    if (selectedDateOnly.getTime() === todayDateOnly.getTime()) {
+      const [hours, minutes] = time.split(':').map(Number);
+      const selectedTime = new Date(todayDateOnly);
+      selectedTime.setHours(hours, minutes, 0, 0);
+
+      if (selectedTime < today) {
+        alert('Cannot select a time in the past.');
+        return;
+      }
     }
 
     if (userRole === 'driver') {
@@ -262,7 +281,7 @@ export default function CreateRide() {
               onClose={() => setActivePicker(null)}
               title="Select Time"
             >
-              <RollerTimePicker value={time} onChange={setTime} />
+              <ClockTimePicker value={time} onChange={setTime} />
             </PickerModal>
 
             {userRole === 'driver' && (

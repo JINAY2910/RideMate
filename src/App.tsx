@@ -12,9 +12,6 @@ import GPSTracking from './screens/GPSTracking';
 import Profile from './screens/Profile';
 import RideHistory from './screens/RideHistory';
 import Rating from './screens/Rating';
-import Platform from './screens/Platform';
-import Cities from './screens/Cities';
-import Safety from './screens/Safety';
 import RideConfirmation from './screens/RideConfirmation';
 import Vehicles from './screens/Vehicles';
 import Chatbot from './components/Chatbot';
@@ -38,9 +35,6 @@ function AppRouter() {
     profile: <Profile />,
     'ride-history': <RideHistory />,
     rating: <Rating />,
-    platform: <Platform />,
-    cities: <Cities />,
-    safety: <Safety />,
     'ride-confirmation': <RideConfirmation />,
     vehicles: <Vehicles />,
   };

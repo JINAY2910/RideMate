@@ -7,7 +7,7 @@ import Card from '../components/Card';
 import LocationAutocomplete from '../components/LocationAutocomplete';
 import { Location } from '../services/locations';
 import { rideApi, Ride, RideMatch, RideMatchMetrics, RideMatchResponse } from '../services/rides';
-import RollerTimePicker from '../components/RollerPicker/RollerTimePicker';
+import ClockTimePicker from '../components/ClockPicker/ClockTimePicker';
 import CalendarDatePicker from '../components/RollerPicker/CalendarDatePicker';
 import PickerModal from '../components/RollerPicker/PickerModal';
 import { Calendar, Clock } from 'lucide-react';
@@ -97,6 +97,25 @@ export default function SearchRide() {
     if (!date || !time) {
       setError('Please select both date and preferred time.');
       return;
+    }
+
+    // Time validation
+    const today = new Date();
+    const selectedDate = new Date(date);
+
+    // Reset time parts for date comparison
+    const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+
+    if (selectedDateOnly.getTime() === todayDateOnly.getTime()) {
+      const [hours, minutes] = time.split(':').map(Number);
+      const selectedTime = new Date(todayDateOnly);
+      selectedTime.setHours(hours, minutes, 0, 0);
+
+      if (selectedTime < today) {
+        setError('Cannot select a time in the past.');
+        return;
+      }
     }
 
     const seats = requiredSeats ? Number(requiredSeats) : 1;
@@ -405,7 +424,7 @@ export default function SearchRide() {
               onClose={() => setActivePicker(null)}
               title="Select Time"
             >
-              <RollerTimePicker value={time} onChange={setTime} />
+              <ClockTimePicker value={time} onChange={setTime} />
             </PickerModal>
             <Input
               label="Required Seats"
