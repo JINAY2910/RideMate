@@ -9,11 +9,11 @@
 /* Hero Section */
 .hero-section {
     position: relative;
-    min-height: 100vh;
+    /* min-height: 100vh; Removed to fix zoom layout issues */
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: 120px 24px 60px;
+    /* justify-content: center; Removed to fix zoom layout issues */
+    padding: 160px 24px 80px;
     background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.03) 0%, rgba(255, 255, 255, 0) 70%);
 }
 

@@ -151,8 +151,8 @@ export default function Profile() {
 
             <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg">Senior Mode</h3>
-                <p className="text-sm text-gray-500">Simplify the interface and increase text size</p>
+                <h3 className="font-semibold text-lg">Assisted Mode</h3>
+                <p className="text-sm text-gray-500">Make the interface more accessible and enable navigation using voice commands</p>
               </div>
               <button
                 onClick={toggleSeniorMode}

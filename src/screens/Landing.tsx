@@ -22,7 +22,7 @@ export default function Landing() {
   ];
 
   return (
-    <div className="landing-page">
+    <div className="landing-page w-full min-h-screen overflow-x-hidden flex flex-col">
       <CustomCursor />
 
       {/* Header */}
@@ -73,11 +73,11 @@ export default function Landing() {
         </div>
       </header>
 
-      <div className="pt-8"> {/* Further reduced padding to bring hero section much closer to header */}
+      <main className="w-full flex-grow">
         {activeTab === 'home' && (
           <>
             {/* Hero Section */}
-            <section className="hero-section">
+            <section className="hero-section w-full">
               <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-6 items-center">
                 <div className="flex flex-col justify-center">
                   <AnimatedSection delay={200}>
@@ -129,7 +129,7 @@ export default function Landing() {
             </section>
 
             {/* Features Grid */}
-            <section className="py-24 px-6 bg-white">
+            <section className="py-24 px-6 bg-white w-full">
               <div className="max-w-7xl mx-auto">
                 <AnimatedSection className="section-header">
                   <span className="section-label">Why RideMate</span>
@@ -177,7 +177,7 @@ export default function Landing() {
             </section>
 
             {/* Rolling Reviews */}
-            <section className="py-24 bg-gray-50 overflow-hidden">
+            <section className="py-24 bg-gray-50 overflow-hidden w-full">
               <AnimatedSection className="section-header">
                 <span className="section-label">Community</span>
                 <h2 className="section-title">Loved by Thousands</h2>
@@ -186,7 +186,7 @@ export default function Landing() {
             </section>
 
             {/* App Showcase */}
-            <section id="app-showcase" className="py-24 px-6 bg-black text-white">
+            <section id="app-showcase" className="py-24 px-6 bg-black text-white w-full">
               <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
                 <AnimatedSection direction="right">
                   <span className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-4 block">The App</span>
@@ -233,7 +233,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'platform' && (
-          <div className="pb-20 px-6">
+          <div className="pt-40 pb-20 px-6">
             <div className="max-w-4xl mx-auto">
               <AnimatedSection>
                 <h1 className="hero-title text-center mb-16">The RideMate<br />Architecture</h1>
@@ -284,7 +284,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'cities' && (
-          <div className="pb-20 px-6">
+          <div className="pt-40 pb-20 px-6">
             <div className="max-w-6xl mx-auto">
               <AnimatedSection>
                 <h1 className="hero-title text-center mb-8">Global Reach,<br />Local Impact.</h1>
@@ -318,7 +318,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'safety' && (
-          <div className="pb-20 px-6">
+          <div className="pt-40 pb-20 px-6">
             <div className="max-w-5xl mx-auto">
               <AnimatedSection>
                 <div className="text-center mb-20">
@@ -374,7 +374,7 @@ export default function Landing() {
         )}
 
         {activeTab === 'about' && (
-          <div className="pb-20 px-6">
+          <div className="pt-40 pb-20 px-6">
             <div className="max-w-5xl mx-auto">
               <AnimatedSection>
                 <div className="text-center mb-20">
@@ -473,7 +473,7 @@ export default function Landing() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       <Footer />
     </div>
