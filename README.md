@@ -36,7 +36,7 @@ RideMate is a modern, full-stack carpooling and ride-sharing platform built with
 - **Voice Assistant**: Voice-enabled ride booking and navigation
 - **Real-Time Chat**: In-ride messaging between drivers and riders
 - **Live Ride Updates**: Real-time ride status updates via WebSocket
-- **PDF Ticket Generation**: Download ride tickets simply
+- **PDF Ticket Generation**: One-tap download for a clean, structured PDF ticket of your ride
 - **Accessibility Mode**: Senior-friendly UI with larger fonts and simplified navigation
 - **Weather Integration**: Real-time weather information for ride planning
 - **Location Autocomplete**: Smart location search with geocoding support
