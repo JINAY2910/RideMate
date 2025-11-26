@@ -1,15 +1,36 @@
-import { User, Search, Car, LogOut } from 'lucide-react';
+import { User, Search, Car, LogOut, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import DriverDashboard from '../components/DriverDashboard';
 import RiderDashboard from '../components/RiderDashboard';
 import Button from '../components/Button';
 import Layout from '../components/Layout';
+import NotificationPanel from '../components/NotificationPanel';
+import { notificationApi } from '../services/notifications';
 import GreenStatsCard from '../components/GreenStatsCard';
 
 export default function Dashboard() {
   const { navigateTo, userRole, userName, logout, user } = useApp();
   const { isSeniorMode } = useAccessibility();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await notificationApi.list(true);
+        setUnreadCount(response.unreadCount);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -33,6 +54,18 @@ export default function Dashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="relative p-3 rounded-xl border-2 border-black hover:bg-gray-100 transition-all"
+              title="Notifications"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
             <Button variant="secondary" onClick={() => navigateTo('profile')} className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors">
               <User size={18} />
               Profile
@@ -46,6 +79,15 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        <NotificationPanel
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+          onNotificationClick={() => {
+            // Refresh unread count when notification is clicked
+            notificationApi.list(true).then(response => setUnreadCount(response.unreadCount));
+          }}
+        />
 
         <div className="mb-12">
           <div className={`rounded-3xl ${isSeniorMode ? 'bg-white border-4 border-black text-black' : 'bg-black text-white'} p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] border-2 border-black animate-slide-in`}>

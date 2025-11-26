@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Vehicle = require('../models/Vehicle');
 const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
+const { createNotification } = require('./notificationController');
 
 const toRadians = (deg) => (deg * Math.PI) / 180;
 
@@ -172,6 +173,9 @@ const transformRide = (ride) => {
     date: rideObj.date || '',
     time: rideObj.time || '',
     status: rideObj.isActive !== false ? 'Active' : 'Completed',
+    rideStatus: rideObj.rideStatus || 'pending',
+    startTime: rideObj.startTime ? rideObj.startTime.toISOString() : null,
+    endTime: rideObj.endTime ? rideObj.endTime.toISOString() : null,
     seats: {
       total: (rideObj.seatsAvailable || 0) + (rideObj.participants?.reduce((sum, p) => sum + (p.seatsBooked || 1), 0) || 0),
       available: rideObj.seatsAvailable || 0,
@@ -559,6 +563,11 @@ const getRides = async (req, res, next) => {
       query.seatsAvailable = { $gt: 0 };
     }
 
+    // Exclude completed rides from public search (unless filtering by driver or participant for dashboard views)
+    if (!driver && !participant) {
+      query.rideStatus = { $ne: 'completed' };
+    }
+
     const rides = await Ride.find(query)
       .populate({
         path: 'driver',
@@ -864,6 +873,20 @@ const addRequest = async (req, res, next) => {
 
     console.log(`[Ride] Request added successfully: ${newRequest.rider} to ride ${ride._id}`);
 
+    // Send notification to driver
+    try {
+      const riderName = req.user.name || 'A rider';
+      await createNotification(
+        ride.driver,
+        'ride_request',
+        `${riderName} has requested to join your ride from ${ride.from} to ${ride.to}`,
+        ride._id?.toString() || ride._id,
+        newRequest._id?.toString()
+      );
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+    }
+
     res.status(201).json(transformRide(populatedRide));
   } catch (error) {
     console.error(`[Ride] AddRequest error:`, error);
@@ -1013,7 +1036,56 @@ const updateRequestStatus = async (req, res, next) => {
     });
 
     console.log(`[Ride] Request status updated successfully: ${status}`);
-    res.json(transformRide(populatedRide));
+
+    // Send notification to rider
+    try {
+      const rider = await User.findById(request.rider);
+      const driverName = ride.driver?.name || 'Driver';
+      if (status === 'Approved') {
+        await createNotification(
+          request.rider,
+          'request_accepted',
+          `${driverName} has accepted your ride request from ${ride.from} to ${ride.to}`,
+          ride._id?.toString() || ride._id,
+          request._id?.toString()
+        );
+        // Update rideStatus to 'accepted' if this is the first accepted request
+        if (ride.rideStatus === 'pending') {
+          ride.rideStatus = 'accepted';
+          await ride.save();
+        }
+      } else if (status === 'Rejected') {
+        await createNotification(
+          request.rider,
+          'request_rejected',
+          `${driverName} has rejected your ride request from ${ride.from} to ${ride.to}`,
+          ride._id?.toString() || ride._id,
+          request._id?.toString()
+        );
+        // Update rideStatus to 'rejected' if all requests are rejected
+        const hasApprovedRequests = ride.requests.some(r => r.status === 'Approved');
+        if (!hasApprovedRequests && ride.requests.every(r => r.status === 'Rejected' || r._id.toString() === request._id.toString())) {
+          ride.rideStatus = 'rejected';
+          await ride.save();
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+    }
+
+    // Re-populate to get updated rideStatus
+    const finalRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate('vehicle').populate({
+      path: 'requests.rider',
+      select: 'name email phone',
+    }).populate({
+      path: 'participants.rider',
+      select: 'name email phone',
+    });
+
+    res.json(transformRide(finalRide));
   } catch (error) {
     console.error(`[Ride] UpdateRequestStatus error:`, error);
     next(error);
@@ -1051,6 +1123,7 @@ const findRideMatches = async (req, res, next) => {
     const query = {
       isActive: true,
       seatsAvailable: { $gt: 0 },
+      rideStatus: { $ne: 'completed' }, // Exclude completed rides from search
     };
 
     if (preferredDateTime) {
@@ -1346,10 +1419,229 @@ const cancelBooking = async (req, res, next) => {
       { status: 'Cancelled' }
     );
 
+    // Send notification to driver about cancellation
+    try {
+      const riderName = req.user.name || 'A rider';
+      await createNotification(
+        ride.driver,
+        'request_cancelled',
+        `${riderName} has cancelled their booking for the ride from ${ride.from} to ${ride.to}`,
+        ride._id?.toString() || ride._id
+      );
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+    }
+
     console.log(`[Ride] Booking cancelled successfully`);
     res.json({ success: true, message: 'Booking cancelled successfully' });
   } catch (error) {
     console.error(`[Ride] CancelBooking error:`, error);
+    next(error);
+  }
+};
+
+// @desc    Start a ride (Driver only)
+// @route   POST /api/rides/:id/start
+// @access  Private (Driver only)
+const startRide = async (req, res, next) => {
+  try {
+    console.log(`[Ride] StartRide for ride: ${req.params.id} by user: ${req.user.id}`);
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found',
+      });
+    }
+
+    // Check if user is the driver
+    if (ride.driver.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the driver can start the ride',
+      });
+    }
+
+    // Check if ride can be started
+    if (ride.rideStatus === 'started') {
+      return res.status(400).json({
+        success: false,
+        message: 'Ride has already been started',
+      });
+    }
+
+    if (ride.rideStatus === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot start a completed ride',
+      });
+    }
+
+    // Check if driver already has another ride that is started
+    const existingStartedRide = await Ride.findOne({
+      driver: req.user.id,
+      rideStatus: 'started',
+      _id: { $ne: ride._id }, // Exclude current ride
+    });
+
+    if (existingStartedRide) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an ongoing ride. Please complete it before starting another one.',
+      });
+    }
+
+    // Update ride status
+    ride.rideStatus = 'started';
+    ride.startTime = new Date();
+    ride.isActive = true;
+    await ride.save();
+
+    // Send notifications to all participants
+    try {
+      const driverName = ride.driver?.name || 'Driver';
+      for (const participant of ride.participants) {
+        if (participant.rider) {
+          await createNotification(
+            participant.rider,
+            'ride_started',
+            `${driverName} has started the ride from ${ride.from} to ${ride.to}`,
+            ride._id?.toString() || ride._id
+          );
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send notifications:', notifError);
+    }
+
+    // Populate and return updated ride
+    const populatedRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate('vehicle').populate({
+      path: 'requests.rider',
+      select: 'name email phone',
+    }).populate({
+      path: 'participants.rider',
+      select: 'name email phone',
+    });
+
+    console.log(`[Ride] Ride started successfully: ${ride._id}`);
+    res.json(transformRide(populatedRide));
+  } catch (error) {
+    console.error(`[Ride] StartRide error:`, error);
+    next(error);
+  }
+};
+
+// @desc    Complete a ride (Driver only)
+// @route   POST /api/rides/:id/complete
+// @access  Private (Driver only)
+const completeRide = async (req, res, next) => {
+  try {
+    console.log(`[Ride] CompleteRide for ride: ${req.params.id} by user: ${req.user.id}`);
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found',
+      });
+    }
+
+    // Check if user is the driver
+    if (ride.driver.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the driver can complete the ride',
+      });
+    }
+
+    // Check if ride can be completed
+    if (ride.rideStatus === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Ride has already been completed',
+      });
+    }
+
+    if (ride.rideStatus !== 'started') {
+      return res.status(400).json({
+        success: false,
+        message: 'Ride must be started before it can be completed',
+      });
+    }
+
+    // Update ride status
+    ride.rideStatus = 'completed';
+    ride.endTime = new Date();
+    ride.isActive = false;
+    await ride.save();
+
+    // Calculate distance and update user stats (similar to updateRide)
+    const start = {
+      lat: ride.startCoordinates.coordinates[1],
+      lng: ride.startCoordinates.coordinates[0]
+    };
+    const end = {
+      lat: ride.destCoordinates.coordinates[1],
+      lng: ride.destCoordinates.coordinates[0]
+    };
+    const distance = haversineDistanceKm(start, end);
+
+    if (distance > 0 && distance !== Number.POSITIVE_INFINITY) {
+      const co2Saved = Math.round(distance * 0.2 * 100) / 100;
+      const points = Math.round(distance * 10);
+
+      // Update Driver
+      await User.findByIdAndUpdate(ride.driver, {
+        $inc: { co2Saved: co2Saved, greenPoints: points }
+      });
+
+      // Update Participants
+      for (const participant of ride.participants) {
+        if (participant.rider) {
+          await User.findByIdAndUpdate(participant.rider, {
+            $inc: { co2Saved: co2Saved, greenPoints: points }
+          });
+        }
+      }
+    }
+
+    // Send notifications to all participants
+    try {
+      const driverName = ride.driver?.name || 'Driver';
+      for (const participant of ride.participants) {
+        if (participant.rider) {
+          await createNotification(
+            participant.rider,
+            'ride_completed',
+            `${driverName} has completed the ride from ${ride.from} to ${ride.to}`,
+            ride._id?.toString() || ride._id
+          );
+        }
+      }
+    } catch (notifError) {
+      console.error('Failed to send notifications:', notifError);
+    }
+
+    // Populate and return updated ride
+    const populatedRide = await Ride.findById(ride._id).populate({
+      path: 'driver',
+      select: 'name email phone role',
+    }).populate('vehicle').populate({
+      path: 'requests.rider',
+      select: 'name email phone',
+    }).populate({
+      path: 'participants.rider',
+      select: 'name email phone',
+    });
+
+    console.log(`[Ride] Ride completed successfully: ${ride._id}`);
+    res.json(transformRide(populatedRide));
+  } catch (error) {
+    console.error(`[Ride] CompleteRide error:`, error);
     next(error);
   }
 };
@@ -1366,4 +1658,6 @@ module.exports = {
   rateRide,
   deleteRequest,
   cancelBooking,
+  startRide,
+  completeRide,
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, CheckCircle, XCircle, Car, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, CheckCircle, XCircle, Car, Plus, Trash2, X } from 'lucide-react';
 import Button from './Button';
 import Card from './Card';
 import { useApp } from '../context/AppContext';
@@ -9,7 +9,15 @@ interface DriverDashboardProps {
     userName: string;
 }
 
-const RiderProfileModal = ({ rider, onClose }: { rider: any, onClose: () => void }) => {
+const RiderProfileModal = ({ rider, rating, rideId, requestId, onAccept, onReject, onClose }: { 
+    rider: any, 
+    rating: number,
+    rideId: string,
+    requestId: string,
+    onAccept: () => void,
+    onReject: () => void,
+    onClose: () => void 
+}) => {
     if (!rider) return null;
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -27,7 +35,7 @@ const RiderProfileModal = ({ rider, onClose }: { rider: any, onClose: () => void
                     </div>
                     <h3 className="text-xl font-bold text-black">{rider.name}</h3>
                     <div className="flex items-center justify-center gap-1 text-yellow-500 mt-1">
-                        <span className="font-bold">{rider.rating || 5.0}</span>
+                        <span className="font-bold">{rating || 5.0}</span>
                         <span className="text-xs">★</span>
                     </div>
                 </div>
@@ -35,13 +43,20 @@ const RiderProfileModal = ({ rider, onClose }: { rider: any, onClose: () => void
                 <div className="space-y-4">
                     <div className="bg-gray-50 p-4 rounded-xl">
                         <p className="text-xs text-gray-500 uppercase font-bold mb-1">Contact Info</p>
-                        <p className="text-black font-medium">{rider.email}</p>
+                        <p className="text-black font-medium">{rider.email || 'Not provided'}</p>
                         <p className="text-black font-medium">{rider.phone || 'No phone number'}</p>
                     </div>
                 </div>
 
-                <div className="mt-6 flex gap-2">
-                    <Button fullWidth onClick={onClose}>Close</Button>
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                    <Button onClick={onAccept} className="bg-green-600 text-white hover:bg-green-700">
+                        <CheckCircle size={16} className="mr-2" />
+                        Accept
+                    </Button>
+                    <Button onClick={onReject} variant="secondary" className="border-red-500 text-red-600 hover:bg-red-50">
+                        <XCircle size={16} className="mr-2" />
+                        Reject
+                    </Button>
                 </div>
             </div>
         </div>
@@ -52,7 +67,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
     const { navigateTo, userId, setActiveRideId } = useApp();
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedRider, setSelectedRider] = useState<any>(null);
+    const [selectedRider, setSelectedRider] = useState<{ rider: any; rating: number; rideId: string; requestId: string } | null>(null);
 
     useEffect(() => {
         if (userId) {
@@ -80,7 +95,18 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
             fetchMyRides();
         } catch (error) {
             console.error('Error accepting request:', error);
-            alert('Failed to accept request');
+            const errorMessage = error instanceof Error ? error.message : 'Failed to accept request';
+            // Try to parse JSON error message if it's a stringified JSON
+            let displayMessage = errorMessage;
+            try {
+                const parsed = JSON.parse(errorMessage);
+                if (parsed.message) {
+                    displayMessage = parsed.message;
+                }
+            } catch {
+                // Not JSON, use as is
+            }
+            alert(`Failed to accept request: ${displayMessage}`);
         }
     };
     const handleRejectRequest = async (rideId: string, requestId: string) => {
@@ -90,7 +116,18 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                 fetchMyRides();
             } catch (error) {
                 console.error('Error rejecting request:', error);
-                alert('Failed to reject request');
+                const errorMessage = error instanceof Error ? error.message : 'Failed to reject request';
+                // Try to parse JSON error message if it's a stringified JSON
+                let displayMessage = errorMessage;
+                try {
+                    const parsed = JSON.parse(errorMessage);
+                    if (parsed.message) {
+                        displayMessage = parsed.message;
+                    }
+                } catch {
+                    // Not JSON, use as is
+                }
+                alert(`Failed to reject request: ${displayMessage}`);
             }
         }
     };
@@ -119,8 +156,18 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
         navigateTo('ride-details');
     };
 
-    const ongoingRides = myRides.filter(r => r.status === 'Active');
-    const upcomingRides = myRides.filter(r => r.status === 'Pending' || r.status === 'Confirmed');
+    // Only show one ongoing ride (the one that is started)
+    const startedRides = myRides.filter(r => r.rideStatus === 'started');
+    const ongoingRides = startedRides.slice(0, 1); // Only show the first started ride
+    // All other rides (including other started rides) go to upcoming
+    const upcomingRides = myRides.filter(r => {
+      // Exclude the first started ride from upcoming
+      if (startedRides.length > 0 && r._id === startedRides[0]._id) {
+        return false;
+      }
+      // Include all other rides that are not completed
+      return r.rideStatus !== 'completed';
+    });
 
     return (
         <div className="space-y-8">
@@ -196,6 +243,82 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                             ))}
                         </div>
                     )}
+
+                    {/* Request Status Section */}
+                    <div className="mb-8">
+                        <h3 className="text-xl font-bold text-black mb-4">Request Status</h3>
+                        {upcomingRides.length === 0 ? (
+                            <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                                <p className="text-gray-500">No ride requests to review.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {upcomingRides.map((ride) => {
+                                    const allRequests = ride.requests || [];
+                                    if (allRequests.length === 0) return null;
+                                    return (
+                                        <Card key={ride._id} className="border-2 border-black">
+                                            <div className="mb-3">
+                                                <h4 className="font-bold text-lg text-black mb-1">
+                                                    {ride.start.label} → {ride.destination.label}
+                                                </h4>
+                                                <p className="text-sm text-gray-600">{ride.date} at {ride.time}</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {allRequests.map((request) => (
+                                                    <div
+                                                        key={request._id}
+                                                        className={`p-3 rounded-lg border-2 ${
+                                                            request.status === 'Approved'
+                                                                ? 'bg-green-50 border-green-200'
+                                                                : request.status === 'Rejected'
+                                                                ? 'bg-red-50 border-red-200'
+                                                                : 'bg-yellow-50 border-yellow-200'
+                                                        }`}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <p className="font-bold text-black">{request.name}</p>
+                                                                <p className="text-xs text-gray-600">
+                                                                    {request.seatsRequested} seat{request.seatsRequested > 1 ? 's' : ''} • Rating: {request.rating} ★
+                                                                </p>
+                                                            </div>
+                                                            <span
+                                                                className={`px-2 py-1 text-xs font-bold rounded-full ${
+                                                                    request.status === 'Approved'
+                                                                        ? 'bg-green-100 text-green-800'
+                                                                        : request.status === 'Rejected'
+                                                                        ? 'bg-red-100 text-red-800'
+                                                                        : 'bg-yellow-100 text-yellow-800'
+                                                                }`}
+                                                            >
+                                                                {request.status}
+                                                            </span>
+                                                        </div>
+                                                        {request.status === 'Pending' && (
+                                                            <div className="flex gap-2 mt-2">
+                                                                <button
+                                                                    onClick={() => setSelectedRider({
+                                                                        rider: request.rider,
+                                                                        rating: request.rating || 5.0,
+                                                                        rideId: ride._id,
+                                                                        requestId: request._id
+                                                                    })}
+                                                                    className="flex-1 bg-gray-100 text-gray-700 py-1.5 px-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+                                                                >
+                                                                    Review Profile
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Upcoming Rides Section */}
                     <div>
@@ -290,11 +413,16 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                                 </div>
                                                             </div>
                                                             <button
-                                                                onClick={() => setSelectedRider(request.rider)}
+                                                                onClick={() => setSelectedRider({ 
+                                                                    rider: request.rider, 
+                                                                    rating: request.rating || 5.0,
+                                                                    rideId: ride._id,
+                                                                    requestId: request._id
+                                                                })}
                                                                 className="w-full mb-2 bg-gray-100 text-gray-700 py-1.5 px-3 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
                                                             >
                                                                 <User size={14} />
-                                                                View Profile
+                                                                Review Profile
                                                             </button>
                                                             <div className="flex gap-2">
                                                                 <button
@@ -338,7 +466,21 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                 </>
             )}
             {selectedRider && (
-                <RiderProfileModal rider={selectedRider} onClose={() => setSelectedRider(null)} />
+                <RiderProfileModal 
+                    rider={selectedRider.rider} 
+                    rating={selectedRider.rating}
+                    rideId={selectedRider.rideId}
+                    requestId={selectedRider.requestId}
+                    onAccept={async () => {
+                        await handleAcceptRequest(selectedRider.rideId, selectedRider.requestId);
+                        setSelectedRider(null);
+                    }}
+                    onReject={async () => {
+                        await handleRejectRequest(selectedRider.rideId, selectedRider.requestId);
+                        setSelectedRider(null);
+                    }}
+                    onClose={() => setSelectedRider(null)} 
+                />
             )}
         </div>
     );

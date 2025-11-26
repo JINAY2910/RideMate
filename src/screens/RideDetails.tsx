@@ -11,6 +11,7 @@ import {
   Send,
   X,
   Car,
+  CheckCircle,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -49,6 +50,7 @@ export default function RideDetails() {
   const [selectedRequest, setSelectedRequest] = useState<RideRequest | null>(null);
   const [rideMetrics, setRideMetrics] = useState<RideMetrics | null>(null);
   const [seatsRequested, setSeatsRequested] = useState(1);
+  const [hasStartedRide, setHasStartedRide] = useState(false);
 
   useEffect(() => {
     if (!activeRideId) {
@@ -113,7 +115,21 @@ export default function RideDetails() {
         ride.destination.coordinates.lng
       ).then(setRideMetrics).catch(console.error);
     }
-  }, [ride]);
+
+    // Check if driver has another started ride
+    if (userRole === 'driver' && userId && ride) {
+      const checkForStartedRide = async () => {
+        try {
+          const myRides = await rideApi.list({ driverId: userId });
+          const hasOtherStartedRide = myRides.some(r => r.rideStatus === 'started' && r._id !== ride._id);
+          setHasStartedRide(hasOtherStartedRide);
+        } catch (err) {
+          console.error('Error checking for started rides:', err);
+        }
+      };
+      checkForStartedRide();
+    }
+  }, [ride, userRole, userId]);
 
   const rideStatus = ride?.status ?? 'Pending';
   const approvedRequests =
@@ -174,6 +190,52 @@ export default function RideDetails() {
       // Refresh ride to show updated state if needed
     } catch (err) {
       setActionError('Failed to rate driver');
+    }
+  };
+
+  const handleStartRide = async () => {
+    if (!ride) return;
+    
+    // Check if there's already a started ride (frontend validation)
+    try {
+      const myRides = await rideApi.list(userId ? { driverId: userId } : undefined);
+      const hasStartedRide = myRides.some(r => r.rideStatus === 'started' && r._id !== ride._id);
+      
+      if (hasStartedRide) {
+        setActionError('You already have an ongoing ride. Please complete it before starting another one.');
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking for existing rides:', err);
+      // Continue anyway, backend will also check
+    }
+    
+    if (window.confirm('Are you sure you want to start this ride? This will notify all participants.')) {
+      try {
+        const updatedRide = await rideApi.startRide(ride._id);
+        setRide(updatedRide);
+        setActionError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unable to start ride.';
+        setActionError(errorMessage);
+        // Show alert for better visibility
+        if (errorMessage.includes('already have an ongoing ride')) {
+          alert(errorMessage);
+        }
+      }
+    }
+  };
+
+  const handleCompleteRide = async () => {
+    if (!ride) return;
+    if (window.confirm('Are you sure you want to complete this ride? This will notify all participants.')) {
+      try {
+        const updatedRide = await rideApi.completeRide(ride._id);
+        setRide(updatedRide);
+        setActionError(null);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Unable to complete ride.');
+      }
     }
   };
 
@@ -499,15 +561,67 @@ export default function RideDetails() {
 
                 {/* Driver Actions */}
                 {userRole === 'driver' && ride.driver.id === userId && (
-                  <Button fullWidth onClick={() => navigateTo('gps-tracking')}>
-                    <MapPin size={20} className="inline mr-2" />
-                    Start Trip
-                  </Button>
+                  <>
+                    {ride.rideStatus === 'accepted' || ride.rideStatus === 'pending' ? (
+                      <Button 
+                        fullWidth 
+                        onClick={handleStartRide} 
+                        className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={hasStartedRide}
+                        title={hasStartedRide ? 'You already have an ongoing ride. Please complete it first.' : ''}
+                      >
+                        <Car size={20} className="inline mr-2" />
+                        {hasStartedRide ? 'Another Ride Active' : 'Start Ride'}
+                      </Button>
+                    ) : ride.rideStatus === 'started' ? (
+                      <>
+                        <div className="col-span-2 p-4 bg-blue-50 border-2 border-blue-500 rounded-lg mb-2">
+                          <p className="text-center font-bold text-blue-800">Ride In Progress</p>
+                          <p className="text-center text-sm text-blue-600 mt-1">
+                            {ride.startTime ? `Started at ${new Date(ride.startTime).toLocaleTimeString()}` : 'Ride is active'}
+                          </p>
+                        </div>
+                        <Button fullWidth onClick={handleCompleteRide} className="bg-red-600 text-white hover:bg-red-700">
+                          <CheckCircle size={20} className="inline mr-2" />
+                          End Ride
+                        </Button>
+                      </>
+                    ) : ride.rideStatus === 'completed' ? (
+                      <div className="col-span-2 p-4 bg-gray-50 border-2 border-gray-500 rounded-lg">
+                        <p className="text-center font-bold text-gray-800">Ride Completed</p>
+                        {ride.endTime && (
+                          <p className="text-center text-sm text-gray-600 mt-1">
+                            Completed at {new Date(ride.endTime).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <Button fullWidth onClick={() => navigateTo('gps-tracking')}>
+                        <MapPin size={20} className="inline mr-2" />
+                        Track Ride
+                      </Button>
+                    )}
+                  </>
                 )}
 
                 {/* Rider Actions - Only if Confirmed/Accepted */}
                 {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && (
                   <>
+                    {ride.rideStatus === 'started' ? (
+                      <div className="col-span-2 p-4 bg-blue-50 border-2 border-blue-500 rounded-lg mb-2">
+                        <p className="text-center font-bold text-blue-800">Ride In Progress</p>
+                        <p className="text-center text-sm text-blue-600 mt-1">Your ride has started!</p>
+                      </div>
+                    ) : ride.rideStatus === 'completed' ? (
+                      <div className="col-span-2 p-4 bg-gray-50 border-2 border-gray-500 rounded-lg mb-2">
+                        <p className="text-center font-bold text-gray-800">Ride Completed</p>
+                        {ride.endTime && (
+                          <p className="text-center text-sm text-gray-600 mt-1">
+                            Completed at {new Date(ride.endTime).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                     <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
                       <MapPin size={20} className="inline mr-2" />
                       Track Ride

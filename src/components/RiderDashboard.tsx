@@ -60,8 +60,9 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
 
 
 export default function RiderDashboard() {
-    const { navigateTo, setActiveRideId } = useApp();
+    const { navigateTo, setActiveRideId, userId, userName } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [myRides, setMyRides] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [rideMetrics, setRideMetrics] = useState<Record<string, RideMetrics>>({});
 
@@ -80,8 +81,21 @@ export default function RiderDashboard() {
             }
         };
 
+        const fetchMyRides = async () => {
+            try {
+                // Fetch rides where user has made requests
+                const rides = await rideApi.list(userId ? { participantId: userId } : undefined);
+                setMyRides(rides);
+            } catch (err) {
+                console.error('Failed to fetch rides:', err);
+            }
+        };
+
         fetchBookings();
-    }, []);
+        if (userId) {
+            fetchMyRides();
+        }
+    }, [userId]);
 
     // Calculate ride metrics for bookings with totalPrice of 0
     useEffect(() => {
@@ -109,19 +123,25 @@ export default function RiderDashboard() {
         });
     }, [bookings, rideMetrics]);
 
-    const ongoingRide = bookings.find(b => b.ride && b.ride.isActive && (b.status === 'Accepted' || b.status === 'Approved'));
+    // Only show one ongoing ride (the one that is started)
+    const startedRides = bookings.filter(b => 
+      b.ride && 
+      (b.ride.rideStatus === 'started' || (b.ride.isActive && (b.status === 'Accepted' || b.status === 'Approved')))
+    );
+    const ongoingRide = startedRides.length > 0 ? startedRides[0] : null;
 
     const upcomingRides = bookings.filter(b => {
         if (!b.ride) return false;
+        // Exclude the ongoing ride from upcoming
+        if (ongoingRide && b._id === ongoingRide._id) return false;
         // Check if confirmed
         const isConfirmed = b.status === 'Accepted' || b.status === 'Approved';
         if (!isConfirmed) return false;
-        // If ride is explicitly active, it's ongoing, not upcoming (unless we want to show it in both, but usually separate is better)
-        if (b.ride.isActive) return false;
-
-        // Otherwise check date - actually, show all confirmed rides that aren't active/completed yet
-        // const rideDate = new Date(`${b.ride.date}T${b.ride.time}`);
-        // return rideDate > new Date();
+        // Exclude started rides (they should only be in ongoing)
+        if (b.ride.rideStatus === 'started') return false;
+        // Exclude completed rides
+        if (b.ride.rideStatus === 'completed') return false;
+        // If ride is explicitly active but not started, it's upcoming
         return true;
     });
 
@@ -194,6 +214,82 @@ export default function RiderDashboard() {
                     </Card>
                 </div>
             )}
+
+            {/* Request Status Section */}
+            <div className="mb-8">
+                <h3 className="text-xl font-bold text-black mb-4">My Ride Requests</h3>
+                {myRides.length === 0 ? (
+                    <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                        <p className="text-gray-500">No ride requests yet.</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {myRides.map((ride) => {
+                            const myRequest = ride.requests?.find(r => 
+                                (userId && r.rider?.id === userId) || 
+                                r.name === userName || 
+                                r.rider?.name === userName
+                            );
+                            if (!myRequest) return null;
+                            
+                            return (
+                                <Card key={ride._id} className="border-2 border-black">
+                                    <div className="mb-3">
+                                        <h4 className="font-bold text-lg text-black mb-1">
+                                            {ride.start.label} → {ride.destination.label}
+                                        </h4>
+                                        <p className="text-sm text-gray-600">{ride.date} at {ride.time}</p>
+                                        <p className="text-sm text-gray-600">Driver: {ride.driver.name}</p>
+                                    </div>
+                                    <div className={`p-3 rounded-lg border-2 ${
+                                        myRequest.status === 'Approved'
+                                            ? 'bg-green-50 border-green-200'
+                                            : myRequest.status === 'Rejected'
+                                            ? 'bg-red-50 border-red-200'
+                                            : 'bg-yellow-50 border-yellow-200'
+                                    }`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <p className="font-bold text-black">Request Status</p>
+                                                <p className="text-xs text-gray-600 mt-1">
+                                                    {myRequest.seatsRequested} seat{myRequest.seatsRequested > 1 ? 's' : ''} requested
+                                                </p>
+                                            </div>
+                                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                                                myRequest.status === 'Approved'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : myRequest.status === 'Rejected'
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
+                                            }`}>
+                                                {myRequest.status}
+                                            </span>
+                                        </div>
+                                        {ride.rideStatus && (
+                                            <div className="mt-2 pt-2 border-t border-gray-200">
+                                                <p className="text-xs text-gray-600">
+                                                    Ride Status: <span className="font-bold capitalize">{ride.rideStatus}</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            fullWidth
+                                            className="mt-3"
+                                            onClick={() => {
+                                                setActiveRideId(ride._id);
+                                                navigateTo('ride-details');
+                                            }}
+                                        >
+                                            View Details
+                                        </Button>
+                                    </div>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Upcoming Trips Section */}
             <div>

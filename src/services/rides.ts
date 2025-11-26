@@ -92,6 +92,9 @@ export type Ride = {
   time: string;
   duration?: number;
   status: 'Active' | 'Pending' | 'Completed' | 'Confirmed';
+  rideStatus?: 'pending' | 'accepted' | 'rejected' | 'started' | 'completed';
+  startTime?: string | null;
+  endTime?: string | null;
   seats: {
     total: number;
     available: number;
@@ -375,6 +378,32 @@ export const rideApi = {
       },
     });
     return handleResponse<{ success: true; message: string }>(response);
+  },
+
+  async startRide(id: string) {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required.');
+    const response = await fetch(`${API_BASE}/rides/${id}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<Ride>(response);
+  },
+
+  async completeRide(id: string) {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required.');
+    const response = await fetch(`${API_BASE}/rides/${id}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<Ride>(response);
   },
 };
 

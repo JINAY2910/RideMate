@@ -120,12 +120,23 @@ const rideSchema = new mongoose.Schema(
     seatsAvailable: {
       type: Number,
       required: [true, 'Seats available is required'],
-      min: [1, 'At least 1 seat must be available'],
+      min: [0, 'Seats available cannot be negative'],
       default: 1,
     },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    rideStatus: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected', 'started', 'completed'],
+      default: 'pending',
+    },
+    startTime: {
+      type: Date,
+    },
+    endTime: {
+      type: Date,
     },
     createdAt: {
       type: Date,
