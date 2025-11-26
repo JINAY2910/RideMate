@@ -576,12 +576,12 @@ const getRides = async (req, res, next) => {
     }
 
     // Hide full rides from public search (unless filtering by driver or participant for dashboard views)
-    if (!driver && !participant) {
+    if (!driver && !participant && !driverId && !participantId) {
       query.seatsAvailable = { $gt: 0 };
     }
 
     // Exclude completed rides from public search (unless filtering by driver or participant for dashboard views)
-    if (!driver && !participant) {
+    if (!driver && !participant && !driverId && !participantId) {
       query.rideStatus = { $ne: 'completed' };
     }
 
