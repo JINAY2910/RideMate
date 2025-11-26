@@ -82,6 +82,8 @@ const rideSchema = new mongoose.Schema(
         rating: Number,
         text: String,
       },
+      driverRated: { type: Boolean, default: false },
+      riderRatedDriver: { type: Boolean, default: false },
       createdAt: { type: Date, default: Date.now },
     }],
     participants: [{

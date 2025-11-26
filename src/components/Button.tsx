@@ -7,6 +7,7 @@ interface ButtonProps {
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   className?: string;
+  title?: string;
 }
 
 export default function Button({
@@ -18,6 +19,7 @@ export default function Button({
   size = 'md',
   disabled = false,
   className = '',
+  title,
 }: ButtonProps) {
   const sizeStyles = {
     sm: 'px-4 py-2 text-sm',
@@ -39,6 +41,7 @@ export default function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={`${sizeStyles[size]} ${variantStyles[variant]} ${widthStyles} ${disabledStyles} inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-black ${className}`}
     >
       {children}

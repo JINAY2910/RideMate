@@ -63,6 +63,8 @@ export type RideRequest = {
     rating: number;
     text?: string;
   };
+  driverRated?: boolean;
+  riderRatedDriver?: boolean;
   createdAt: string;
 };
 

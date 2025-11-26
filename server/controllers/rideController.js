@@ -74,6 +74,21 @@ const classifyMatch = ({ pickupDistanceKm, dropDistanceKm, timeDiffMinutes }) =>
   return withinNearby ? 'nearby' : null;
 };
 
+const updateUserRating = async (userId, rating) => {
+  if (!userId || typeof rating !== 'number') return;
+  const user = await User.findById(userId);
+  if (!user) return;
+
+  const totalReviews = user.totalReviews || 0;
+  const currentRating = user.rating || 5;
+  const newTotal = totalReviews + 1;
+  const newRating = ((currentRating * totalReviews) + rating) / newTotal;
+
+  user.rating = parseFloat(newRating.toFixed(1));
+  user.totalReviews = newTotal;
+  await user.save();
+};
+
 const resolveLocationInput = async (input, fieldName) => {
   if (!input) {
     throw new Error(`Missing ${fieldName} location`);
@@ -198,6 +213,8 @@ const transformRide = (ride) => {
       finalCost: req.finalCost,
       riderReview: req.riderReview,
       driverReview: req.driverReview,
+      driverRated: !!req.driverRated,
+      riderRatedDriver: !!req.riderRatedDriver,
       createdAt: req.createdAt ? req.createdAt.toISOString() : new Date().toISOString(),
     })),
     participants: (rideObj.participants || []).map(part => ({
@@ -1244,11 +1261,18 @@ const findRideMatches = async (req, res, next) => {
 const rateRide = async (req, res, next) => {
   try {
     console.log(`[Ride] RateRide request for ride: ${req.params.id} by user: ${req.user.id}`);
-    const { rating, review, type, targetUserId } = req.body;
+    const { rating, type, targetUserId } = req.body;
     const ride = await Ride.findById(req.params.id);
 
     if (!ride) {
       return res.status(404).json({ success: false, message: 'Ride not found' });
+    }
+
+    if (ride.rideStatus !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Ride must be completed before submitting ratings',
+      });
     }
 
     if (type === 'driver') {
@@ -1259,18 +1283,15 @@ const rateRide = async (req, res, next) => {
         return res.status(403).json({ success: false, message: 'You are not a participant of this ride' });
       }
 
-      request.driverReview = { rating, text: review };
-
-      // Update driver's average rating
-      const driver = await User.findById(ride.driver);
-      if (driver) {
-        const totalReviews = driver.totalReviews || 0;
-        const currentRating = driver.rating || 5;
-        const newRating = ((currentRating * totalReviews) + rating) / (totalReviews + 1);
-        driver.rating = parseFloat(newRating.toFixed(1));
-        driver.totalReviews = totalReviews + 1;
-        await driver.save();
+      if (request.riderRatedDriver) {
+        return res.status(400).json({
+          success: false,
+          message: 'You have already rated this driver for this ride',
+        });
       }
+
+      await updateUserRating(ride.driver, rating);
+      request.riderRatedDriver = true;
 
     } else if (type === 'rider') {
       // Driver rating a rider
@@ -1287,18 +1308,15 @@ const rateRide = async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Rider request not found' });
       }
 
-      request.riderReview = { rating, text: review };
-
-      // Update rider's average rating
-      const rider = await User.findById(targetUserId);
-      if (rider) {
-        const totalReviews = rider.totalReviews || 0;
-        const currentRating = rider.rating || 5;
-        const newRating = ((currentRating * totalReviews) + rating) / (totalReviews + 1);
-        rider.rating = parseFloat(newRating.toFixed(1));
-        rider.totalReviews = totalReviews + 1;
-        await rider.save();
+      if (request.driverRated) {
+        return res.status(400).json({
+          success: false,
+          message: 'You have already rated this rider for this ride',
+        });
       }
+
+      await updateUserRating(targetUserId, rating);
+      request.driverRated = true;
     } else {
       return res.status(400).json({ success: false, message: 'Invalid rating type' });
     }

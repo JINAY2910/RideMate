@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 5.0,
     },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
     co2Saved: {
       type: Number,
       default: 0,

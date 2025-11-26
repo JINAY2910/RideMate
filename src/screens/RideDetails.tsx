@@ -36,7 +36,9 @@ export default function RideDetails() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [riderRatings, setRiderRatings] = useState<Record<string, number>>({});
+  const [driverRatings, setDriverRatings] = useState<Record<string, number>>({});
+  const [driverRatingLoading, setDriverRatingLoading] = useState<string | null>(null);
+  const [driverRatingValue, setDriverRatingValue] = useState(0);
   const [showEmergencyPanel, setShowEmergencyPanel] = useState(false);
   const [showSOSConfirmation, setShowSOSConfirmation] = useState(false);
   const [emergencyType, setEmergencyType] = useState('medical');
@@ -134,6 +136,15 @@ export default function RideDetails() {
   const rideStatus = ride?.status ?? 'Pending';
   const approvedRequests =
     ride?.requests?.filter((request) => request.status === 'Approved') ?? [];
+  const riderRequest = ride?.requests?.find(
+    (req) => req.rider?.id === userId
+  );
+  const hasRatedDriver = riderRequest?.riderRatedDriver ?? false;
+  useEffect(() => {
+    if (!hasRatedDriver) {
+      setDriverRatingValue(0);
+    }
+  }, [hasRatedDriver]);
   const trustedContacts = emergencyContacts.length
     ? emergencyContacts
     : [
@@ -148,59 +159,55 @@ export default function RideDetails() {
     { id: 'other', label: 'Other / Unknown', desc: 'Any unusual situation needing help' },
   ];
 
-  const canSubmitRatings =
-    approvedRequests.length > 0 &&
-    approvedRequests.every((request) => (riderRatings[request._id] || 0) > 0);
-
   // Check if current user has already requested this ride
   const hasRequested = ride?.requests?.some(
     (req) => req.rider?.id === userId && req.status !== 'Rejected'
   );
 
-  const handleRating = (riderId: string, rating: number) => {
-    setRiderRatings((prev) => ({ ...prev, [riderId]: rating }));
-  };
-
-  const handleSubmitRatings = async () => {
-    if (!canSubmitRatings || !ride) return;
-    try {
-      // Submit ratings for all approved riders
-      await Promise.all(approvedRequests.map(req =>
-        rideApi.rateRide(ride._id, {
-          rating: riderRatings[req._id],
-          type: 'rider',
-          targetUserId: req.rider?.id
-        })
-      ));
-      alert('Ratings submitted successfully!');
-      navigateTo('dashboard');
-    } catch (err) {
-      setActionError('Failed to submit ratings');
-    }
-  };
-
   const handleRateDriver = async (rating: number) => {
-    if (!ride) return;
+    if (!ride || hasRatedDriver) return;
     try {
-      await rideApi.rateRide(ride._id, {
+      const updatedRide = await rideApi.rateRide(ride._id, {
         rating,
         type: 'driver'
       });
+      setRide(updatedRide);
+      setDriverRatingValue(rating);
       alert('Driver rated successfully!');
-      // Refresh ride to show updated state if needed
+      setActionError(null);
     } catch (err) {
       setActionError('Failed to rate driver');
     }
   };
 
+  const handleDriverRateRider = async (requestId: string, riderId?: string, ratingValue?: number) => {
+    if (!ride || !riderId || !ratingValue) return;
+    try {
+      setDriverRatingLoading(requestId);
+      const updatedRide = await rideApi.rateRide(ride._id, {
+        rating: ratingValue,
+        type: 'rider',
+        targetUserId: riderId
+      });
+      setRide(updatedRide);
+      setDriverRatings(prev => ({ ...prev, [requestId]: ratingValue }));
+      setActionError(null);
+      alert(`Rated rider with ${ratingValue} star${ratingValue > 1 ? 's' : ''}`);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to rate rider');
+    } finally {
+      setDriverRatingLoading(null);
+    }
+  };
+
   const handleStartRide = async () => {
     if (!ride) return;
-    
+
     // Check if there's already a started ride (frontend validation)
     try {
       const myRides = await rideApi.list(userId ? { driverId: userId } : undefined);
       const hasStartedRide = myRides.some(r => r.rideStatus === 'started' && r._id !== ride._id);
-      
+
       if (hasStartedRide) {
         setActionError('You already have an ongoing ride. Please complete it before starting another one.');
         return;
@@ -209,7 +216,7 @@ export default function RideDetails() {
       console.error('Error checking for existing rides:', err);
       // Continue anyway, backend will also check
     }
-    
+
     if (window.confirm('Are you sure you want to start this ride? This will notify all participants.')) {
       try {
         const updatedRide = await rideApi.startRide(ride._id);
@@ -554,18 +561,20 @@ export default function RideDetails() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button fullWidth onClick={() => navigateTo('chat')} className="bg-black text-white hover:bg-gray-800 border-2 border-black">
-                  <MessageCircle size={20} className="inline mr-2" />
-                  Chat
-                </Button>
+                {rideStatus !== 'Completed' && (
+                  <Button fullWidth onClick={() => navigateTo('chat')} className="bg-black text-white hover:bg-gray-800 border-2 border-black">
+                    <MessageCircle size={20} className="inline mr-2" />
+                    Chat
+                  </Button>
+                )}
 
                 {/* Driver Actions */}
                 {userRole === 'driver' && ride.driver.id === userId && (
                   <>
                     {ride.rideStatus === 'accepted' || ride.rideStatus === 'pending' ? (
-                      <Button 
-                        fullWidth 
-                        onClick={handleStartRide} 
+                      <Button
+                        fullWidth
+                        onClick={handleStartRide}
                         className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         disabled={hasStartedRide}
                         title={hasStartedRide ? 'You already have an ongoing ride. Please complete it first.' : ''}
@@ -622,10 +631,12 @@ export default function RideDetails() {
                         )}
                       </div>
                     ) : null}
-                    <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
-                      <MapPin size={20} className="inline mr-2" />
-                      Track Ride
-                    </Button>
+                    {rideStatus !== 'Completed' && (
+                      <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
+                        <MapPin size={20} className="inline mr-2" />
+                        Track Ride
+                      </Button>
+                    )}
                     <Button
                       fullWidth
                       variant="secondary"
@@ -634,15 +645,17 @@ export default function RideDetails() {
                       <ShieldAlert size={20} className="inline mr-2" />
                       Download Ticket
                     </Button>
-                    <Button
-                      fullWidth
-                      variant="secondary"
-                      onClick={handleSOSButtonClick}
-                      className="border-red-500 text-red-600"
-                    >
-                      <AlertTriangle size={20} className="inline mr-2 text-red-600" />
-                      SOS
-                    </Button>
+                    {rideStatus !== 'Completed' && (
+                      <Button
+                        fullWidth
+                        variant="secondary"
+                        onClick={handleSOSButtonClick}
+                        className="border-red-500 text-red-600"
+                      >
+                        <AlertTriangle size={20} className="inline mr-2 text-red-600" />
+                        SOS
+                      </Button>
+                    )}
 
                     {rideStatus === 'Completed' && (
                       <div className="mt-4 p-4 border-2 border-black rounded-lg bg-white">
@@ -652,15 +665,22 @@ export default function RideDetails() {
                             <button
                               key={`driver-rate-${star}`}
                               onClick={() => handleRateDriver(star)}
-                              className="hover:scale-110 transition-transform"
+                              className="hover:scale-110 transition-transform disabled:opacity-50"
+                              disabled={hasRatedDriver}
+                              title={hasRatedDriver ? 'You already rated your driver' : `Give ${star} star${star > 1 ? 's' : ''}`}
                             >
                               <Star
                                 size={32}
-                                className={ride.requests?.find(r => r.rider?.id === userId)?.driverReview?.rating && (ride.requests.find(r => r.rider?.id === userId)?.driverReview?.rating || 0) >= star ? 'text-black fill-black' : 'text-gray-300'}
+                                className={`${driverRatingValue >= star ? 'text-black fill-black' : 'text-gray-300'}`}
                               />
                             </button>
                           ))}
                         </div>
+                        {hasRatedDriver && (
+                          <p className="text-center text-xs text-green-600 mt-3">
+                            Thanks for sharing your feedback!
+                          </p>
+                        )}
                       </div>
                     )}
                   </>
@@ -759,32 +779,45 @@ export default function RideDetails() {
                               </Button>
                             </div>
                           )}
-                          {request.status === 'Approved' && (
-                            <div className="mt-4">
-                              <p className="text-sm font-semibold text-gray-600 mb-2 uppercase">Rate rider</p>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <button
-                                    key={`${request._id}-${star}`}
-                                    type="button"
-                                    onClick={() => handleRating(request._id, star)}
-                                    className="transition-transform duration-150 hover:scale-110"
-                                  >
-                                    <Star
-                                      size={28}
-                                      className={`${star <= (riderRatings[request._id] || 0)
-                                        ? 'text-black fill-black'
-                                        : 'text-gray-300'
-                                        }`}
-                                    />
-                                  </button>
-                                ))}
-                                <span className="text-sm font-medium text-black">
-                                  {(riderRatings[request._id] || 0) > 0
-                                    ? `${riderRatings[request._id]} / 5`
-                                    : 'Tap to rate'}
-                                </span>
-                              </div>
+                          {request.status === 'Approved' && rideStatus === 'Completed' && userRole === 'driver' && ride.driver.id === userId && (
+                            <div className="mt-4 border-t border-gray-200 pt-3">
+                              <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                                Rate {request.name}
+                                {request.driverRated && (
+                                  <span className="text-green-600 font-bold text-[11px] uppercase tracking-wider">
+                                    Rated
+                                  </span>
+                                )}
+                              </p>
+                              {request.driverRated ? (
+                                <p className="text-xs text-green-600 font-semibold">
+                                  You already rated this rider. Thank you!
+                                </p>
+                              ) : (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                      key={`${request._id}-${star}`}
+                                      type="button"
+                                      onClick={() => handleDriverRateRider(request._id, request.rider?.id, star)}
+                                      className="transition-transform duration-150 hover:scale-110 disabled:opacity-50"
+                                      disabled={driverRatingLoading === request._id}
+                                      title={`Give ${star} star${star > 1 ? 's' : ''}`}
+                                    >
+                                      <Star
+                                        size={28}
+                                        className={`${star <= (driverRatings[request._id] || 0)
+                                          ? 'text-black fill-black'
+                                          : 'text-gray-300'
+                                          }`}
+                                      />
+                                    </button>
+                                  ))}
+                                  {driverRatingLoading === request._id && (
+                                    <span className="text-xs text-gray-500">Saving...</span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                           <div className="mt-2 text-xs text-gray-600">
@@ -796,16 +829,6 @@ export default function RideDetails() {
                       <p className="text-gray-600 text-center py-4">No pending requests.</p>
                     )}
                   </div>
-                  {approvedRequests.length > 0 && (
-                    <div className="mt-6 flex flex-col gap-3">
-                      <p className="text-sm text-gray-600">
-                        Rate each approved rider to keep your community trustworthy.
-                      </p>
-                      <Button onClick={handleSubmitRatings} disabled={!canSubmitRatings}>
-                        Submit Rider Ratings
-                      </Button>
-                    </div>
-                  )}
                 </Card>
               </>
             )}
