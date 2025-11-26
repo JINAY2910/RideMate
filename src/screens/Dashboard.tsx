@@ -90,26 +90,26 @@ export default function Dashboard() {
         />
 
         <div className="mb-12">
-          <div className={`rounded-3xl ${isSeniorMode ? 'bg-white border-4 border-black text-black' : 'bg-black text-white'} p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] border-2 border-black animate-slide-in`}>
-            <div className="flex items-center gap-6 mb-6 sm:mb-0">
-              <div className={`p-6 ${isSeniorMode ? 'bg-black' : 'bg-white/10'} rounded-2xl border-2 ${isSeniorMode ? 'border-black' : 'border-white/20'} backdrop-blur-sm`}>
-                {userRole === 'driver' ? <Car size={isSeniorMode ? 72 : 56} className={isSeniorMode ? "text-white" : "text-white"} strokeWidth={1.5} /> : <Search size={isSeniorMode ? 72 : 56} className={isSeniorMode ? "text-white" : "text-white"} strokeWidth={1.5} />}
+          <div className={`rounded-3xl ${isSeniorMode ? 'bg-white border-4 border-black text-black' : 'bg-black text-white'} p-8 sm:p-12 flex flex-col ${isSeniorMode ? 'gap-8' : 'sm:flex-row'} items-center justify-between shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)] border-2 border-black animate-slide-in`}>
+            <div className={`flex ${isSeniorMode ? 'flex-col text-center w-full' : 'flex-row'} items-center gap-6 mb-6 sm:mb-0`}>
+              <div className={`p-6 ${isSeniorMode ? 'bg-black p-8' : 'bg-white/10'} rounded-2xl border-2 ${isSeniorMode ? 'border-black' : 'border-white/20'} backdrop-blur-sm inline-flex justify-center`}>
+                {userRole === 'driver' ? <Car size={isSeniorMode ? 80 : 56} className={isSeniorMode ? "text-white" : "text-white"} strokeWidth={1.5} /> : <Search size={isSeniorMode ? 80 : 56} className={isSeniorMode ? "text-white" : "text-white"} strokeWidth={1.5} />}
               </div>
               <div>
                 {!isSeniorMode && <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-2">Quick Action</p>}
-                <h2 className={`${isSeniorMode ? 'text-4xl sm:text-5xl' : 'text-3xl sm:text-4xl'} font-bold`}>{userRole === 'driver' ? 'Post a Ride' : 'Find a Ride'}</h2>
-                <p className={`${isSeniorMode ? 'text-black text-xl font-medium' : 'text-white/70'} mt-2 max-w-md`}>
+                <h2 className={`${isSeniorMode ? 'text-4xl sm:text-6xl mt-4' : 'text-3xl sm:text-4xl'} font-bold`}>{userRole === 'driver' ? 'Post a Ride' : 'Find a Ride'}</h2>
+                <p className={`${isSeniorMode ? 'text-black text-2xl font-medium mt-4' : 'text-white/70 mt-2'} max-w-md`}>
                   {userRole === 'driver'
                     ? 'Going somewhere? Share your ride.'
                     : 'Need a lift? Find a ride.'}
                 </p>
               </div>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className={`w-full ${isSeniorMode ? '' : 'sm:w-auto'}`}>
               <Button
                 variant={isSeniorMode ? "primary" : "secondary"}
                 size="lg"
-                className={`w-full sm:w-auto px-8 py-4 ${isSeniorMode ? 'text-2xl h-20' : 'text-lg'} font-bold border-2 ${isSeniorMode ? 'border-black' : 'border-white hover:bg-white hover:text-black'} transition-all transform hover:-translate-y-1`}
+                className={`w-full ${isSeniorMode ? 'text-3xl h-24 shadow-xl border-4' : 'sm:w-auto text-lg'} font-bold border-2 ${isSeniorMode ? 'border-black' : 'border-white hover:bg-white hover:text-black'} transition-all transform hover:-translate-y-1`}
                 onClick={() => navigateTo(userRole === 'driver' ? 'create-ride' : 'search-ride')}
               >
                 {userRole === 'driver' ? 'Create Ride' : 'Search Ride'}

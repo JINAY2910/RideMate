@@ -29,21 +29,6 @@
     @apply bg-white text-black;
   }
 
-  h1 {
-    @apply font-bold tracking-tight;
-  }
-
-  h2 {
-    @apply font-bold tracking-tight;
-  }
-}
-
-@layer components {
-  .gradient-divider {
-    background: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
-    @apply h-0.5;
-  }
-
   .glow-shadow {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   }

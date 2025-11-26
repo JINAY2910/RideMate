@@ -536,6 +536,78 @@ export default function RideDetails() {
                 </div>
               </div>
 
+              {/* Action Buttons Group */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {/* Chat Button */}
+                {((userRole === 'driver' && ride.requests && ride.requests.length > 0) ||
+                  (userRole !== 'driver' && ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')))) &&
+                  rideStatus !== 'Completed' && (
+                    <Button fullWidth onClick={() => navigateTo('chat')} className="bg-black text-white hover:bg-gray-800 border-2 border-black">
+                      <MessageCircle size={20} className="inline mr-2" />
+                      Chat
+                    </Button>
+                  )}
+
+                {/* Download Ticket - Rider Only */}
+                {userRole !== 'driver' &&
+                  ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && (
+                    <Button
+                      fullWidth
+                      variant="secondary"
+                      onClick={handleDownloadTicket}
+                    >
+                      <ShieldAlert size={20} className="inline mr-2" />
+                      Ticket
+                    </Button>
+                  )}
+
+                {/* Driver Actions - Start/End Ride */}
+                {userRole === 'driver' && ride.driver.id === userId && (
+                  <>
+                    {(ride.rideStatus === 'accepted' || ride.rideStatus === 'pending') && (
+                      <Button
+                        fullWidth
+                        onClick={handleStartRide}
+                        className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={hasStartedRide}
+                        title={hasStartedRide ? 'You already have an ongoing ride. Please complete it first.' : ''}
+                      >
+                        <Car size={20} className="inline mr-2" />
+                        {hasStartedRide ? 'Another Ride Active' : 'Start Ride'}
+                      </Button>
+                    )}
+
+                    {ride.rideStatus === 'started' && (
+                      <Button fullWidth onClick={handleCompleteRide} className="bg-red-600 text-white hover:bg-red-700">
+                        <CheckCircle size={20} className="inline mr-2" />
+                        End Ride
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {/* Track Ride - Active Ride Only */}
+                {ride.rideStatus === 'started' && (
+                  <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
+                    <MapPin size={20} className="inline mr-2" />
+                    Track
+                  </Button>
+                )}
+
+                {/* SOS - Active Ride Only */}
+                {ride.rideStatus === 'started' && (
+                  <Button
+                    fullWidth
+                    variant="secondary"
+                    onClick={handleSOSButtonClick}
+                    className="border-red-500 text-red-600"
+                  >
+                    <AlertTriangle size={20} className="inline mr-2 text-red-600" />
+                    SOS
+                  </Button>
+                )}
+              </div>
+
               {/* Non-Driver / Non-Participant - Seats Selector (Above Chat and Total Cost) */}
               {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && !hasRequested && ride.seats.available > 0 && (
                 <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border-2 border-gray-200 mb-4">
@@ -561,40 +633,18 @@ export default function RideDetails() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {rideStatus !== 'Completed' && (
-                  <Button fullWidth onClick={() => navigateTo('chat')} className="bg-black text-white hover:bg-gray-800 border-2 border-black">
-                    <MessageCircle size={20} className="inline mr-2" />
-                    Chat
-                  </Button>
-                )}
+
 
                 {/* Driver Actions */}
                 {userRole === 'driver' && ride.driver.id === userId && (
                   <>
-                    {ride.rideStatus === 'accepted' || ride.rideStatus === 'pending' ? (
-                      <Button
-                        fullWidth
-                        onClick={handleStartRide}
-                        className="bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        disabled={hasStartedRide}
-                        title={hasStartedRide ? 'You already have an ongoing ride. Please complete it first.' : ''}
-                      >
-                        <Car size={20} className="inline mr-2" />
-                        {hasStartedRide ? 'Another Ride Active' : 'Start Ride'}
-                      </Button>
-                    ) : ride.rideStatus === 'started' ? (
-                      <>
-                        <div className="col-span-2 p-4 bg-blue-50 border-2 border-blue-500 rounded-lg mb-2">
-                          <p className="text-center font-bold text-blue-800">Ride In Progress</p>
-                          <p className="text-center text-sm text-blue-600 mt-1">
-                            {ride.startTime ? `Started at ${new Date(ride.startTime).toLocaleTimeString()}` : 'Ride is active'}
-                          </p>
-                        </div>
-                        <Button fullWidth onClick={handleCompleteRide} className="bg-red-600 text-white hover:bg-red-700">
-                          <CheckCircle size={20} className="inline mr-2" />
-                          End Ride
-                        </Button>
-                      </>
+                    {ride.rideStatus === 'started' ? (
+                      <div className="col-span-2 p-4 bg-blue-50 border-2 border-blue-500 rounded-lg mb-2">
+                        <p className="text-center font-bold text-blue-800">Ride In Progress</p>
+                        <p className="text-center text-sm text-blue-600 mt-1">
+                          {ride.startTime ? `Started at ${new Date(ride.startTime).toLocaleTimeString()}` : 'Ride is active'}
+                        </p>
+                      </div>
                     ) : ride.rideStatus === 'completed' ? (
                       <div className="col-span-2 p-4 bg-gray-50 border-2 border-gray-500 rounded-lg">
                         <p className="text-center font-bold text-gray-800">Ride Completed</p>
@@ -604,12 +654,7 @@ export default function RideDetails() {
                           </p>
                         )}
                       </div>
-                    ) : (
-                      <Button fullWidth onClick={() => navigateTo('gps-tracking')}>
-                        <MapPin size={20} className="inline mr-2" />
-                        Track Ride
-                      </Button>
-                    )}
+                    ) : null}
                   </>
                 )}
 
@@ -631,31 +676,7 @@ export default function RideDetails() {
                         )}
                       </div>
                     ) : null}
-                    {rideStatus !== 'Completed' && (
-                      <Button fullWidth variant="secondary" onClick={() => navigateTo('gps-tracking')}>
-                        <MapPin size={20} className="inline mr-2" />
-                        Track Ride
-                      </Button>
-                    )}
-                    <Button
-                      fullWidth
-                      variant="secondary"
-                      onClick={handleDownloadTicket}
-                    >
-                      <ShieldAlert size={20} className="inline mr-2" />
-                      Download Ticket
-                    </Button>
-                    {rideStatus !== 'Completed' && (
-                      <Button
-                        fullWidth
-                        variant="secondary"
-                        onClick={handleSOSButtonClick}
-                        className="border-red-500 text-red-600"
-                      >
-                        <AlertTriangle size={20} className="inline mr-2 text-red-600" />
-                        SOS
-                      </Button>
-                    )}
+
 
                     {rideStatus === 'Completed' && (
                       <div className="mt-4 p-4 border-2 border-black rounded-lg bg-white">
