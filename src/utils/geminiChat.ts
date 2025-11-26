@@ -35,3 +35,54 @@ export async function classifyDomain(message: string): Promise<"domain" | "exter
   // In a real app, we could have a lightweight classifier or just send everything to backend
   return "domain";
 }
+
+export interface VoiceCommandResponse {
+  intent: 'BOOK_RIDE' | 'NAVIGATE' | 'UNKNOWN';
+  entities?: {
+    origin?: string;
+    destination?: string;
+    date?: string;
+    time?: string;
+    screen?: string;
+  };
+  message?: string;
+}
+
+export async function parseVoiceCommand(text: string): Promise<VoiceCommandResponse> {
+  try {
+    const prompt = `
+      You are a voice assistant for a ride-sharing app called RideMate.
+      Analyze the following user command and extract the intent and entities.
+      
+      Command: "${text}"
+      
+      Possible Intents:
+      - BOOK_RIDE: User wants to book a ride, find a ride, or go somewhere.
+      - NAVIGATE: User wants to go to a specific screen (e.g., dashboard, profile, history).
+      - UNKNOWN: Command is not understood or irrelevant.
+      
+      Return ONLY a JSON object with the following structure (no markdown):
+      {
+        "intent": "BOOK_RIDE" | "NAVIGATE" | "UNKNOWN",
+        "entities": {
+          "origin": "extracted origin location (optional)",
+          "destination": "extracted destination location (optional)",
+          "date": "extracted date (optional)",
+          "time": "extracted time (optional)",
+          "screen": "extracted screen name (only for NAVIGATE intent)"
+        },
+        "message": "A short, natural language response to the user confirming the action"
+      }
+    `;
+
+    const responseText = await askGemini(prompt);
+
+    // Clean up response if it contains markdown code blocks
+    const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("Error parsing voice command:", error);
+    return { intent: 'UNKNOWN', message: "Sorry, I couldn't understand that command." };
+  }
+}

@@ -89,28 +89,65 @@ const VoiceAssistant: React.FC = () => {
 
     const handleVoiceCommand = async (text: string) => {
         try {
-            // 1. Simple intent matching for navigation (faster)
-            if (text.toLowerCase().includes('book') || text.toLowerCase().includes('ride') || text.toLowerCase().includes('go to')) {
-                const destination = text.replace(/book a ride to|go to|i want to go to/i, '').trim();
-                const aiResponse = `I can help you book a ride to ${destination}. Opening the search page for you.`;
-                speak(aiResponse);
-                setResponse(aiResponse);
-                setTimeout(() => {
-                    setIsOpen(false);
-                    navigateTo('search-ride');
-                }, 3000);
-                return;
+            // 1. Parse command using Gemini
+            setResponse("Processing...");
+            const command = await import('../utils/geminiChat').then(m => m.parseVoiceCommand(text));
+
+            if (command.message) {
+                speak(command.message);
+                setResponse(command.message);
             }
 
-            // 2. Gemini Integration for complex queries
-            setResponse("Thinking...");
-            const aiResponse = await askGemini(text);
+            if (command.intent === 'BOOK_RIDE') {
+                const { origin, destination } = command.entities || {};
 
-            // Clean up response (remove markdown if any)
-            const cleanResponse = aiResponse.replace(/\*/g, '');
+                if (origin && destination) {
+                    // Geocode locations
+                    const [originGeo, destGeo] = await Promise.all([
+                        import('../utils/weatherApi').then(m => m.geocodePlace(origin)),
+                        import('../utils/weatherApi').then(m => m.geocodePlace(destination))
+                    ]);
 
-            setResponse(cleanResponse);
-            speak(cleanResponse);
+                    if (originGeo && destGeo) {
+                        setTimeout(() => {
+                            setIsOpen(false);
+                            navigateTo('search-ride', {
+                                startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
+                                destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
+                                autoSearch: true
+                            });
+                        }, 2000);
+                    } else {
+                        const errorMsg = "I couldn't find one of those locations. Please try again.";
+                        speak(errorMsg);
+                        setResponse(errorMsg);
+                    }
+                } else {
+                    // If locations are missing, just go to search
+                    setTimeout(() => {
+                        setIsOpen(false);
+                        navigateTo('search-ride');
+                    }, 2000);
+                }
+            } else if (command.intent === 'NAVIGATE') {
+                const screen = command.entities?.screen?.toLowerCase();
+                if (screen) {
+                    setTimeout(() => {
+                        setIsOpen(false);
+                        if (screen.includes('dashboard')) navigateTo('dashboard');
+                        else if (screen.includes('history')) navigateTo('ride-history');
+                        else if (screen.includes('profile')) navigateTo('profile');
+                        else if (screen.includes('create')) navigateTo('create-ride');
+                        else navigateTo('dashboard'); // Default
+                    }, 2000);
+                }
+            } else {
+                // Fallback to normal chat if unknown intent
+                const aiResponse = await askGemini(text);
+                const cleanResponse = aiResponse.replace(/\*/g, '');
+                setResponse(cleanResponse);
+                speak(cleanResponse);
+            }
 
         } catch (error) {
             console.error('Error processing voice command:', error);
@@ -119,7 +156,7 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
-    if (!isSeniorMode) return null;
+    // if (!isSeniorMode) return null; // Enabled for everyone now
 
     return (
         <>

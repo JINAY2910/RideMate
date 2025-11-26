@@ -61,8 +61,45 @@ export default function SearchRide() {
 
   useEffect(() => {
     loadRides();
+
+    // Check for navigation state (from Voice Assistant)
+    const navState = (window as any).__navigationState;
+    if (navState) {
+      if (navState.startLocation) setStartLocation(navState.startLocation);
+      if (navState.destinationLocation) setDestinationLocation(navState.destinationLocation);
+
+      // Clear state to prevent re-triggering
+      (window as any).__navigationState = null;
+
+      // If we have both locations and autoSearch is true, we could trigger search
+      // But we need date/time. Let's set default date/time if missing.
+      if (navState.autoSearch && navState.startLocation && navState.destinationLocation) {
+        const now = new Date();
+        // Default to today/now if not provided
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+        setDate(dateStr);
+        setTime(timeStr);
+
+        // We can't easily call handleSearch here because it depends on state that might not be updated yet
+        // So we'll just pre-fill for now and let the user click search or use a separate effect
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Effect to auto-search if all required fields are present and we just loaded from voice
+  useEffect(() => {
+    if (startLocation && destinationLocation && date && time && !hasSearched) {
+      // Only auto-search if it looks like we came from a voice command (implied by having all fields set quickly)
+      // For safety, we might want to just let the user review and click search.
+      // But the user asked to "do my all work".
+      // Let's trigger it if we are confident.
+      // For now, I'll leave it as pre-filled so user can verify.
+      // To fully automate, I'd need to refactor handleSearch to accept params or use a ref.
+    }
+  }, [startLocation, destinationLocation, date, time]);
 
 
   const formatDisplayDate = (value: string) => {
@@ -86,6 +123,45 @@ export default function SearchRide() {
       return undefined;
     }
     return candidate.toISOString();
+  };
+
+  const executeSearch = async (start: Location, dest: Location, d: string, t: string, seats: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setHasSearched(true);
+
+      // Build preferred time
+      const normalizedTime = t.length === 5 ? `${t}:00` : t;
+      const candidate = new Date(`${d}T${normalizedTime}`);
+      const preferredTimeISO = !Number.isNaN(candidate.getTime()) ? candidate.toISOString() : undefined;
+
+      const payload = {
+        pickup: {
+          label: start.name,
+          lat: start.lat,
+          lng: start.lng,
+        },
+        drop: {
+          label: dest.name,
+          lat: dest.lat,
+          lng: dest.lng,
+        },
+        preferredTime: preferredTimeISO,
+        seatsRequired: seats,
+      };
+
+      const response = await rideApi.match(payload);
+      setMatchGroups(response.matches);
+      setMatchTotals(response.totals);
+      setRides([]);
+    } catch (err) {
+      console.error('Search error:', err);
+      const message = err instanceof Error ? err.message : 'Unable to find rides.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearch = async () => {
@@ -124,38 +200,18 @@ export default function SearchRide() {
       return;
     }
 
-    try {
-      setLoading(true);
-      setError(null);
-      setHasSearched(true);
-
-      const payload = {
-        pickup: {
-          label: startLocation.name,
-          lat: startLocation.lat,
-          lng: startLocation.lng,
-        },
-        drop: {
-          label: destinationLocation.name,
-          lat: destinationLocation.lat,
-          lng: destinationLocation.lng,
-        },
-        preferredTime: buildPreferredTimeISO(),
-        seatsRequired: seats,
-      };
-
-      const response = await rideApi.match(payload);
-      setMatchGroups(response.matches);
-      setMatchTotals(response.totals);
-      setRides([]);
-    } catch (err) {
-      console.error('Search error:', err);
-      const message = err instanceof Error ? err.message : 'Unable to find rides.';
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
+    await executeSearch(startLocation, destinationLocation, date, time, seats);
   };
+
+  // Auto-search effect
+  useEffect(() => {
+    const navState = (window as any).__navigationState;
+    if (navState && navState.autoSearch && startLocation && destinationLocation && date && time) {
+      // Clear the flag so we don't loop
+      (window as any).__navigationState.autoSearch = false;
+      executeSearch(startLocation, destinationLocation, date, time, 1);
+    }
+  }, [startLocation, destinationLocation, date, time]);
 
 
 
