@@ -14,6 +14,7 @@ const {
   cancelBooking,
   startRide,
   completeRide,
+  confirmPayment,
 } = require('../controllers/rideController');
 const { authMiddleware, driverMiddleware } = require('../middleware/authMiddleware');
 
@@ -26,6 +27,7 @@ router.route('/:id/rate').post(authMiddleware, rateRide);
 router.route('/:id/cancel').post(authMiddleware, cancelBooking);
 router.route('/:id/start').post(authMiddleware, driverMiddleware, startRide);
 router.route('/:id/complete').post(authMiddleware, driverMiddleware, completeRide);
+router.route('/:id/payment/confirm').post(authMiddleware, confirmPayment);
 
 module.exports = router;
 

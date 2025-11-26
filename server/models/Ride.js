@@ -66,7 +66,7 @@ const rideSchema = new mongoose.Schema(
       },
       name: String,
       rating: { type: Number, default: 5 },
-      status: { type: String, enum: ['Approved', 'Pending', 'Rejected'], default: 'Pending' },
+      status: { type: String, enum: ['Approved', 'Pending', 'Rejected', 'PaymentPending'], default: 'Pending' },
       seatsRequested: { type: Number, default: 1, min: 1 },
       addons: {
         firstAid: { type: Boolean, default: false },

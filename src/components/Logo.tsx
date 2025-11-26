@@ -6,7 +6,7 @@ interface LogoProps {
 export default function Logo({ className = 'h-16 w-16', alt = 'RideMate logo' }: LogoProps) {
   return (
     <img
-      src="/logo.jpg"
+      src="/ridemate_logo.png"
       alt={alt}
       draggable={false}
       loading="lazy"

@@ -9,16 +9,16 @@ interface GreenStatsCardProps {
 const GreenStatsCard: React.FC<GreenStatsCardProps> = ({ co2Saved, greenPoints }) => {
     // Determine level based on points
     const getLevel = (points: number) => {
-        if (points < 100) return { name: 'Seedling', icon: Leaf, color: 'text-green-400', nextLevel: 100 };
-        if (points < 500) return { name: 'Sapling', icon: TreeDeciduous, color: 'text-green-500', nextLevel: 500 };
-        return { name: 'Forest Guardian', icon: Award, color: 'text-emerald-600', nextLevel: 1000 };
+        if (points < 100) return { name: 'Seedling', icon: Leaf, color: 'text-green-400', minPoints: 0, nextLevel: 100 };
+        if (points < 500) return { name: 'Sapling', icon: TreeDeciduous, color: 'text-green-500', minPoints: 100, nextLevel: 500 };
+        return { name: 'Forest Guardian', icon: Award, color: 'text-emerald-600', minPoints: 500, nextLevel: 1000 };
     };
 
     const level = getLevel(greenPoints);
     const LevelIcon = level.icon;
 
     // Calculate progress to next level
-    const progress = Math.min(100, (greenPoints / level.nextLevel) * 100);
+    const progress = Math.min(100, Math.max(0, ((greenPoints - level.minPoints) / (level.nextLevel - level.minPoints)) * 100));
 
     return (
         <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 rounded-2xl p-8 shadow-lg border-2 border-green-200/50 mb-6 relative overflow-hidden hover:shadow-xl transition-shadow duration-300">

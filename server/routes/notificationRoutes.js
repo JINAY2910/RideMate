@@ -13,3 +13,4 @@ router.route('/:id/read').patch(authMiddleware, markAsRead);
 
 module.exports = router;
 
+

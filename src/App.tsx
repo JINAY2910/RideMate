@@ -14,6 +14,7 @@ import RideHistory from './screens/RideHistory';
 import Rating from './screens/Rating';
 import RideConfirmation from './screens/RideConfirmation';
 import Vehicles from './screens/Vehicles';
+import PaymentPage from './screens/PaymentPage';
 import Chatbot from './components/Chatbot';
 
 
@@ -37,6 +38,7 @@ function AppRouter() {
     rating: <Rating />,
     'ride-confirmation': <RideConfirmation />,
     vehicles: <Vehicles />,
+    payment: <PaymentPage />,
   };
 
   return screens[currentScreen] || <Landing />;

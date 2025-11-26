@@ -135,9 +135,10 @@ export default function CreateRide() {
             startLocation.lat,
             startLocation.lng,
             destinationLocation.lat,
-            destinationLocation.lng
+            destinationLocation.lng,
+            seatsNumber
           );
-          estimatedPrice = details.cost;
+          estimatedPrice = details.pricePerRider;
         } catch (err) {
           console.warn('Could not calculate price:', err);
         }
@@ -325,7 +326,7 @@ export default function CreateRide() {
             )}
 
             <Input
-              label="Available Seats"
+              label="Max Riders"
               type="number"
               placeholder="e.g., 3"
               value={seats}

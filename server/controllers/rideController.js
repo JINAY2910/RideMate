@@ -934,7 +934,7 @@ const updateRequestStatus = async (req, res, next) => {
       });
     }
 
-    const { status } = req.body;
+    let { status } = req.body;
     if (!['Approved', 'Rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -962,7 +962,12 @@ const updateRequestStatus = async (req, res, next) => {
       });
     }
 
-    // Handle "Approved" status
+    // Check if payment is required for approval
+    if (status === 'Approved' && ride.price > 0) {
+      status = 'PaymentPending';
+    }
+
+    // Handle "Approved" status (Free rides only, or manual override if we ever allow it)
     if (status === 'Approved' && request.status !== 'Approved') {
       const seatsToBook = request.seatsRequested || 1;
 
@@ -1005,8 +1010,14 @@ const updateRequestStatus = async (req, res, next) => {
       );
     }
 
+    // PaymentPending check moved up
+
     // Update the request status
     request.status = status;
+
+    // If Approved (free ride) or PaymentPending, we don't add to participants yet
+    // Only add to participants when status is 'Approved' AND (price is 0 OR payment confirmed)
+    // Logic handled above.
 
     // Fix invalid driverLocation if present (legacy data issue)
     if (ride.driverLocation && (!ride.driverLocation.coordinates || ride.driverLocation.coordinates.length === 0)) {
@@ -1066,11 +1077,18 @@ const updateRequestStatus = async (req, res, next) => {
           ride._id?.toString() || ride._id,
           request._id?.toString()
         );
-        // Update rideStatus to 'accepted' if this is the first accepted request
         if (ride.rideStatus === 'pending') {
           ride.rideStatus = 'accepted';
           await ride.save();
         }
+      } else if (status === 'PaymentPending') {
+        await createNotification(
+          request.rider,
+          'payment_required',
+          `${driverName} has accepted your request. Please complete payment to confirm.`,
+          ride._id?.toString() || ride._id,
+          request._id?.toString()
+        );
       } else if (status === 'Rejected') {
         await createNotification(
           request.rider,
@@ -1664,6 +1682,93 @@ const completeRide = async (req, res, next) => {
   }
 };
 
+// @desc    Confirm payment and finalize booking
+// @route   POST /api/rides/:id/payment/confirm
+// @access  Private
+const confirmPayment = async (req, res, next) => {
+  try {
+    console.log(`[Ride] ConfirmPayment for ride: ${req.params.id} by user: ${req.user.id}`);
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({ success: false, message: 'Ride not found' });
+    }
+
+    const request = ride.requests.find(r => r.rider && r.rider.toString() === req.user.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found' });
+    }
+
+    if (request.status !== 'PaymentPending') {
+      return res.status(400).json({ success: false, message: 'Payment is not pending for this request' });
+    }
+
+    const seatsToBook = request.seatsRequested || 1;
+
+    // CRITICAL: Check if seats are still available
+    if (ride.seatsAvailable < seatsToBook) {
+      return res.status(400).json({
+        success: false,
+        message: `Sorry, only ${ride.seatsAvailable} seat(s) are left. Someone else booked while you were paying.`
+      });
+    }
+
+    // Update request status
+    request.status = 'Approved';
+
+    // Add to participants
+    ride.participants.push({
+      rider: request.rider,
+      name: request.name,
+      status: 'Confirmed',
+      seatsBooked: seatsToBook,
+      addons: request.addons,
+      finalCost: request.finalCost
+    });
+
+    // Decrement seats
+    ride.seatsAvailable -= seatsToBook;
+
+    await ride.save();
+
+    // Update Booking
+    await Booking.findOneAndUpdate(
+      { ride: ride._id, rider: req.user.id },
+      { status: 'Approved' }
+    );
+
+    // Send notifications (non-blocking for response)
+    try {
+      // Notify Driver
+      await createNotification(
+        ride.driver,
+        'ride_booked',
+        `${request.name} has completed payment and confirmed their seat.`,
+        ride._id,
+        request._id
+      );
+
+      // Notify Rider
+      await createNotification(
+        req.user.id,
+        'ride_confirmed',
+        `Payment successful! Your ride with ${ride.driver.name || 'the driver'} is confirmed.`,
+        ride._id,
+        request._id
+      );
+    } catch (notifError) {
+      console.error('[Ride] Notification failed during payment confirmation:', notifError);
+      // We don't fail the request here because the payment/booking is already successful
+    }
+
+    res.json({ success: true, message: 'Payment confirmed and ride booked' });
+
+  } catch (error) {
+    console.error(`[Ride] ConfirmPayment error:`, error);
+    next(error);
+  }
+};
+
 module.exports = {
   createRide,
   getRides,
@@ -1678,4 +1783,5 @@ module.exports = {
   cancelBooking,
   startRide,
   completeRide,
+  confirmPayment
 };

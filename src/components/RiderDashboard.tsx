@@ -3,7 +3,7 @@ import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
 import { User, Car } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { rideApi } from '../services/rides';
+import { rideApi, Ride } from '../services/rides';
 import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
 import Button from './Button';
 import { parseRideDate } from '../utils/dateUtils';
@@ -62,7 +62,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
 export default function RiderDashboard() {
     const { navigateTo, setActiveRideId, userId, userName } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
-    const [myRides, setMyRides] = useState<any[]>([]);
+    const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
     const [rideMetrics, setRideMetrics] = useState<Record<string, RideMetrics>>({});
 
@@ -124,9 +124,9 @@ export default function RiderDashboard() {
     }, [bookings, rideMetrics]);
 
     // Only show one ongoing ride (the one that is started)
-    const startedRides = bookings.filter(b => 
-      b.ride && 
-      (b.ride.rideStatus === 'started' || (b.ride.isActive && (b.status === 'Accepted' || b.status === 'Approved')))
+    const startedRides = bookings.filter(b =>
+        b.ride &&
+        b.ride.rideStatus === 'started'
     );
     const ongoingRide = startedRides.length > 0 ? startedRides[0] : null;
 
@@ -153,7 +153,9 @@ export default function RiderDashboard() {
         <div className="space-y-8 relative">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-black">Rider Dashboard</h2>
-                <div className="flex gap-2">
+            </div>
+            <div className="flex items-center">
+                <div className="w-full grid grid-cols-1">
                     <Button
                         size="sm"
                         variant="outline"
@@ -162,14 +164,6 @@ export default function RiderDashboard() {
                     >
                         <Car size={16} />
                         Ride History
-                    </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => navigateTo('search-ride')}
-                        className="flex items-center gap-2"
-                    >
-                        <User size={16} />
-                        Find a Ride
                     </Button>
                 </div>
             </div>
@@ -225,66 +219,75 @@ export default function RiderDashboard() {
                 ) : (
                     <div className="space-y-4">
                         {myRides.map((ride) => {
-                            const myRequest = ride.requests?.find(r => 
-                                (userId && r.rider?.id === userId) || 
-                                r.name === userName || 
-                                r.rider?.name === userName
-                            );
-                            if (!myRequest) return null;
-                            
+                            const myRequest = ride.requests.find(r => r.rider && (typeof r.rider === 'string' ? r.rider === userId : r.rider.id === userId));
+                            const isPaymentPending = myRequest?.status === 'PaymentPending';
+
                             return (
-                                <Card key={ride._id} className="border-2 border-black">
-                                    <div className="mb-3">
-                                        <h4 className="font-bold text-lg text-black mb-1">
-                                            {ride.start.label} → {ride.destination.label}
-                                        </h4>
-                                        <p className="text-sm text-gray-600">{ride.date} at {ride.time}</p>
-                                        <p className="text-sm text-gray-600">Driver: {ride.driver.name}</p>
-                                    </div>
-                                    <div className={`p-3 rounded-lg border-2 ${
-                                        myRequest.status === 'Approved'
-                                            ? 'bg-green-50 border-green-200'
-                                            : myRequest.status === 'Rejected'
-                                            ? 'bg-red-50 border-red-200'
-                                            : 'bg-yellow-50 border-yellow-200'
-                                    }`}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <p className="font-bold text-black">Request Status</p>
-                                                <p className="text-xs text-gray-600 mt-1">
-                                                    {myRequest.seatsRequested} seat{myRequest.seatsRequested > 1 ? 's' : ''} requested
-                                                </p>
+                                <div key={ride._id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div>
+                                            <h3 className="font-bold text-lg text-black mb-1">
+                                                {ride.start.label} → {ride.destination.label}
+                                            </h3>
+                                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                <div className="flex items-center">
+                                                    <User size={16} className="mr-1" />
+                                                    {ride.driver.name}
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Car size={16} className="mr-1" />
+                                                    {ride.vehicle ? `${ride.vehicle.make} ${ride.vehicle.model}` : 'Vehicle details N/A'}
+                                                </div>
                                             </div>
-                                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                                                myRequest.status === 'Approved'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : myRequest.status === 'Rejected'
-                                                    ? 'bg-red-100 text-red-800'
-                                                    : 'bg-yellow-100 text-yellow-800'
-                                            }`}>
-                                                {myRequest.status}
-                                            </span>
                                         </div>
-                                        {ride.rideStatus && (
-                                            <div className="mt-2 pt-2 border-t border-gray-200">
-                                                <p className="text-xs text-gray-600">
-                                                    Ride Status: <span className="font-bold capitalize">{ride.rideStatus}</span>
-                                                </p>
-                                            </div>
-                                        )}
-                                        <Button
-                                            size="sm"
-                                            fullWidth
-                                            className="mt-3"
-                                            onClick={() => {
-                                                setActiveRideId(ride._id);
-                                                navigateTo('ride-details');
-                                            }}
-                                        >
-                                            View Details
-                                        </Button>
+                                        <div className="text-right">
+                                            <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${isPaymentPending
+                                                    ? 'bg-orange-50 text-orange-600 border-orange-200'
+                                                    : myRequest?.status === 'Approved'
+                                                        ? 'bg-green-50 text-green-600 border-green-200'
+                                                        : myRequest?.status === 'Rejected'
+                                                            ? 'bg-red-50 text-red-600 border-red-200'
+                                                            : 'bg-yellow-50 text-yellow-600 border-yellow-200'
+                                                }`}>
+                                                {isPaymentPending ? 'Payment Pending' : myRequest?.status || 'Pending'}
+                                            </span>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Requested {new Date(myRequest?.createdAt || Date.now()).toLocaleDateString()}
+                                            </p>
+                                        </div>
                                     </div>
-                                </Card>
+
+                                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                                        <div className="text-sm">
+                                            <span className="text-gray-500">Date:</span>
+                                            <span className="font-medium text-black ml-1">{ride.date}</span>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setActiveRideId(ride._id);
+                                                    navigateTo('ride-details');
+                                                }}
+                                            >
+                                                View Details
+                                            </Button>
+                                            {isPaymentPending && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setActiveRideId(ride._id);
+                                                        navigateTo('payment');
+                                                    }}
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white border-orange-600"
+                                                >
+                                                    Pay Now
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>

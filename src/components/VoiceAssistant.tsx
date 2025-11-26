@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 import { askGemini } from '../utils/geminiChat';
 
 const VoiceAssistant: React.FC = () => {
-    const { isSeniorMode } = useAccessibility();
+    const { isVoiceCommandMode } = useAccessibility();
     const { navigateTo } = useApp();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -156,7 +156,7 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
-    // if (!isSeniorMode) return null; // Enabled for everyone now
+    if (!isVoiceCommandMode) return null;
 
     return (
         <>

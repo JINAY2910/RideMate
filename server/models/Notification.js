@@ -17,6 +17,9 @@ const notificationSchema = new mongoose.Schema(
         'request_cancelled',
         'ride_started',
         'ride_completed',
+        'ride_booked',
+        'ride_confirmed',
+        'payment_required',
       ],
       required: [true, 'Notification type is required'],
     },
@@ -52,4 +55,5 @@ notificationSchema.index({ receiverId: 1, isRead: 1 });
 notificationSchema.index({ receiverId: 1, timestamp: -1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
+
 

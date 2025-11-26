@@ -24,7 +24,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 export type Notification = {
   _id: string;
   receiverId: string;
-  type: 'ride_request' | 'request_accepted' | 'request_rejected' | 'request_cancelled' | 'ride_started' | 'ride_completed';
+  type: 'ride_request' | 'request_accepted' | 'request_rejected' | 'request_cancelled' | 'ride_started' | 'ride_completed' | 'ride_booked' | 'ride_confirmed' | 'payment_required';
   message: string;
   rideId?: string;
   requestId?: string;
@@ -85,4 +85,5 @@ export const notificationApi = {
     return handleResponse<{ success: boolean; message: string }>(response);
   },
 };
+
 

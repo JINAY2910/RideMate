@@ -47,7 +47,7 @@ export type RideRequest = {
   } | null;
   name: string;
   rating: number;
-  status: 'Approved' | 'Pending' | 'Rejected';
+  status: 'Approved' | 'Pending' | 'Rejected' | 'PaymentPending';
   seatsRequested: number;
   addons?: {
     firstAid: boolean;
@@ -406,6 +406,19 @@ export const rideApi = {
       },
     });
     return handleResponse<Ride>(response);
+  },
+
+  async confirmPayment(id: string) {
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required.');
+    const response = await fetch(`${API_BASE}/rides/${id}/payment/confirm`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return handleResponse<{ success: true; message: string }>(response);
   },
 };
 

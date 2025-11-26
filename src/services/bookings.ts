@@ -42,6 +42,7 @@ export type Booking = {
             make: string;
             color: string;
         };
+        rideStatus?: 'upcoming' | 'started' | 'completed' | 'cancelled';
     };
     rider: {
         _id: string;

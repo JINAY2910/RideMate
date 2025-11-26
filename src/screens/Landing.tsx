@@ -576,7 +576,7 @@ export default function Landing() {
                     <div className="bg-white border border-black/10 rounded-3xl p-8 hover:shadow-xl transition-all">
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex items-center gap-4">
-                          <img src="/team/tirth.png" alt="Tirth Bhatt" className="w-16 h-16 rounded-full object-cover" />
+                          <img src="/team/tirth.jpg" alt="Tirth Bhatt" className="w-16 h-16 rounded-full object-cover" />
                           <div>
                             <h3 className="text-xl font-bold text-black">Tirth Bhatt</h3>
                             <p className="text-gray-600 text-sm">Designing the Future of Mobility</p>

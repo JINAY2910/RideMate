@@ -58,7 +58,7 @@ export default function MyRides() {
       req.rider?.name === userName ||
       (userId && req.rider?.id === userId)
     );
-    return myRequest && (myRequest.status === 'Pending' || myRequest.status === 'Rejected');
+    return myRequest && (myRequest.status === 'Pending' || myRequest.status === 'Rejected' || myRequest.status === 'PaymentPending');
   }) : [];
 
   // Check for newly approved requests to show notification
@@ -139,6 +139,13 @@ export default function MyRides() {
           </div>
         )}
 
+        {!isDriver && myStatus === 'PaymentPending' && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-orange-100 px-3 py-2 text-sm font-bold text-orange-800 border border-orange-200">
+            <div className="h-2 w-2 rounded-full bg-orange-600 animate-pulse" />
+            Payment Required! Tap to pay and confirm.
+          </div>
+        )}
+
         <div className="flex justify-between items-start mb-4">
           <div>
             <h3 className="text-xl font-bold text-black">
@@ -195,6 +202,17 @@ export default function MyRides() {
                     className="px-3 py-1 text-xs font-bold text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                   >
                     {myStatus === 'Pending' ? 'Cancel Request' : 'Remove'}
+                  </button>
+                )}
+                {myStatus === 'PaymentPending' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNavigateToRide();
+                    }}
+                    className="px-3 py-1 text-xs font-bold text-white bg-orange-500 border border-orange-600 rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Pay Now
                   </button>
                 )}
                 {myStatus === 'Approved' && ride.status !== 'Completed' && (
@@ -323,7 +341,7 @@ export default function MyRides() {
               <section>
                 <h2 className="text-2xl font-bold mb-4 text-gray-700 flex items-center gap-2">
                   <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                  Pending & Rejected Requests
+                  Pending & Requests
                 </h2>
                 <div className="space-y-4">
                   {pendingRides.map(renderRideCard)}

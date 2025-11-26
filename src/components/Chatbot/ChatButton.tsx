@@ -85,7 +85,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ onClick, isOpen }) => {
                     aria-label="Open AI Assistant"
                 >
                     <img
-                        src="/logo.jpg"
+                        src="/ridemate_logo.png"
                         alt="RideMate AI"
                         style={{
                             width: '100%',

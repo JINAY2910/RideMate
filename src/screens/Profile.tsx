@@ -7,7 +7,7 @@ import Layout from '../components/Layout';
 
 export default function Profile() {
   const { navigateTo, userName, userRole, updateProfile, user, fetchUserProfile } = useApp();
-  const { isSeniorMode, toggleSeniorMode } = useAccessibility();
+  const { isVoiceCommandMode, toggleVoiceCommandMode } = useAccessibility();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -138,7 +138,7 @@ export default function Profile() {
                 </div>
               ) : null}
 
-              <h1 className={`${isSeniorMode ? 'text-4xl mt-4' : 'text-2xl'} font-bold text-black`}>{userName}</h1>
+              <h1 className="text-2xl font-bold text-black">{userName}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-gray-500 capitalize">{userRole}</p>
                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
@@ -151,16 +151,16 @@ export default function Profile() {
 
             <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-center justify-between">
               <div>
-                <h3 className={`font-semibold ${isSeniorMode ? 'text-2xl' : 'text-lg'}`}>Assisted Mode</h3>
-                <p className={`${isSeniorMode ? 'text-lg' : 'text-sm'} text-gray-500`}>Make the interface more accessible and enable navigation using voice commands</p>
+                <h3 className="font-semibold text-lg">Voice Command Mode</h3>
+                <p className="text-sm text-gray-500">Use whole App using Voice Commands</p>
               </div>
               <button
-                onClick={toggleSeniorMode}
-                className={`relative inline-flex ${isSeniorMode ? 'h-12 w-20' : 'h-8 w-14'} items-center rounded-full transition-colors ${isSeniorMode ? 'bg-black' : 'bg-gray-300'
+                onClick={toggleVoiceCommandMode}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isVoiceCommandMode ? 'bg-black' : 'bg-gray-300'
                   }`}
               >
                 <span
-                  className={`inline-block ${isSeniorMode ? 'h-10 w-10' : 'h-6 w-6'} transform rounded-full bg-white transition-transform ${isSeniorMode ? 'translate-x-9' : 'translate-x-1'
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isVoiceCommandMode ? 'translate-x-7' : 'translate-x-1'
                     }`}
                 />
               </button>
@@ -175,14 +175,14 @@ export default function Profile() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className={`block ${isSeniorMode ? 'text-lg' : 'text-sm'} font-medium text-gray-700 mb-2`}>Full Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className={`w-full ${isSeniorMode ? 'px-6 py-5 text-xl' : 'px-4 py-3'} rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500`}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                   />
                 </div>
                 <div>
@@ -196,14 +196,14 @@ export default function Profile() {
                   />
                 </div>
                 <div>
-                  <label className={`block ${isSeniorMode ? 'text-lg' : 'text-sm'} font-medium text-gray-700 mb-2`}>Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    className={`w-full ${isSeniorMode ? 'px-6 py-5 text-xl' : 'px-4 py-3'} rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500`}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-black transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                   />
                 </div>
               </div>
@@ -294,7 +294,7 @@ export default function Profile() {
                     </Button>
                   </>
                 ) : (
-                  <Button type="button" onClick={() => setIsEditing(true)} className={isSeniorMode ? 'text-xl px-8 py-4' : ''}>
+                  <Button type="button" onClick={() => setIsEditing(true)}>
                     Edit Profile
                   </Button>
                 )}

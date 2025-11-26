@@ -1,22 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, User, CheckCircle, XCircle, Car, Plus, Trash2, X } from 'lucide-react';
+import { Calendar, Clock, User, CheckCircle, XCircle, Car, Trash2 } from 'lucide-react';
 import Button from './Button';
 import Card from './Card';
 import { useApp } from '../context/AppContext';
 import { rideApi, Ride } from '../services/rides';
 
-interface DriverDashboardProps {
-    userName: string;
-}
+interface DriverDashboardProps { }
 
-const RiderProfileModal = ({ rider, rating, rideId, requestId, onAccept, onReject, onClose }: { 
-    rider: any, 
+const RiderProfileModal = ({ rider, rating, onAccept, onReject, onClose }: {
+    rider: any,
     rating: number,
-    rideId: string,
-    requestId: string,
     onAccept: () => void,
     onReject: () => void,
-    onClose: () => void 
+    onClose: () => void
 }) => {
     if (!rider) return null;
     return (
@@ -63,7 +59,7 @@ const RiderProfileModal = ({ rider, rating, rideId, requestId, onAccept, onRejec
     );
 };
 
-export default function DriverDashboard({ userName }: DriverDashboardProps) {
+export default function DriverDashboard({ }: DriverDashboardProps) {
     const { navigateTo, userId, setActiveRideId } = useApp();
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
@@ -161,24 +157,26 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
     const ongoingRides = startedRides.slice(0, 1); // Only show the first started ride
     // All other rides (including other started rides) go to upcoming
     const upcomingRides = myRides.filter(r => {
-      // Exclude the first started ride from upcoming
-      if (startedRides.length > 0 && r._id === startedRides[0]._id) {
-        return false;
-      }
-      // Include all other rides that are not completed
-      return r.rideStatus !== 'completed';
+        // Exclude the first started ride from upcoming
+        if (startedRides.length > 0 && r._id === startedRides[0]._id) {
+            return false;
+        }
+        // Include all other rides that are not completed
+        return r.rideStatus !== 'completed';
     });
 
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-black">Driver Dashboard</h2>
-                <div className="flex gap-2">
+            </div>
+            <div className="flex items-center">
+                <div className="w-full grid grid-cols-2 gap-3">
                     <Button
                         size="sm"
                         variant="outline"
                         onClick={() => navigateTo('ride-history')}
-                        className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
+                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
                     >
                         <Clock size={16} />
                         Ride History
@@ -187,18 +185,10 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                         size="sm"
                         variant="outline"
                         onClick={() => navigateTo('vehicles')}
-                        className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
+                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
                     >
                         <Car size={16} />
                         My Vehicles
-                    </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => navigateTo('create-ride')}
-                        className="flex items-center gap-2"
-                    >
-                        <Plus size={16} />
-                        Create Ride
                     </Button>
                 </div>
             </div>
@@ -219,7 +209,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                             </h3>
                             {ongoingRides.map(ride => (
                                 <Card key={ride._id} className="border-2 border-green-500 bg-green-50/30 shadow-lg mb-6">
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex flex-col gap-4">
                                         <div>
                                             <h3 className="font-bold text-2xl text-black mb-2">
                                                 {ride.start.label} → {ride.destination.label}
@@ -235,9 +225,11 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button onClick={() => handleViewRide(ride)} className="bg-green-600 hover:bg-green-700 border-green-700">
-                                            Track Ride
-                                        </Button>
+                                        <div className="flex justify-end w-full">
+                                            <Button onClick={() => handleViewRide(ride)} className="bg-green-600 hover:bg-green-700 border-green-700">
+                                                Ride Details
+                                            </Button>
+                                        </div>
                                     </div>
                                 </Card>
                             ))}
@@ -246,7 +238,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
 
                     {/* Request Status Section */}
                     <div className="mb-8">
-                        <h3 className="text-xl font-bold text-black mb-4">Request Status</h3>
+                        <h3 className="text-xl font-bold text-black mb-4">Ride Requests</h3>
                         {upcomingRides.length === 0 ? (
                             <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                                 <p className="text-gray-500">No ride requests to review.</p>
@@ -268,13 +260,14 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                 {allRequests.map((request) => (
                                                     <div
                                                         key={request._id}
-                                                        className={`p-3 rounded-lg border-2 ${
-                                                            request.status === 'Approved'
-                                                                ? 'bg-green-50 border-green-200'
-                                                                : request.status === 'Rejected'
+                                                        className={`p-3 rounded-lg border-2 ${request.status === 'Approved'
+                                                            ? 'bg-green-50 border-green-200'
+                                                            : request.status === 'Rejected'
                                                                 ? 'bg-red-50 border-red-200'
-                                                                : 'bg-yellow-50 border-yellow-200'
-                                                        }`}
+                                                                : request.status === 'PaymentPending'
+                                                                    ? 'bg-orange-50 border-orange-200'
+                                                                    : 'bg-yellow-50 border-yellow-200'
+                                                            }`}
                                                     >
                                                         <div className="flex justify-between items-start mb-2">
                                                             <div>
@@ -284,15 +277,16 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                                 </p>
                                                             </div>
                                                             <span
-                                                                className={`px-2 py-1 text-xs font-bold rounded-full ${
-                                                                    request.status === 'Approved'
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : request.status === 'Rejected'
+                                                                className={`px-2 py-1 text-xs font-bold rounded-full ${request.status === 'Approved'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : request.status === 'Rejected'
                                                                         ? 'bg-red-100 text-red-800'
-                                                                        : 'bg-yellow-100 text-yellow-800'
-                                                                }`}
+                                                                        : request.status === 'PaymentPending'
+                                                                            ? 'bg-orange-100 text-orange-800'
+                                                                            : 'bg-yellow-100 text-yellow-800'
+                                                                    }`}
                                                             >
-                                                                {request.status}
+                                                                {request.status === 'PaymentPending' ? 'Payment Pending' : request.status}
                                                             </span>
                                                         </div>
                                                         {request.status === 'Pending' && (
@@ -312,6 +306,11 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                         )}
                                                     </div>
                                                 ))}
+                                            </div>
+                                            <div className="mt-3 flex justify-end">
+                                                <Button size="sm" onClick={() => handleViewRide(ride)} className="bg-black text-white hover:bg-gray-800">
+                                                    Ride Details
+                                                </Button>
                                             </div>
                                         </Card>
                                     );
@@ -413,8 +412,8 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                                                 </div>
                                                             </div>
                                                             <button
-                                                                onClick={() => setSelectedRider({ 
-                                                                    rider: request.rider, 
+                                                                onClick={() => setSelectedRider({
+                                                                    rider: request.rider,
                                                                     rating: request.rating || 5.0,
                                                                     rideId: ride._id,
                                                                     requestId: request._id
@@ -446,10 +445,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                             </div>
                                         )}
 
-                                        <div className="mt-4 flex gap-2 border-t pt-4 border-gray-100">
-                                            <Button size="sm" fullWidth onClick={() => handleViewRide(ride)}>
-                                                Manage Ride
-                                            </Button>
+                                        <div className="mt-4 flex justify-between items-center border-t pt-4 border-gray-100">
                                             <button
                                                 onClick={() => handleDeleteRide(ride._id)}
                                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -457,6 +453,9 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                                             >
                                                 <Trash2 size={20} />
                                             </button>
+                                            <Button size="sm" onClick={() => handleViewRide(ride)}>
+                                                Manage Ride
+                                            </Button>
                                         </div>
                                     </Card>
                                 ))}
@@ -466,11 +465,9 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                 </>
             )}
             {selectedRider && (
-                <RiderProfileModal 
-                    rider={selectedRider.rider} 
+                <RiderProfileModal
+                    rider={selectedRider.rider}
                     rating={selectedRider.rating}
-                    rideId={selectedRider.rideId}
-                    requestId={selectedRider.requestId}
                     onAccept={async () => {
                         await handleAcceptRequest(selectedRider.rideId, selectedRider.requestId);
                         setSelectedRider(null);
@@ -479,7 +476,7 @@ export default function DriverDashboard({ userName }: DriverDashboardProps) {
                         await handleRejectRequest(selectedRider.rideId, selectedRider.requestId);
                         setSelectedRider(null);
                     }}
-                    onClose={() => setSelectedRider(null)} 
+                    onClose={() => setSelectedRider(null)}
                 />
             )}
         </div>
