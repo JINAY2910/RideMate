@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const Ride = require('../models/Ride');
 const Booking = require('../models/Booking');
+const { haversineDistanceKm } = require('../utils/distance');
 
 // Load env vars
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -27,20 +28,6 @@ const PLATFORM_FEE_RATE = 0.10;
 const MIN_FARE_PER_RIDER = 50;
 const LONG_TRIP_THRESHOLD_KM = 500;
 const REDUCED_PROFIT_MARGIN = 0.10;
-
-const toRadians = (deg) => (deg * Math.PI) / 180;
-
-const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the earth in km
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-};
 
 const calculatePricePerRider = (distanceKm, durationMinutes, seats = 1) => {
     const d = distanceKm;
@@ -97,29 +84,20 @@ const updatePrices = async () => {
                 continue;
             }
 
-            const startLat = ride.startCoordinates.coordinates[1];
-            const startLng = ride.startCoordinates.coordinates[0];
-            const destLat = ride.destCoordinates.coordinates[1];
-            const destLng = ride.destCoordinates.coordinates[0];
+            const start = {
+                lat: ride.startCoordinates.coordinates[1],
+                lng: ride.startCoordinates.coordinates[0]
+            };
+            const dest = {
+                lat: ride.destCoordinates.coordinates[1],
+                lng: ride.destCoordinates.coordinates[0]
+            };
 
-            const distanceKm = haversineDistanceKm(startLat, startLng, destLat, destLng);
+            const distanceKm = haversineDistanceKm(start, dest);
             const durationMinutes = ride.duration * 60; // duration is in hours
-
-            // Calculate price based on seats available + booked
-            // Actually, price per rider usually depends on total capacity or just "1" for base calculation?
-            // In CreateRide.tsx, it calls calculateRideDetails with `seatsNumber` (which is total seats offered).
-            // But `calculateCost` in `rideCalculations.ts` uses `seats` to divide the total cost.
-            // If the driver offers 3 seats, the price per rider is Total / 3.
-            // So we should use `ride.seatsAvailable` + `ride.participants.length`?
-            // Or just the initial total seats?
-            // `ride.seatsAvailable` is current available.
-            // We need total seats.
-            // Let's assume `ride.seatsAvailable` + (ride.participants ? ride.participants.reduce((sum, p) => sum + p.seatsBooked, 0) : 0)
 
             const bookedSeats = ride.participants ? ride.participants.reduce((sum, p) => sum + (p.seatsBooked || 1), 0) : 0;
             const totalSeats = (ride.seatsAvailable || 0) + bookedSeats;
-
-            // If totalSeats is 0 (shouldn't happen), default to 1
             const seatsForCalc = Math.max(1, totalSeats);
 
             const newPricePerRider = calculatePricePerRider(distanceKm, durationMinutes, seatsForCalc);
@@ -148,11 +126,6 @@ const updatePrices = async () => {
                 for (const req of ride.requests) {
                     const oldFinalCost = req.finalCost;
                     const newFinalCost = newPricePerRider * (req.seatsRequested || 1);
-                    // Addons? Assuming addons are extra, but let's just update the base cost part if we can distinguish.
-                    // `finalCost` in schema usually includes addons.
-                    // But here we are just updating the base fare.
-                    // If we don't know addon cost, we might overwrite it.
-                    // `req.addonCharges` exists.
                     const newTotalWithAddons = newFinalCost + (req.addonCharges || 0);
 
                     if (req.finalCost !== newTotalWithAddons) {

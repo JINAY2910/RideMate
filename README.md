@@ -25,10 +25,12 @@ RideMate is a modern, full-stack carpooling and ride-sharing platform built with
 
 ### 👥 User Features
 - **User Authentication**: Secure JWT-based authentication with bcrypt password hashing
+- **Two-Step Signup**: Enhanced registration process with email/password first, then profile details
 - **Profile Management**: Update profile, add emergency contacts, upload profile photos
 - **Vehicle Management**: Drivers can add and manage multiple vehicles
 - **Rating System**: Mutual rating system for drivers and riders
 - **Emergency Contacts**: Store up to 3 emergency contacts for safety
+- **SOS Emergency Button**: Quick access emergency alert system during rides
 - **GreenMiles Tracking**: Track CO₂ saved and earn green points for eco-friendly travel
 
 ### 🚀 Advanced Features
@@ -40,11 +42,30 @@ RideMate is a modern, full-stack carpooling and ride-sharing platform built with
 - **Accessibility Mode**: Senior-friendly UI with larger fonts and simplified navigation
 - **Weather Integration**: Real-time weather information for ride planning
 - **Location Autocomplete**: Smart location search with geocoding support
+- **Notification System**: Real-time notification panel for ride updates and alerts
+- **Rider Profile Modal**: View detailed rider information before accepting requests
+
+### 💰 Pricing & Add-ons
+- **Dynamic Pricing Model**: Advanced fare calculation based on:
+  - Fuel costs (₹100/L at 15km/L efficiency)
+  - Wear-and-tear (₹5/km)
+  - Driver time compensation (₹2/min)
+  - Profit margin (20% standard, 10% for trips >500km)
+  - Platform fee (10%)
+  - Minimum fare per rider (₹50)
+- **Optional Add-ons**:
+  - Door-to-Door Service (+₹25)
+  - First Aid Kit (+₹20)
+- **Scheduled Price Updates**: Automated script to recalculate prices for existing rides
 
 ### 🎨 UI/UX Features
 - **Modern Design**: Clean, minimalist interface with smooth animations
 - **Responsive Layout**: Fully responsive design for all device sizes
 - **Dark Mode Support**: (Configurable)
+- **Custom Components**:
+  - Clock Picker for time selection
+  - Roller Picker for scrollable options
+  - Mini Map for ride previews
 - **Custom Cursor**: Enhanced cursor interactions
 - **Scroll Progress Bar**: Visual feedback for page scrolling
 - **Animated Sections**: Smooth fade-in animations for better UX

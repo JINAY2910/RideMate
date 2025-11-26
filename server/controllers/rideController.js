@@ -5,26 +5,7 @@ const Vehicle = require('../models/Vehicle');
 const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
 const { createNotification } = require('./notificationController');
-
-const toRadians = (deg) => (deg * Math.PI) / 180;
-
-const haversineDistanceKm = (a, b) => {
-  if (!a || !b || (a.lat === 0 && a.lng === 0) || (b.lat === 0 && b.lng === 0)) {
-    return Number.POSITIVE_INFINITY;
-  }
-  const R = 6371; // Earth radius in km
-  const dLat = toRadians(b.lat - a.lat);
-  const dLng = toRadians(b.lng - a.lng);
-  const lat1 = toRadians(a.lat);
-  const lat2 = toRadians(b.lat);
-
-  const sinLat = Math.sin(dLat / 2);
-  const sinLng = Math.sin(dLng / 2);
-
-  const aVal = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
-  const c = 2 * Math.atan2(Math.sqrt(aVal), Math.sqrt(1 - aVal));
-  return R * c;
-};
+const { haversineDistanceKm } = require('../utils/distance');
 
 const parseRideDateTime = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return null;
@@ -439,7 +420,6 @@ const createRide = async (req, res, next) => {
       requests: [],
       participants: [],
       isActive: true,
-      vehicle: vehicleId,
       vehicle: vehicleId,
       driverLocation: driverLocationGeoJSON || startCoordsGeoJSON,
     });
