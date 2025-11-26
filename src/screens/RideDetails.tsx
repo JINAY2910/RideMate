@@ -617,7 +617,8 @@ export default function RideDetails() {
 
                 {/* Download Ticket - Rider Only */}
                 {userRole !== 'driver' &&
-                  ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && (
+                  ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) &&
+                  rideStatus !== 'Completed' && (
                     <Button
                       fullWidth
                       variant="secondary"
@@ -714,34 +715,6 @@ export default function RideDetails() {
               {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && (
                 <>
                   {/* Status banner moved to top */}
-
-
-                  {rideStatus === 'Completed' && (
-                    <div className="mt-4 p-4 border-2 border-black rounded-lg bg-white">
-                      <p className="text-sm font-semibold text-black mb-2 text-center">Rate your Driver</p>
-                      <div className="flex justify-center gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={`driver-rate-${star}`}
-                            onClick={() => handleRateDriver(star)}
-                            className="hover:scale-110 transition-transform disabled:opacity-50"
-                            disabled={hasRatedDriver}
-                            title={hasRatedDriver ? 'You already rated your driver' : `Give ${star} star${star > 1 ? 's' : ''}`}
-                          >
-                            <Star
-                              size={32}
-                              className={`${driverRatingValue >= star ? 'text-black fill-black' : 'text-gray-300'}`}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                      {hasRatedDriver && (
-                        <p className="text-center text-xs text-green-600 mt-3">
-                          Thanks for sharing your feedback!
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </>
               )}
 
@@ -755,6 +728,34 @@ export default function RideDetails() {
                 </div>
               )}
             </div>
+
+            {/* Rate Driver - Full Width */}
+            {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && rideStatus === 'Completed' && (
+              <div className="mt-6 p-6 border-2 border-black rounded-xl bg-white shadow-sm">
+                <p className="text-lg font-bold text-black mb-4 text-center">Rate your Driver</p>
+                <div className="flex justify-center gap-3">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={`driver-rate-${star}`}
+                      onClick={() => handleRateDriver(star)}
+                      className="hover:scale-110 transition-transform disabled:opacity-50 p-1"
+                      disabled={hasRatedDriver}
+                      title={hasRatedDriver ? 'You already rated your driver' : `Give ${star} star${star > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        size={40}
+                        className={`${driverRatingValue >= star ? 'text-black fill-black' : 'text-gray-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {hasRatedDriver && (
+                  <p className="text-center text-sm font-medium text-green-600 mt-4 bg-green-50 py-2 rounded-lg border border-green-200 inline-block px-6 mx-auto block w-fit">
+                    Thanks for sharing your feedback!
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Non-Driver / Non-Participant - Request Button */}
             {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
@@ -907,194 +908,207 @@ export default function RideDetails() {
                   <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
                     Ride marked as complete. Chat history cleared.
                   </div>
-                  <Button fullWidth variant="outline" onClick={handleDeleteRide} className="border-red-500 text-red-600 hover:bg-red-50">
-                    Delete Ride from History
-                  </Button>
                 </div>
               )}
             </div>
+
+            {/* Driver Only - Delete Ride */}
+            {userRole === 'driver' && ride.driver.id === userId && rideStatus === 'Completed' && (
+              <div className="mt-6">
+                <Button fullWidth variant="outline" onClick={handleDeleteRide} className="border-red-500 text-red-600 hover:bg-red-50">
+                  Delete Ride from History
+                </Button>
+              </div>
+            )}
+
           </>
         ) : null}
       </div>
 
-      {showSOSConfirmation && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg rounded-3xl border-4 border-black bg-white p-6 md:p-8 shadow-2xl">
-            <h2 className="text-2xl font-bold text-black mb-2 flex items-center gap-2">
-              <ShieldAlert className="text-red-600" size={26} />
-              Confirm SOS Activation
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Triggering SOS immediately alerts local emergency services, shares your live location, and notifies all trusted contacts.
-              False alarms may still result in authorities responding. Are you sure you need urgent help?
-            </p>
-            <ul className="mb-6 list-disc pl-5 text-sm text-gray-700 space-y-1">
-              <li>Instant call-out to nearest police assistance desk</li>
-              <li>Location + emergency type shared with RideMate Safety</li>
-              <li>Current ride automatically paused until resolved</li>
-            </ul>
-            <div className="flex flex-col gap-3 md:flex-row">
-              <Button fullWidth size="lg" onClick={confirmSOSActivation} className="bg-red-600 text-white hover:bg-red-700">
-                Yes, Activate SOS
-              </Button>
-              <Button fullWidth size="lg" variant="secondary" onClick={cancelSOSActivation}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEmergencyPanel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-          <div className="relative w-full max-w-3xl rounded-3xl border-4 border-black bg-white p-6 md:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={handleCloseEmergencyPanel}
-              className="absolute right-4 top-4 rounded-full border-2 border-black p-1 text-black hover:bg-black hover:text-white transition-colors"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">
-                SOS / Emergency
-              </p>
-              <h2 className="mt-2 flex items-center gap-2 text-2xl font-bold text-black">
-                <ShieldAlert className="text-red-600" size={28} />
-                Instant Emergency Response
+      {
+        showSOSConfirmation && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+            <div className="w-full max-w-lg rounded-3xl border-4 border-black bg-white p-6 md:p-8 shadow-2xl">
+              <h2 className="text-2xl font-bold text-black mb-2 flex items-center gap-2">
+                <ShieldAlert className="text-red-600" size={26} />
+                Confirm SOS Activation
               </h2>
-              <p className="text-sm text-gray-600">
-                One tap connects you with local authorities, shares your live location, and alerts your trusted
-                contacts automatically.
+              <p className="text-sm text-gray-600 mb-4">
+                Triggering SOS immediately alerts local emergency services, shares your live location, and notifies all trusted contacts.
+                False alarms may still result in authorities responding. Are you sure you need urgent help?
               </p>
-            </div>
-
-            <div className="grid gap-4 mb-6 md:grid-cols-2">
-              {emergencyTypes.map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setEmergencyType(type.id)}
-                  className={`rounded-2xl border-2 p-4 text-left transition-colors ${emergencyType === type.id ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'
-                    }`}
-                >
-                  <p className="font-semibold">{type.label}</p>
-                  <p className={`text-sm mt-1 ${emergencyType === type.id ? 'text-white/80' : 'text-gray-600'}`}>
-                    {type.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
-
-            <div className="mb-6 rounded-2xl border-2 border-gray-200 bg-gray-50 p-4">
-              <p className="text-xs font-semibold uppercase text-gray-500">Automatic Location Sharing</p>
-              <p className="mt-2 text-lg font-bold text-black">
-                {userLocation
-                  ? `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
-                  : locationStatus === 'fetching'
-                    ? 'Fetching GPS...'
-                    : 'Location unavailable'}
-              </p>
-              <p className="text-xs text-gray-600">
-                {locationStatus === 'error'
-                  ? 'Using last known coordinates while we reconnect to GPS.'
-                  : 'Coordinates sent to emergency services and all trusted contacts.'}
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-xs font-semibold uppercase text-gray-500 mb-3">Trusted contacts notified</p>
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {trustedContacts.map((contact, index) => (
-                  <li
-                    key={`${contact.name}-${index}`}
-                    className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3"
-                  >
-                    <div>
-                      <p className="font-semibold text-black">{contact.name}</p>
-                      <p className="text-sm text-gray-700">{contact.phone || 'No phone added'}</p>
-                    </div>
-                    <PhoneCall size={18} className="text-gray-500" />
-                  </li>
-                ))}
+              <ul className="mb-6 list-disc pl-5 text-sm text-gray-700 space-y-1">
+                <li>Instant call-out to nearest police assistance desk</li>
+                <li>Location + emergency type shared with RideMate Safety</li>
+                <li>Current ride automatically paused until resolved</li>
               </ul>
-            </div>
-
-            <div className="mb-6">
-              <label className="mb-2 block text-sm font-semibold text-black">Incident details (optional)</label>
-              <textarea
-                value={incidentNotes}
-                onChange={(e) => setIncidentNotes(e.target.value)}
-                placeholder="Add any quick context (vehicle information, visible threats, medical symptoms, etc.)"
-                className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm text-gray-700 focus:border-black focus:outline-none focus:ring-1 focus:ring-black min-h-[120px]"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Notes are shared with emergency dispatchers and RideMate safety specialists.
-              </p>
-            </div>
-
-            {dispatchComplete ? (
-              <div className="mb-6 rounded-2xl border-2 border-green-500 bg-green-50 p-4 text-sm text-green-700">
-                Emergency activation logged. Ride cancellation and post-incident support are in progress.
+              <div className="flex flex-col gap-3 md:flex-row">
+                <Button fullWidth size="lg" onClick={confirmSOSActivation} className="bg-red-600 text-white hover:bg-red-700">
+                  Yes, Activate SOS
+                </Button>
+                <Button fullWidth size="lg" variant="secondary" onClick={cancelSOSActivation}>
+                  Cancel
+                </Button>
               </div>
-            ) : (
-              <div className="mb-6 rounded-2xl border-2 border-yellow-400 bg-yellow-50 p-4 text-sm text-yellow-800">
-                Selecting the correct emergency type helps responders prioritize the right resources faster.
-              </div>
-            )}
-
-            <div className="flex flex-col gap-3 md:flex-row">
-              <Button
-                fullWidth
-                size="lg"
-                onClick={handleDispatchEmergency}
-                disabled={isDispatching || dispatchComplete}
-              >
-                {dispatchComplete ? (
-                  'Emergency Logged'
-                ) : (
-                  <>
-                    {isDispatching ? 'Contacting Emergency Services...' : 'Dispatch Emergency Response'}
-                    {!dispatchComplete && !isDispatching && <Send size={18} />}
-                  </>
-                )}
-              </Button>
-              <Button fullWidth size="lg" variant="secondary" onClick={handleCloseEmergencyPanel}>
-                Cancel
-              </Button>
             </div>
           </div>
-        </div>
-      )}
-      {selectedRequest && (
-        <RiderProfileModal
-          rider={selectedRequest.rider}
-          rating={selectedRequest.rating}
-          onAccept={async () => {
-            if (!ride) return;
-            try {
-              const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Approved');
-              setRide(updated);
-              setActionError(null);
-              setSelectedRequest(null);
-            } catch (err) {
-              setActionError(err instanceof Error ? err.message : 'Failed to approve request');
-            }
-          }}
-          onReject={async () => {
-            if (!ride) return;
-            try {
-              const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Rejected');
-              setRide(updated);
-              setActionError(null);
-              setSelectedRequest(null);
-            } catch (err) {
-              setActionError(err instanceof Error ? err.message : 'Failed to reject request');
-            }
-          }}
-          onClose={() => setSelectedRequest(null)}
-        />
-      )}
-    </div>
+        )
+      }
+
+      {
+        showEmergencyPanel && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+            <div className="relative w-full max-w-3xl rounded-3xl border-4 border-black bg-white p-6 md:p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <button
+                onClick={handleCloseEmergencyPanel}
+                className="absolute right-4 top-4 rounded-full border-2 border-black p-1 text-black hover:bg-black hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="mb-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">
+                  SOS / Emergency
+                </p>
+                <h2 className="mt-2 flex items-center gap-2 text-2xl font-bold text-black">
+                  <ShieldAlert className="text-red-600" size={28} />
+                  Instant Emergency Response
+                </h2>
+                <p className="text-sm text-gray-600">
+                  One tap connects you with local authorities, shares your live location, and alerts your trusted
+                  contacts automatically.
+                </p>
+              </div>
+
+              <div className="grid gap-4 mb-6 md:grid-cols-2">
+                {emergencyTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => setEmergencyType(type.id)}
+                    className={`rounded-2xl border-2 p-4 text-left transition-colors ${emergencyType === type.id ? 'border-black bg-black text-white' : 'border-gray-200 hover:border-black'
+                      }`}
+                  >
+                    <p className="font-semibold">{type.label}</p>
+                    <p className={`text-sm mt-1 ${emergencyType === type.id ? 'text-white/80' : 'text-gray-600'}`}>
+                      {type.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mb-6 rounded-2xl border-2 border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-semibold uppercase text-gray-500">Automatic Location Sharing</p>
+                <p className="mt-2 text-lg font-bold text-black">
+                  {userLocation
+                    ? `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
+                    : locationStatus === 'fetching'
+                      ? 'Fetching GPS...'
+                      : 'Location unavailable'}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {locationStatus === 'error'
+                    ? 'Using last known coordinates while we reconnect to GPS.'
+                    : 'Coordinates sent to emergency services and all trusted contacts.'}
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-xs font-semibold uppercase text-gray-500 mb-3">Trusted contacts notified</p>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {trustedContacts.map((contact, index) => (
+                    <li
+                      key={`${contact.name}-${index}`}
+                      className="flex items-center justify-between rounded-2xl border border-gray-200 px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-semibold text-black">{contact.name}</p>
+                        <p className="text-sm text-gray-700">{contact.phone || 'No phone added'}</p>
+                      </div>
+                      <PhoneCall size={18} className="text-gray-500" />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-6">
+                <label className="mb-2 block text-sm font-semibold text-black">Incident details (optional)</label>
+                <textarea
+                  value={incidentNotes}
+                  onChange={(e) => setIncidentNotes(e.target.value)}
+                  placeholder="Add any quick context (vehicle information, visible threats, medical symptoms, etc.)"
+                  className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm text-gray-700 focus:border-black focus:outline-none focus:ring-1 focus:ring-black min-h-[120px]"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Notes are shared with emergency dispatchers and RideMate safety specialists.
+                </p>
+              </div>
+
+              {dispatchComplete ? (
+                <div className="mb-6 rounded-2xl border-2 border-green-500 bg-green-50 p-4 text-sm text-green-700">
+                  Emergency activation logged. Ride cancellation and post-incident support are in progress.
+                </div>
+              ) : (
+                <div className="mb-6 rounded-2xl border-2 border-yellow-400 bg-yellow-50 p-4 text-sm text-yellow-800">
+                  Selecting the correct emergency type helps responders prioritize the right resources faster.
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 md:flex-row">
+                <Button
+                  fullWidth
+                  size="lg"
+                  onClick={handleDispatchEmergency}
+                  disabled={isDispatching || dispatchComplete}
+                >
+                  {dispatchComplete ? (
+                    'Emergency Logged'
+                  ) : (
+                    <>
+                      {isDispatching ? 'Contacting Emergency Services...' : 'Dispatch Emergency Response'}
+                      {!dispatchComplete && !isDispatching && <Send size={18} />}
+                    </>
+                  )}
+                </Button>
+                <Button fullWidth size="lg" variant="secondary" onClick={handleCloseEmergencyPanel}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      {
+        selectedRequest && (
+          <RiderProfileModal
+            rider={selectedRequest.rider}
+            rating={selectedRequest.rating}
+            onAccept={async () => {
+              if (!ride) return;
+              try {
+                const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Approved');
+                setRide(updated);
+                setActionError(null);
+                setSelectedRequest(null);
+              } catch (err) {
+                setActionError(err instanceof Error ? err.message : 'Failed to approve request');
+              }
+            }}
+            onReject={async () => {
+              if (!ride) return;
+              try {
+                const updated = await rideApi.updateRequestStatus(ride._id, selectedRequest._id, 'Rejected');
+                setRide(updated);
+                setActionError(null);
+                setSelectedRequest(null);
+              } catch (err) {
+                setActionError(err instanceof Error ? err.message : 'Failed to reject request');
+              }
+            }}
+            onClose={() => setSelectedRequest(null)}
+          />
+        )
+      }
+    </div >
   );
 }

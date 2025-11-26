@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, MapPin, Calendar, Star, Users, Car } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Star, Users, Car, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Card from '../components/Card';
 import { rideApi, Ride } from '../services/rides';
@@ -45,6 +45,19 @@ export default function RideHistory() {
     };
     fetchRides();
   }, [userName, userRole, userId]);
+
+  const handleDeleteRide = async (rideId: string) => {
+    if (!window.confirm('Are you sure you want to delete this ride from your history?')) {
+      return;
+    }
+
+    try {
+      await rideApi.delete(rideId);
+      setRides((prevRides) => prevRides.filter((r) => r._id !== rideId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete ride');
+    }
+  };
 
   return (
     <Layout fullWidth className="bg-white">
@@ -143,11 +156,24 @@ export default function RideHistory() {
                     </div>
                   )}
                 </div>
+
+
+                {userRole === 'driver' && (
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                    <button
+                      onClick={() => handleDeleteRide(ride._id)}
+                      className="flex items-center text-red-600 hover:text-red-800 font-medium text-sm transition-colors"
+                    >
+                      <Trash2 size={16} className="mr-2" />
+                      Delete Ride
+                    </button>
+                  </div>
+                )}
               </Card>
             ))}
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout >
   );
 }

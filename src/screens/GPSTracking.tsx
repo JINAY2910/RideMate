@@ -101,10 +101,9 @@ export default function GPSTracking() {
             </div>
 
             {userRole === 'driver' && (
-              <Button fullWidth onClick={() => navigateTo('rating')} className="py-4 text-lg shadow-lg hover:shadow-xl transform transition-all active:scale-95">
-                <Navigation size={24} className="inline mr-2" />
-                Complete Trip
-              </Button>
+              <div className="text-center text-gray-500 text-sm italic">
+                Head to Ride Details to complete the trip.
+              </div>
             )}
           </div>
         </div>
