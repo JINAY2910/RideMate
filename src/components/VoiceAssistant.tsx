@@ -87,6 +87,33 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
+    const normalizeTime = (timeStr?: string): string | undefined => {
+        if (!timeStr) return undefined;
+
+        // Remove any non-time characters (like "approx", "around")
+        let cleanTime = timeStr.toLowerCase().replace(/[^0-9:apm\s]/g, '').trim();
+
+        // Handle AM/PM
+        if (cleanTime.includes('pm') || cleanTime.includes('am')) {
+            const isPM = cleanTime.includes('pm');
+            cleanTime = cleanTime.replace(/(am|pm)/, '').trim();
+            let [hours, minutes] = cleanTime.split(':').map(Number);
+
+            if (isPM && hours < 12) hours += 12;
+            if (!isPM && hours === 12) hours = 0;
+
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        // Assume 24h if no AM/PM
+        const [hours, minutes] = cleanTime.split(':');
+        if (hours && minutes) {
+            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        }
+
+        return timeStr;
+    };
+
     const handleVoiceCommand = async (text: string) => {
         try {
             // 1. Parse command using Gemini
@@ -102,6 +129,7 @@ const VoiceAssistant: React.FC = () => {
 
             if (command.intent === 'BOOK_RIDE') {
                 const { origin, destination } = command.entities || {};
+                const normalizedTime = normalizeTime(command.entities?.time);
 
                 if (origin && destination) {
                     // Geocode locations
@@ -117,7 +145,7 @@ const VoiceAssistant: React.FC = () => {
                                 startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
                                 destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
                                 date: command.entities?.date,
-                                time: command.entities?.time,
+                                time: normalizedTime,
                                 seats: command.entities?.seats,
                                 autoSearch: true
                             });
@@ -136,6 +164,7 @@ const VoiceAssistant: React.FC = () => {
                 }
             } else if (command.intent === 'OFFER_RIDE') {
                 const { origin, destination } = command.entities || {};
+                const normalizedTime = normalizeTime(command.entities?.time);
 
                 if (origin && destination) {
                     // Geocode locations
@@ -151,7 +180,7 @@ const VoiceAssistant: React.FC = () => {
                                 startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
                                 destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
                                 date: command.entities?.date,
-                                time: command.entities?.time,
+                                time: normalizedTime,
                                 seats: command.entities?.seats
                             });
                         }, 2000);

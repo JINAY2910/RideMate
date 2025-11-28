@@ -68,7 +68,7 @@ export async function parseVoiceCommand(text: string): Promise<VoiceCommandRespo
           "origin": "extracted origin location (optional)",
           "destination": "extracted destination location (optional)",
           "date": "extracted date (YYYY-MM-DD format if possible, or natural language)",
-          "time": "extracted time (HH:MM format if possible, or natural language)",
+          "time": "extracted time (strictly 24-hour HH:MM format, e.g., 17:00 for 5 PM)",
           "seats": "extracted number of seats/riders (number)",
           "screen": "extracted screen name (only for NAVIGATE intent)"
         },
