@@ -98,6 +98,8 @@ const VoiceAssistant: React.FC = () => {
                 setResponse(command.message);
             }
 
+
+
             if (command.intent === 'BOOK_RIDE') {
                 const { origin, destination } = command.entities || {};
 
@@ -114,6 +116,9 @@ const VoiceAssistant: React.FC = () => {
                             navigateTo('search-ride', {
                                 startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
                                 destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
+                                date: command.entities?.date,
+                                time: command.entities?.time,
+                                seats: command.entities?.seats,
                                 autoSearch: true
                             });
                         }, 2000);
@@ -144,7 +149,10 @@ const VoiceAssistant: React.FC = () => {
                             setIsOpen(false);
                             navigateTo('create-ride', {
                                 startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
-                                destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon }
+                                destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
+                                date: command.entities?.date,
+                                time: command.entities?.time,
+                                seats: command.entities?.seats
                             });
                         }, 2000);
                     } else {

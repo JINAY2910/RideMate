@@ -41,6 +41,7 @@ export interface VoiceCommandResponse {
     destination?: string;
     date?: string;
     time?: string;
+    seats?: string;
     screen?: string;
   };
   message?: string;
@@ -66,8 +67,9 @@ export async function parseVoiceCommand(text: string): Promise<VoiceCommandRespo
         "entities": {
           "origin": "extracted origin location (optional)",
           "destination": "extracted destination location (optional)",
-          "date": "extracted date (optional)",
-          "time": "extracted time (optional)",
+          "date": "extracted date (YYYY-MM-DD format if possible, or natural language)",
+          "time": "extracted time (HH:MM format if possible, or natural language)",
+          "seats": "extracted number of seats/riders (number)",
           "screen": "extracted screen name (only for NAVIGATE intent)"
         },
         "message": "A short, natural language response to the user confirming the action"

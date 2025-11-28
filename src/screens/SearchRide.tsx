@@ -59,33 +59,41 @@ export default function SearchRide() {
     }
   };
 
-  useEffect(() => {
-    loadRides();
-
-    // Check for navigation state (from Voice Assistant)
+  const checkNavigationState = () => {
     const navState = (window as any).__navigationState;
     if (navState) {
       if (navState.startLocation) setStartLocation(navState.startLocation);
       if (navState.destinationLocation) setDestinationLocation(navState.destinationLocation);
-
-      // Clear state to prevent re-triggering
-      (window as any).__navigationState = null;
+      if (navState.date) setDate(navState.date);
+      if (navState.time) setTime(navState.time);
+      if (navState.seats) setRequiredSeats(String(navState.seats));
 
       // If we have both locations and autoSearch is true, we could trigger search
       // But we need date/time. Let's set default date/time if missing.
       if (navState.autoSearch && navState.startLocation && navState.destinationLocation) {
-        const now = new Date();
-        // Default to today/now if not provided
-        const dateStr = now.toISOString().split('T')[0];
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-        setDate(dateStr);
-        setTime(timeStr);
-
-        // We can't easily call handleSearch here because it depends on state that might not be updated yet
-        // So we'll just pre-fill for now and let the user click search or use a separate effect
+        if (!navState.date) {
+          const now = new Date();
+          const dateStr = now.toISOString().split('T')[0];
+          setDate(dateStr);
+        }
+        if (!navState.time) {
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+          setTime(timeStr);
+        }
       }
+
+      // Clear state to prevent re-triggering
+      (window as any).__navigationState = null;
     }
+  };
+
+  useEffect(() => {
+    loadRides();
+    checkNavigationState();
+
+    window.addEventListener('navigation-state-change', checkNavigationState);
+    return () => window.removeEventListener('navigation-state-change', checkNavigationState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -115,15 +123,7 @@ export default function SearchRide() {
 
 
 
-  const buildPreferredTimeISO = () => {
-    if (!date || !time) return undefined;
-    const normalizedTime = time.length === 5 ? `${time}:00` : time;
-    const candidate = new Date(`${date}T${normalizedTime}`);
-    if (Number.isNaN(candidate.getTime())) {
-      return undefined;
-    }
-    return candidate.toISOString();
-  };
+
 
   const executeSearch = async (start: Location, dest: Location, d: string, t: string, seats: number) => {
     try {
