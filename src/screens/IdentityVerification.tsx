@@ -1,18 +1,30 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, CheckCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import { verificationApi } from '../services/verification';
 import Layout from '../components/Layout';
 
 export default function IdentityVerification() {
-    const { navigateTo, user, token } = useApp();
+    const { navigateTo, authToken: token, fetchUserProfile, user } = useApp();
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any | null>(null);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (!token) {
+            navigateTo('login');
+        } else {
+            // Check if already verified
+            if (user?.verificationStatus === 'verified') {
+                setResult({ verificationStatus: 'verified', details: {} });
+            }
+        }
+    }, [token, navigateTo, user]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -30,28 +42,20 @@ export default function IdentityVerification() {
             return;
         }
 
+        if (!token) {
+            setError('Authentication required.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
-        const formData = new FormData();
-        formData.append('license', file);
-
         try {
-            const response = await fetch('http://localhost:5001/api/verification/upload', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Verification failed');
-            }
-
+            const data = await verificationApi.verifyLicense(file, token);
             setResult(data.data);
+            if (data.data.verificationStatus === 'verified') {
+                await fetchUserProfile();
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Something went wrong');
         } finally {
@@ -149,6 +153,16 @@ export default function IdentityVerification() {
                                     </div>
                                     <h2 className="text-2xl font-bold text-green-700 mb-2">Verification Successful!</h2>
                                     <p className="text-gray-600">Your identity has been verified.</p>
+
+                                    <div className="mt-8">
+                                        <Button
+                                            fullWidth
+                                            onClick={() => navigateTo('profile')}
+                                            className="bg-black text-white hover:bg-gray-800"
+                                        >
+                                            Go to Profile
+                                        </Button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="mb-6">
@@ -156,38 +170,44 @@ export default function IdentityVerification() {
                                         <AlertCircle size={40} />
                                     </div>
                                     <h2 className="text-2xl font-bold text-red-700 mb-2">Verification Failed</h2>
-                                    <p className="text-gray-600">We couldn't verify your ID. Please try again with a clearer photo.</p>
+                                    <p className="text-gray-600">
+                                        {result.failReason || "We couldn't verify your ID. Please try again with a clearer photo."}
+                                    </p>
+
+                                    <div className="mt-8">
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => {
+                                                setFile(null);
+                                                setPreview(null);
+                                                setResult(null);
+                                            }}
+                                        >
+                                            Try Again
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="bg-gray-50 rounded-lg p-4 text-left max-w-md mx-auto mb-8">
-                                <h3 className="font-semibold text-gray-900 mb-3 border-b pb-2">Extracted Details</h3>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500">Name:</span>
-                                        <span className="font-medium">{result.details.name || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500">License No:</span>
-                                        <span className="font-medium">{result.details.licenseNumber || 'N/A'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500">Expiry Date:</span>
-                                        <span className="font-medium">{result.details.expiryDate || 'N/A'}</span>
+                            {result.details && Object.keys(result.details).length > 0 && (
+                                <div className="bg-gray-50 rounded-lg p-4 text-left max-w-md mx-auto mt-8">
+                                    <h3 className="font-semibold text-gray-900 mb-3 border-b pb-2">Extracted Details</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Name:</span>
+                                            <span className="font-medium">{result.details.name || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">License No:</span>
+                                            <span className="font-medium">{result.details.licenseNumber || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Expiry Date:</span>
+                                            <span className="font-medium">{result.details.expiryDate || 'N/A'}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <Button
-                                variant="secondary"
-                                onClick={() => {
-                                    setFile(null);
-                                    setPreview(null);
-                                    setResult(null);
-                                }}
-                            >
-                                Verify Another Document
-                            </Button>
+                            )}
                         </div>
                     )}
                 </Card>

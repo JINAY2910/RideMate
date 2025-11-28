@@ -505,7 +505,12 @@ export default function RideDetails() {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-black mb-1">{ride.driver.name}</h2>
+                    <h2 className="text-2xl font-bold text-black mb-1 flex items-center gap-2">
+                      {ride.driver.name}
+                      {ride.driver.verificationStatus === 'verified' && (
+                        <ShieldCheck size={20} className="text-green-600" fill="currentColor" stroke="white" />
+                      )}
+                    </h2>
                     <span
                       className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full border ${rideStatus === 'Completed' ? 'border-green-600 text-green-600' : 'border-black text-black'
                         }`}

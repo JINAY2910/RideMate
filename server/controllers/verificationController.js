@@ -26,7 +26,7 @@ const verifyLicense = async (req, res) => {
         const imageBase64 = imageData.toString('base64');
 
         // Prepare for Gemini
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
         const prompt = `
       Analyze this image of a driver's license. 
@@ -35,11 +35,19 @@ const verifyLicense = async (req, res) => {
         "name": "Full Name",
         "licenseNumber": "License Number",
         "expiryDate": "Expiry Date (YYYY-MM-DD)",
-        "isValid": boolean (true if it looks like a valid license and not expired)
+        "isValid": boolean (true if it looks like a valid license and not expired),
+        "nameMatch": boolean,
+        "failReason": "String explaining why it failed or why name didn't match (optional)"
       }
       
-      Also, compare the name on the license with the user's profile name: "${user.name}".
-      If they match (fuzzy match is okay), set "nameMatch" to true in the JSON.
+      Compare the name on the license with the user's profile name: "${user.name}".
+      Set "nameMatch" to true if they match. Be lenient:
+      - Ignore case.
+      - Ignore middle names or initials if the first and last name match.
+      - Allow minor typos.
+      
+      If "isValid" is false, explain why in "failReason" (e.g., "Expired", "Not a license", "Blurry").
+      If "nameMatch" is false, explain why in "failReason".
       
       Return ONLY the JSON.
     `;
@@ -59,13 +67,21 @@ const verifyLicense = async (req, res) => {
 
         // Clean up JSON string (remove markdown code blocks if present)
         const jsonString = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        console.log('Gemini Raw Response:', text);
+        console.log('Cleaned JSON:', jsonString);
+
         const data = JSON.parse(jsonString);
+        console.log('Parsed Data:', data);
+        console.log('User Name:', user.name);
+        console.log('Name Match:', data.nameMatch);
+        console.log('Is Valid:', data.isValid);
 
         // Update User
         if (data.isValid && data.nameMatch) {
             user.verificationStatus = 'verified';
         } else {
             user.verificationStatus = 'rejected';
+            console.log('Verification Rejected. Reason:', !data.isValid ? 'Invalid License' : 'Name Mismatch');
         }
 
         user.licenseDetails = {
@@ -85,6 +101,7 @@ const verifyLicense = async (req, res) => {
             data: {
                 verificationStatus: user.verificationStatus,
                 details: data,
+                failReason: data.failReason,
             },
         });
 

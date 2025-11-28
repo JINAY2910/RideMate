@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Star, Users, Car, Sparkles } from 'lucide-react';
+import { ArrowLeft, Star, Users, Car, Sparkles, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -301,7 +301,12 @@ export default function SearchRide() {
       >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-lg font-bold text-black">{ride.driver.name}</h3>
+            <h3 className="text-lg font-bold text-black flex items-center gap-1">
+              {ride.driver.name}
+              {ride.driver.verificationStatus === 'verified' && (
+                <ShieldCheck size={16} className="text-green-600" fill="currentColor" stroke="white" />
+              )}
+            </h3>
             <div className="flex items-center mt-2">
               {[...Array(5)].map((_, i) => (
                 <Star
@@ -596,7 +601,12 @@ export default function SearchRide() {
                 >
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start mb-5">
                     <div>
-                      <h3 className="text-lg font-bold text-black">{ride.driver.name}</h3>
+                      <h3 className="text-lg font-bold text-black flex items-center gap-1">
+                        {ride.driver.name}
+                        {ride.driver.verificationStatus === 'verified' && (
+                          <ShieldCheck size={16} className="text-green-600" fill="currentColor" stroke="white" />
+                        )}
+                      </h3>
                       <div className="flex items-center mt-2">
                         {[...Array(5)].map((_, i) => (
                           <Star

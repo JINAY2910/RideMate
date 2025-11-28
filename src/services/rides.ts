@@ -75,6 +75,7 @@ export type Ride = {
     id: string;
     name: string;
     rating: number;
+    verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
   };
   start: {
     label: string;

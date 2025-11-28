@@ -148,7 +148,8 @@ const transformRide = (ride) => {
     driver: {
       name: driverName,
       rating: driverRating,
-      id: rideObj.driver?._id?.toString()
+      id: rideObj.driver?._id?.toString(),
+      verificationStatus: rideObj.driver?.verificationStatus || 'unverified'
     },
     start: {
       label: rideObj.from || '',
@@ -426,7 +427,7 @@ const createRide = async (req, res, next) => {
 
     const populatedRide = await Ride.findById(ride._id).populate({
       path: 'driver',
-      select: 'name email phone role',
+      select: 'name email phone role verificationStatus',
     }).populate('vehicle');
 
     console.log(`[Ride] Created successfully: ${ride._id}`);
@@ -568,7 +569,7 @@ const getRides = async (req, res, next) => {
     const rides = await Ride.find(query)
       .populate({
         path: 'driver',
-        select: 'name email phone role',
+        select: 'name email phone role verificationStatus',
       })
       .populate('vehicle')
       .populate({
@@ -601,7 +602,7 @@ const getRide = async (req, res, next) => {
     const ride = await Ride.findById(req.params.id)
       .populate({
         path: 'driver',
-        select: 'name email phone role',
+        select: 'name email phone role verificationStatus',
       })
       .populate('vehicle')
       .populate({
@@ -713,16 +714,9 @@ const updateRide = async (req, res, next) => {
         seatsAvailable: req.body.seatsAvailable !== undefined ? parseInt(req.body.seatsAvailable) : ride.seatsAvailable,
         isActive: isActive !== undefined ? isActive : ride.isActive,
       },
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate({
-      path: 'driver',
-      select: 'name email phone role',
-    }).populate('vehicle');
+      { new: true, runValidators: true }
+    ).populate('driver', 'name rating verificationStatus');
 
-    console.log(`[Ride] Updated successfully: ${ride._id}`);
     res.json(transformRide(ride));
   } catch (error) {
     console.error(`[Ride] Update error:`, error);
