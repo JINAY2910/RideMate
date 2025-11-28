@@ -51,6 +51,7 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/verification', require('./routes/verificationRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

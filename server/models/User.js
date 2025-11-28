@@ -54,6 +54,17 @@ const userSchema = new mongoose.Schema(
       enum: ['driver', 'rider'],
       required: [true, 'Role is required'],
     },
+    verificationStatus: {
+      type: String,
+      enum: ['unverified', 'pending', 'verified', 'rejected'],
+      default: 'unverified',
+    },
+    licenseDetails: {
+      name: String,
+      licenseNumber: String,
+      expiryDate: String,
+      extractedData: Object,
+    },
     profilePhoto: {
       type: String,
       default: '',
@@ -123,4 +134,3 @@ userSchema.methods.toJSON = function () {
 };
 
 module.exports = mongoose.model('User', userSchema);
-

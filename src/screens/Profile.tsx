@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, Heart, Star } from 'lucide-react';
+import { ArrowLeft, Camera, Heart, Star, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import Button from '../components/Button';
@@ -146,6 +146,26 @@ export default function Profile() {
                   <Star size={16} fill="currentColor" />
                   <span className="ml-1 font-medium text-black">{user?.rating?.toFixed(1) || '5.0'}</span>
                 </div>
+              </div>
+
+              {/* Verification Status */}
+              <div className="mt-4 flex items-center gap-3">
+                {user?.verificationStatus === 'verified' ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    <ShieldCheck size={14} />
+                    Verified Driver
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => navigateTo('verify-identity')}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <ShieldCheck size={14} />
+                    Verify Identity
+                  </Button>
+                )}
               </div>
             </div>
 
