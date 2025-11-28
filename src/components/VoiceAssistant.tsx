@@ -129,6 +129,36 @@ const VoiceAssistant: React.FC = () => {
                         navigateTo('search-ride');
                     }, 2000);
                 }
+            } else if (command.intent === 'OFFER_RIDE') {
+                const { origin, destination } = command.entities || {};
+
+                if (origin && destination) {
+                    // Geocode locations
+                    const [originGeo, destGeo] = await Promise.all([
+                        import('../utils/weatherApi').then(m => m.geocodePlace(origin)),
+                        import('../utils/weatherApi').then(m => m.geocodePlace(destination))
+                    ]);
+
+                    if (originGeo && destGeo) {
+                        setTimeout(() => {
+                            setIsOpen(false);
+                            navigateTo('create-ride', {
+                                startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
+                                destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon }
+                            });
+                        }, 2000);
+                    } else {
+                        const errorMsg = "I couldn't find one of those locations. Please try again.";
+                        speak(errorMsg);
+                        setResponse(errorMsg);
+                    }
+                } else {
+                    // If locations are missing, just go to create-ride
+                    setTimeout(() => {
+                        setIsOpen(false);
+                        navigateTo('create-ride');
+                    }, 2000);
+                }
             } else if (command.intent === 'NAVIGATE') {
                 const screen = command.entities?.screen?.toLowerCase();
                 if (screen) {
@@ -171,19 +201,19 @@ const VoiceAssistant: React.FC = () => {
                     </button>
 
                     <div className="flex flex-col items-center gap-4">
-                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-indigo-100 text-indigo-600'}`}>
+                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : response.includes('Error') || response.includes('denied') ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
                             {isListening ? <Mic size={32} /> : <Volume2 size={32} />}
                         </div>
 
                         <div className="text-center w-full">
                             <h3 className="font-bold text-gray-800 dark:text-white mb-2">
-                                {isListening ? "Listening..." : isSpeaking ? "Speaking..." : "How can I help?"}
+                                {isListening ? "Listening..." : isSpeaking ? "Speaking..." : response.includes('Error') ? "Error" : "How can I help?"}
                             </h3>
 
                             {(transcript || response) && (
                                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 max-h-40 overflow-y-auto text-sm">
                                     {transcript && <p className="text-gray-500 italic mb-2">"{transcript}"</p>}
-                                    {response && <p className="text-gray-800 dark:text-gray-200">{response}</p>}
+                                    {response && <p className={response.includes('Error') || response.includes('denied') ? "text-red-600 font-medium" : "text-gray-800 dark:text-gray-200"}>{response}</p>}
                                 </div>
                             )}
                         </div>
@@ -199,9 +229,9 @@ const VoiceAssistant: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={startListening}
-                                    className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+                                    className={`flex-1 py-2 ${response.includes('Error') ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg text-sm font-medium`}
                                 >
-                                    Speak
+                                    {response.includes('Error') ? 'Retry' : 'Speak'}
                                 </button>
                             )}
                         </div>
