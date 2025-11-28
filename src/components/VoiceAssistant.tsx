@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Volume2, X } from 'lucide-react';
-import { useAccessibility } from '../context/AccessibilityContext';
+// import { useAccessibility } from '../context/AccessibilityContext';
 import { useApp } from '../context/AppContext';
 import { askGemini } from '../utils/geminiChat';
 
 const VoiceAssistant: React.FC = () => {
-    const { isVoiceCommandMode } = useAccessibility();
+    // const { isVoiceCommandMode } = useAccessibility();
     const { navigateTo } = useApp();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -223,7 +223,7 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
-    if (!isVoiceCommandMode) return null;
+    // if (!isVoiceCommandMode) return null; // Always active now
 
     return (
         <>
@@ -238,7 +238,7 @@ const VoiceAssistant: React.FC = () => {
                     </button>
 
                     <div className="flex flex-col items-center gap-4">
-                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : response.includes('Error') || response.includes('denied') ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : response.includes('Error') || response.includes('denied') ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-black'}`}>
                             {isListening ? <Mic size={32} /> : <Volume2 size={32} />}
                         </div>
 
@@ -266,7 +266,7 @@ const VoiceAssistant: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={startListening}
-                                    className={`flex-1 py-2 ${response.includes('Error') ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg text-sm font-medium`}
+                                    className={`flex-1 py-2 ${response.includes('Error') ? 'bg-red-600 hover:bg-red-700' : 'bg-black hover:bg-gray-800'} text-white rounded-lg text-sm font-medium`}
                                 >
                                     {response.includes('Error') ? 'Retry' : 'Speak'}
                                 </button>
@@ -289,7 +289,7 @@ const VoiceAssistant: React.FC = () => {
                 }}
                 className={`fixed bottom-8 left-8 z-50 w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${isListening
                     ? 'bg-red-500 text-white scale-110 animate-pulse'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105'
+                    : 'bg-black text-white hover:bg-gray-800 hover:scale-105'
                     }`}
                 aria-label="Voice Assistant"
             >

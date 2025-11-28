@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Camera, Heart, Star, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useAccessibility } from '../context/AccessibilityContext';
+// import { useAccessibility } from '../context/AccessibilityContext';
 import Button from '../components/Button';
 import Layout from '../components/Layout';
 
 export default function Profile() {
   const { navigateTo, userName, userRole, updateProfile, user, fetchUserProfile } = useApp();
-  const { isVoiceCommandMode, toggleVoiceCommandMode } = useAccessibility();
+  // const { isVoiceCommandMode, toggleVoiceCommandMode } = useAccessibility(); // Unused now
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -169,22 +169,7 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">Voice Command Mode</h3>
-                <p className="text-sm text-gray-500">Use whole App using Voice Commands</p>
-              </div>
-              <button
-                onClick={toggleVoiceCommandMode}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isVoiceCommandMode ? 'bg-black' : 'bg-gray-300'
-                  }`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isVoiceCommandMode ? 'translate-x-7' : 'translate-x-1'
-                    }`}
-                />
-              </button>
-            </div>
+
 
             {message && (
               <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
