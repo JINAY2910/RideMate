@@ -12,6 +12,7 @@ import {
   X,
   Car,
   CheckCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -506,8 +507,8 @@ export default function RideDetails() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h2 className="text-2xl font-bold text-black mb-1 flex items-center gap-2">
-                      {ride.driver.name}
-                      {ride.driver.verificationStatus === 'verified' && (
+                      {ride.driver?.name}
+                      {ride.driver?.verificationStatus === 'verified' && (
                         <ShieldCheck size={20} className="text-green-600" fill="currentColor" stroke="white" />
                       )}
                     </h2>
