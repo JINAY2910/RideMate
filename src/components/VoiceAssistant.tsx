@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, X } from 'lucide-react';
+import { Mic, Volume2, X } from 'lucide-react';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { useApp } from '../context/AppContext';
 import { askGemini } from '../utils/geminiChat';
@@ -160,68 +160,74 @@ const VoiceAssistant: React.FC = () => {
 
     return (
         <>
-            {/* Floating Mic Button - Moved to LEFT */}
-            <button
-                onClick={startListening}
-                className="fixed bottom-8 left-8 z-50 w-20 h-20 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-105 transition-transform border-4 border-white"
-                aria-label="Voice Assistant"
-            >
-                <Mic size={40} />
-            </button>
+            {/* Voice Interface - Non-intrusive Popover */}
+            <div className={`fixed bottom-28 left-8 z-50 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-80 border border-gray-200 dark:border-gray-700 relative">
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
+                    >
+                        <X size={20} />
+                    </button>
 
-            {/* Voice Interface Modal */}
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg text-center relative animate-slide-in">
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100"
-                        >
-                            <X size={32} />
-                        </button>
-
-                        <div className="mb-8 flex justify-center">
-                            <div className={`p-6 rounded-full ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-black'}`}>
-                                {isListening ? <Mic size={64} /> : <Volume2 size={64} />}
-                            </div>
+                    <div className="flex flex-col items-center gap-4">
+                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-indigo-100 text-indigo-600'}`}>
+                            {isListening ? <Mic size={32} /> : <Volume2 size={32} />}
                         </div>
 
-                        <h2 className="text-3xl font-bold mb-4">
-                            {isListening ? "Listening..." : "I'm here to help"}
-                        </h2>
+                        <div className="text-center w-full">
+                            <h3 className="font-bold text-gray-800 dark:text-white mb-2">
+                                {isListening ? "Listening..." : isSpeaking ? "Speaking..." : "How can I help?"}
+                            </h3>
 
-                        {transcript && (
-                            <div className="mb-6 p-4 bg-gray-50 rounded-xl border-2 border-gray-100">
-                                <p className="text-xl text-gray-600">"{transcript}"</p>
-                            </div>
-                        )}
+                            {(transcript || response) && (
+                                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 max-h-40 overflow-y-auto text-sm">
+                                    {transcript && <p className="text-gray-500 italic mb-2">"{transcript}"</p>}
+                                    {response && <p className="text-gray-800 dark:text-gray-200">{response}</p>}
+                                </div>
+                            )}
+                        </div>
 
-                        {response && (
-                            <div className="mb-8">
-                                <p className="text-2xl font-medium text-black">{response}</p>
-                            </div>
-                        )}
-
-                        <div className="flex justify-center gap-4">
+                        <div className="flex gap-2 w-full">
                             {isListening ? (
                                 <button
                                     onClick={stopListening}
-                                    className="px-8 py-4 bg-red-500 text-white text-xl font-bold rounded-xl hover:bg-red-600 transition-colors"
+                                    className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium"
                                 >
-                                    Stop Listening
+                                    Stop
                                 </button>
                             ) : (
                                 <button
                                     onClick={startListening}
-                                    className="px-8 py-4 bg-black text-white text-xl font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                                    className="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
                                 >
-                                    Speak Again
+                                    Speak
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+
+            {/* Floating Mic Button */}
+            <button
+                onClick={() => {
+                    if (!isOpen) {
+                        setIsOpen(true);
+                        startListening();
+                    } else {
+                        setIsOpen(false);
+                        stopListening();
+                    }
+                }}
+                className={`fixed bottom-8 left-8 z-50 w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${isListening
+                    ? 'bg-red-500 text-white scale-110 animate-pulse'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-105'
+                    }`}
+                aria-label="Voice Assistant"
+            >
+                {isOpen ? <X size={32} /> : <Mic size={32} />}
+            </button>
         </>
     );
 };

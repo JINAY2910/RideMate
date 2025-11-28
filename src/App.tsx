@@ -17,6 +17,7 @@ import Vehicles from './screens/Vehicles';
 import PaymentPage from './screens/PaymentPage';
 import IdentityVerification from './screens/IdentityVerification';
 import Chatbot from './components/Chatbot';
+import VoiceAssistant from './components/VoiceAssistant';
 
 
 
@@ -53,6 +54,7 @@ function App() {
     <AppProvider>
       <AppRouter />
       <ChatbotWrapper />
+      <VoiceAssistant />
     </AppProvider>
   );
 }
