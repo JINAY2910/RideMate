@@ -13,6 +13,20 @@ class AIService {
             this.genAI = new GoogleGenerativeAI(apiKey);
             this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
         }
+
+        // Safety Controller State
+        this.dailyRequestCount = 0;
+        this.lastResetDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+        this.DAILY_LIMIT = 20;
+    }
+
+    checkAndResetLimit() {
+        const today = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+        if (today !== this.lastResetDate) {
+            console.log('[Safety Controller] New day detected. Resetting quota.');
+            this.dailyRequestCount = 0;
+            this.lastResetDate = today;
+        }
     }
 
     async chat(message, userId) {
@@ -79,7 +93,15 @@ class AIService {
             // Ideally, we use the `tools` parameter in `generateContent` if supported by the specific SDK version/model.
             // Here we will use a robust system prompt for stability.
 
-            const systemPrompt = `
+            // Safety Controller Checks
+            this.checkAndResetLimit();
+
+            if (this.dailyRequestCount >= this.DAILY_LIMIT) {
+                console.warn(`[Safety Controller] Daily limit reached (${this.dailyRequestCount}/${this.DAILY_LIMIT}). Blocking request.`);
+                return "⚠️ Daily usage limit reached. Please try again after midnight PT.";
+            }
+
+            let systemPrompt = `
         You are RideMate AI, a helpful assistant for a ride-sharing app.
         
         Current User: ${userContext}
@@ -95,6 +117,18 @@ class AIService {
         Do not output markdown code blocks for the JSON, just the raw JSON string if calling a tool.
       `;
 
+            // Adaptive "Low Gravity" Mode
+            if (this.dailyRequestCount >= this.DAILY_LIMIT - 1) {
+                console.log('[Safety Controller] Near limit. Engaging Low Gravity Mode (Ultra-Brief).');
+                systemPrompt += `
+                 
+                 CRITICAL WARNING: You are approaching the daily rate limit. 
+                 You must switch to ULTRA-LOW-COST MODE.
+                 Provide extremely short, token-efficient answers only. 
+                 Do not perform complex analysis or long explanations.
+                 `;
+            }
+
             const chat = this.model.startChat({
                 history: [
                     { role: "user", parts: [{ text: systemPrompt }] },
@@ -104,6 +138,10 @@ class AIService {
 
             // Use retry logic for the initial message
             const responseText = await this.sendMessageWithRetry(chat, message);
+
+            // Increment count on successful response
+            this.dailyRequestCount++;
+            console.log(`[Safety Controller] Request successful. Count: ${this.dailyRequestCount}/${this.DAILY_LIMIT}`);
 
             // 4. Check for Tool Calls (JSON parsing)
             if (responseText.startsWith('{') && responseText.endsWith('}')) {
