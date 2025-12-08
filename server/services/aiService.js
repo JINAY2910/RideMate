@@ -102,8 +102,8 @@ class AIService {
                 ],
             });
 
-            const result = await chat.sendMessage(message);
-            const responseText = result.response.text().trim();
+            // Use retry logic for the initial message
+            const responseText = await this.sendMessageWithRetry(chat, message);
 
             // 4. Check for Tool Calls (JSON parsing)
             if (responseText.startsWith('{') && responseText.endsWith('}')) {
@@ -111,9 +111,9 @@ class AIService {
                     const toolCall = JSON.parse(responseText);
                     if (tools[toolCall.tool]) {
                         const toolResult = await tools[toolCall.tool](toolCall.args);
-                        // Feed result back to model
-                        const finalResult = await chat.sendMessage(`Tool Output: ${toolResult}. Now answer the user.`);
-                        return finalResult.response.text();
+                        // Feed result back to model, also with retry
+                        const finalResult = await this.sendMessageWithRetry(chat, `Tool Output: ${toolResult}. Now answer the user.`);
+                        return finalResult;
                     }
                 } catch (e) {
                     console.error("Tool execution failed", e);
@@ -124,7 +124,29 @@ class AIService {
 
         } catch (error) {
             console.error('AI Service Error:', error);
+            if (error.status === 429) {
+                throw error; // Re-throw 429 to be handled by controller
+            }
             return "I'm having trouble connecting to my brain right now. Please try again later.";
+        }
+    }
+
+    async sendMessageWithRetry(chat, message, retries = 3, delay = 1000) {
+        try {
+            const result = await chat.sendMessage(message);
+            return result.response.text().trim();
+        } catch (error) {
+            if (error.status === 429 || error.message.includes('429')) {
+                if (retries > 0) {
+                    console.log(`[AI Service] Rate limited. Retrying in ${delay}ms... (${retries} retries left)`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.sendMessageWithRetry(chat, message, retries - 1, delay * 2);
+                } else {
+                    console.error('[AI Service] Rate limit exceeded after retries.');
+                    throw error;
+                }
+            }
+            throw error;
         }
     }
 }

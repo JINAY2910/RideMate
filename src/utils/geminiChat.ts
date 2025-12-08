@@ -16,6 +16,10 @@ export async function askGemini(message: string): Promise<string> {
       body: JSON.stringify({ message })
     });
 
+    if (response.status === 429) {
+      return "I'm receiving too many messages right now. Please try again in a moment.";
+    }
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.statusText}`);
     }

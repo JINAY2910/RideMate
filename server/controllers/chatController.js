@@ -26,6 +26,12 @@ const handleChat = async (req, res, next) => {
         });
     } catch (error) {
         console.error(`[Chat] Error:`, error);
+        if (error.status === 429 || error.message.includes('429')) {
+            return res.status(429).json({
+                success: false,
+                message: 'Too many requests. Please try again later.',
+            });
+        }
         next(error);
     }
 };
