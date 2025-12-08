@@ -6,12 +6,12 @@ const { geocode } = require('../utils/geocoding');
 
 class AIService {
     constructor() {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
             console.error('GEMINI_API_KEY is not set in environment variables.');
         } else {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
         }
     }
 
