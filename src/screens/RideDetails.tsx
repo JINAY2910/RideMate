@@ -135,8 +135,7 @@ export default function RideDetails() {
   }, [ride, userRole, userId]);
 
   const rideStatus = ride?.status ?? 'Pending';
-  const approvedRequests =
-    ride?.requests?.filter((request) => request.status === 'Approved') ?? [];
+
   const riderRequest = ride?.requests?.find(
     (req) => req.rider?.id === userId
   );
@@ -247,18 +246,7 @@ export default function RideDetails() {
     }
   };
 
-  const handleMarkRideComplete = async () => {
-    if (!ride) return;
-    if (window.confirm('Are you sure you want to mark this ride as completed?')) {
-      try {
-        const updatedRide = await rideApi.updateStatus(ride._id, 'Completed');
-        setRide(updatedRide);
-        // Trigger review modal or logic here if needed
-      } catch (err) {
-        setActionError(err instanceof Error ? err.message : 'Unable to complete ride.');
-      }
-    }
-  };
+
 
   const handleDeleteRide = async () => {
     if (!ride) return;

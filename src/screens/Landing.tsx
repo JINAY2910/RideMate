@@ -9,7 +9,7 @@ import '../styles/landing.css';
 import { useState } from 'react';
 
 export default function Landing() {
-  const { navigateTo, authToken } = useApp();
+  const { navigateTo } = useApp();
   const [activeTab, setActiveTab] = useState<'home' | 'platform' | 'cities' | 'safety' | 'about'>('home');
 
   const cities = [

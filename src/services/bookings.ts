@@ -35,6 +35,7 @@ export type Booking = {
             name: string;
             phone?: string;
             email?: string;
+            verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
         };
         vehicle?: {
             registrationNumber: string;

@@ -36,14 +36,21 @@ RideMate is a modern, feature-rich ride-sharing application designed to connect 
 ## � Folder Structure
 
 ```
-RideMate-2/
+RideMate/
 ├── package.json              # Frontend dependencies and scripts
 ├── server/                   # Backend Server Code
 │   ├── config/               # Database configuration
 │   ├── middleware/           # Express middleware (auth, error handling)
 │   ├── models/               # Mongoose database models
 │   ├── routes/               # API route definitions
+│   │   ├── authRoutes.js     # Authentication routes
+│   │   ├── rideRoutes.js     # Ride management routes
+│   │   ├── verificationRoutes.js # Identity verification routes
+│   │   └── ...
 │   ├── services/             # Business logic services
+│   ├── controllers/          # Request handlers
+│   │   ├── verificationController.js # Identity verification logic
+│   │   └── ...
 │   ├── utils/                # Utility functions (cron, geocoding)
 │   ├── index.js              # Server entry point
 │   └── package.json          # Backend dependencies
@@ -58,9 +65,12 @@ RideMate-2/
 │   │   ├── Dashboard.tsx     # Main dashboard
 │   │   ├── CreateRide.tsx    # Driver: Offer a ride
 │   │   ├── SearchRide.tsx    # Rider: Find a ride
+│   │   ├── IdentityVerification.tsx # Driver identity verification
 │   │   ├── Profile.tsx       # User profile
 │   │   └── ...               # Other screens (Login, History, etc.)
 │   ├── services/             # API client services
+│   │   ├── verification.ts   # Identity verification service
+│   │   └── ...
 │   ├── styles/               # Global styles and CSS
 │   ├── utils/                # Frontend utilities (Gemini, Date, etc.)
 │   ├── App.tsx               # Main App component & Routing

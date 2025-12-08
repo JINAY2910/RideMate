@@ -32,7 +32,7 @@ export async function askGemini(message: string): Promise<string> {
   }
 }
 
-export async function classifyDomain(): Promise<"domain" | "external"> {
+export async function classifyDomain(_text: string): Promise<"domain" | "external"> {
   // For now, we'll assume all messages are domain-relevant to simplify
   // In a real app, we could have a lightweight classifier or just send everything to backend
   return "domain";

@@ -60,7 +60,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
 
 
 export default function RiderDashboard() {
-    const { navigateTo, setActiveRideId, userId, userName } = useApp();
+    const { navigateTo, setActiveRideId, userId } = useApp();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
