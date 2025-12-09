@@ -11,7 +11,7 @@ class AIService {
             console.error('GEMINI_API_KEY is not set in environment variables.');
         } else {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+            this.model = this.genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
         }
 
         // Safety Controller State
