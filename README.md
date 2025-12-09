@@ -1,143 +1,146 @@
 # RideMate - Smart Ride Sharing Platform
 
-RideMate is a modern, feature-rich ride-sharing application designed to connect riders and drivers seamlessly. It focuses on accessibility, safety, and ease of use, featuring a unique Voice Assistant for hands-free navigation and a smart AI Chatbot.
+RideMate is a full-stack carpooling and ride-sharing platform designed to connect drivers and riders for sustainable urban transportation. It features a modern, accessible UI, real-time tracking, and AI-powered assistance.
 
 ## 🌟 Key Features
 
-*   **Dual Role System:** Seamlessly switch between Rider and Driver modes.
-*   **Smart Voice Assistant:** Navigate the app and perform actions using voice commands (e.g., "Book a ride to Downtown", "Show my history").
-*   **AI Chatbot:** Integrated AI assistant for support and queries.
-*   **Real-time Ride Tracking:** Live GPS tracking for active rides.
+*   **Dual Role System:** Seamlessly switch between **Rider** and **Driver** modes within the same app.
+*   **Smart Matching:** Intelligent algorithms to match riders with drivers on similar routes.
+*   **Real-time Tracking:** Live GPS tracking for active rides using Leaflet maps.
+*   **AI Power:**
+    *   **Chatbot:** Integrated Google Gemini AI for support, ride queries, and general assistance.
+    *   **Voice Assistant:** Hands-free navigation and actions using voice commands.
+*   **Safety First:**
+    *   **Identity Verification:** Document upload and verification for drivers.
+    *   **Emergency Contacts:** SOS features and emergency contact management.
+*   **Eco-Friendly:**
+    *   **Green Miles:** Track your CO2 savings and environmental impact.
+    *   **Stats:** Visual statistics on your sustainable travel contribution.
 *   **Ride Management:**
-    *   **Drivers:** Create and publish rides with custom routes, dates, and seat availability.
-    *   **Riders:** Search for rides, view driver details, and book seats.
-*   **Safety First:** Identity verification for drivers and emergency contact integration.
-*   **User Profiles:** Comprehensive profiles with ratings, ride history, and vehicle management.
-*   **Interactive Maps:** Visual route selection and location picking using Leaflet.
+    *   **Recurring Rides:** Schedule daily or weekly commutes.
+    *   **Vehicle Management:** Drivers can manage multiple vehicles.
+    *   **History & Receipts:** Comprehensive ride history with downloadable PDF tickets.
+*   **Interactive Maps:** Visual route selection, location picking, and real-time navigation.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-*   **Framework:** React (Vite)
-*   **Language:** TypeScript
-*   **Styling:** Tailwind CSS
-*   **Maps:** Leaflet / React-Leaflet
-*   **State Management:** React Context API
-*   **Voice/AI:** Web Speech API, Google Gemini AI
+*   **Framework:** [React](https://reactjs.org/) (Vite)
+*   **Language:** [TypeScript](https://www.typescriptlang.org/)
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Maps:** [Leaflet](https://leafletjs.com/) / React-Leaflet
+*   **Real-time:** Socket.io-client
+*   **AI:** Google Generative AI (Gemini)
 
 ### Backend
-*   **Runtime:** Node.js
-*   **Framework:** Express.js
-*   **Database:** MongoDB (Mongoose)
-*   **Real-time:** Socket.io
-*   **Authentication:** JWT (JSON Web Tokens)
-*   **AI Integration:** Google Generative AI (Gemini)
+*   **Runtime:** [Node.js](https://nodejs.org/)
+*   **Framework:** [Express.js](https://expressjs.com/)
+*   **Database:** [MongoDB](https://www.mongodb.com/) (Mongoose ODM)
+*   **Authentication:** JWT (JSON Web Tokens) & Bcrypt
+*   **Real-time:** [Socket.io](https://socket.io/)
+*   **Scheduling:** Node-cron
 
-## � Folder Structure
+##  Folder Structure
 
 ```
 RideMate/
-├── package.json              # Frontend dependencies and scripts
-├── server/                   # Backend Server Code
-│   ├── config/               # Database configuration
-│   ├── middleware/           # Express middleware (auth, error handling)
-│   ├── models/               # Mongoose database models
-│   ├── routes/               # API route definitions
-│   │   ├── authRoutes.js     # Authentication routes
-│   │   ├── rideRoutes.js     # Ride management routes
-│   │   ├── verificationRoutes.js # Identity verification routes
-│   │   └── ...
-│   ├── services/             # Business logic services
-│   ├── controllers/          # Request handlers
-│   │   ├── verificationController.js # Identity verification logic
-│   │   └── ...
-│   ├── utils/                # Utility functions (cron, geocoding)
-│   ├── index.js              # Server entry point
-│   └── package.json          # Backend dependencies
-├── src/                      # Frontend Source Code
-│   ├── components/           # Reusable UI components
-│   │   ├── Chatbot/          # AI Chatbot component
-│   │   ├── VoiceAssistant.tsx# Voice command interface
-│   │   └── ...               # Other components (Button, Input, Maps, etc.)
-│   ├── context/              # React Contexts (Auth, App State)
-│   ├── hooks/                # Custom React hooks
-│   ├── screens/              # Page components (Views)
-│   │   ├── Dashboard.tsx     # Main dashboard
-│   │   ├── CreateRide.tsx    # Driver: Offer a ride
-│   │   ├── SearchRide.tsx    # Rider: Find a ride
-│   │   ├── IdentityVerification.tsx # Driver identity verification
-│   │   ├── Profile.tsx       # User profile
-│   │   └── ...               # Other screens (Login, History, etc.)
-│   ├── services/             # API client services
-│   │   ├── verification.ts   # Identity verification service
-│   │   └── ...
-│   ├── styles/               # Global styles and CSS
-│   ├── utils/                # Frontend utilities (Gemini, Date, etc.)
-│   ├── App.tsx               # Main App component & Routing
-│   └── main.tsx              # Entry point
-└── ...                       # Config files (tsconfig, tailwind, vite)
+├── public/                   # Static assets
+├── server/                   # Backend Application
+│   ├── config/               # Database & App Config
+│   ├── controllers/          # Business Logic (Auth, Rides, Bookings, etc.)
+│   ├── middleware/           # Auth & Error Handling
+│   ├── models/               # Mongoose Schemas (User, Ride, Vehicle, etc.)
+│   ├── routes/               # API Endpoints
+│   ├── services/             # External Services (AI, Geocoding)
+│   ├── utils/                # Helpers (Distance, Cron, Validation)
+│   └── index.js              # Server Entry Point
+├── src/                      # Frontend Application
+│   ├── components/           # Reusable UI (Chatbot, Maps, Navbar, etc.)
+│   ├── context/              # State Management (Auth, App Context)
+│   ├── hooks/                # Custom React Hooks
+│   ├── screens/              # App Pages (Dashboard, Search, Profile, etc.)
+│   ├── services/             # API Client & Socket Connection
+│   ├── styles/               # Global & Component Styles
+│   ├── utils/                # Frontend Helpers
+│   ├── App.tsx               # Routing & Layout
+│   └── main.tsx              # Entry Point
+└── ...config files           # Vite, TypeScript, Tailwind config
 ```
+
+*For a detailed breakdown of files and their purposes, please refer to [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md).*
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   Node.js (v16 or higher)
-*   MongoDB (Local or Atlas connection string)
-*   Google Gemini API Key (for AI features)
+*   **Node.js** (v18+ recommended)
+*   **MongoDB** (Local instance or Atlas connection string)
+*   **Google Gemini API Key** (for AI features)
 
 ### Installation
 
-1.  **Clone the repository:**
+1.  **Clone the repository**
     ```bash
     git clone https://github.com/yourusername/RideMate.git
     cd RideMate
     ```
 
-2.  **Setup Backend:**
+2.  **Backend Setup**
+    Navigate to the server directory and install dependencies:
     ```bash
     cd server
     npm install
     ```
-    *   Create a `.env` file in the `server` directory with the following:
-        ```env
-        PORT=5001
-        MONGO_URI=your_mongodb_connection_string
-        JWT_SECRET=your_jwt_secret
-        GEMINI_API_KEY=your_gemini_api_key
-        ```
-    *   Start the server:
-        ```bash
-        npm start
-        ```
+    Create a `.env` file in `server/` with your credentials:
+    ```env
+    PORT=5001
+    MONGO_URI=mongodb://localhost:27017/ridemate
+    JWT_SECRET=your_super_secret_key
+    GEMINI_API_KEY=your_gemini_api_key
+    ```
+    Start the server:
+    ```bash
+    npm start
+    # OR for development with watch mode
+    npm run dev
+    ```
 
-3.  **Setup Frontend:**
-    *   Open a new terminal and go back to the root directory:
-        ```bash
-        cd ..
-        npm install
-        ```
-    *   Start the development server:
-        ```bash
-        npm run dev
-        ```
+3.  **Frontend Setup**
+    Open a new terminal, navigate to the root directory, and install dependencies:
+    ```bash
+    # (Assuming you are back at the root RideMate/ folder)
+    npm install
+    ```
+    Start the development server:
+    ```bash
+    npm run dev
+    ```
 
-4.  **Access the App:**
-    *   Open your browser and navigate to `http://localhost:5173`
+4.  **Access the App**
+    Open your browser and navigate to `http://localhost:5173`.
 
-## � API Documentation
+##  API Documentation
 
-The backend provides RESTful APIs for:
-*   `/api/auth`: User authentication (Login, Signup)
-*   `/api/rides`: Ride creation, searching, and management
-*   `/api/bookings`: Seat booking and status updates
-*   `/api/vehicles`: Vehicle management for drivers
-*   `/api/chat`: Chat history and messaging
-*   `/api/notifications`: User notifications
+The backend provides a RESTful API at `http://localhost:5001/api`. Major endpoints include:
+
+*   **Auth**: `/api/auth` (Login, Signup, Profile)
+*   **Rides**: `/api/rides` (Create, Search, Details)
+*   **Bookings**: `/api/bookings` (Book, Cancel, Status)
+*   **Vehicles**: `/api/vehicles` (Manage driver vehicles)
+*   **Locations**: `/api/locations` (Geocoding & Suggestions)
+*   **Chat**: `/api/chat` (Message history)
+*   **Notifications**: `/api/notifications` (User alerts)
+*   **Verification**: `/api/verification` (Identity verification)
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
 
-## � License
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
-This project is licensed under the MIT License.
+##  License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
