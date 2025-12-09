@@ -84,7 +84,7 @@ RideMate/
     cd RideMate
     ```
 
-2.  **Backend Setup**
+3.  **Backend Setup**
     Navigate to the server directory and install dependencies:
     ```bash
     cd server
@@ -96,6 +96,14 @@ RideMate/
     MONGO_URI=mongodb://localhost:27017/ridemate
     JWT_SECRET=your_super_secret_key
     GEMINI_API_KEY=your_gemini_api_key
+
+    # Geocoding Provider Configuration (Optional)
+    # Options: nominatim (free), geoapify, positionstack, google, mapbox
+    GEOCODING_PROVIDER=nominatim
+    
+    # Provider-specific API Keys (if using paid/key-based providers)
+    # GEOAPIFY_API_KEY=your_geoapify_key
+    # POSITIONSTACK_API_KEY=your_positionstack_key
     ```
     Start the server:
     ```bash
@@ -104,11 +112,15 @@ RideMate/
     npm run dev
     ```
 
-3.  **Frontend Setup**
-    Open a new terminal, navigate to the root directory, and install dependencies:
+4.  **Frontend Setup**
+    Navigate back to the root directory and install dependencies:
     ```bash
-    # (Assuming you are back at the root RideMate/ folder)
+    cd ..
     npm install
+    ```
+    Create a `.env` file in the root directory:
+    ```env
+    VITE_GEMINI_API_KEY=your_gemini_api_key
     ```
     Start the development server:
     ```bash
