@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5001'; // Adjust if your server runs on a different port
+import { API_BASE_URL } from '../config/api';
+
+const SOCKET_URL = API_BASE_URL;
 
 let socket: Socket | null = null;
 

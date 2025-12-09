@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = `${API_BASE_URL}/api`;
 
 export async function askGemini(message: string): Promise<string> {
   try {
