@@ -16,6 +16,11 @@ const axios = require('axios');
 
 // Get geocoding provider from environment
 const GEOCODING_PROVIDER = process.env.GEOCODING_PROVIDER || 'nominatim';
+console.log('--- Geocoding Service Initialized ---');
+console.log('Active Provider:', GEOCODING_PROVIDER);
+if (GEOCODING_PROVIDER === 'geoapify') {
+  console.log('Geoapify Key Configured:', !!process.env.GEOAPIFY_API_KEY);
+}
 
 /**
  * Geocode a location name to coordinates using OpenStreetMap Nominatim
