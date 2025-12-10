@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
-import { User, Car, ShieldCheck } from 'lucide-react';
+import { User, Car, ShieldCheck, Clock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { rideApi, Ride } from '../services/rides';
 import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
@@ -154,18 +154,19 @@ export default function RiderDashboard() {
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-black">Rider Dashboard</h2>
             </div>
-            <div className="flex items-center">
-                <div className="w-full grid grid-cols-1">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigateTo('ride-history')}
-                        className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
-                    >
-                        <Car size={16} />
-                        Ride History
-                    </Button>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                    onClick={() => navigateTo('ride-history')}
+                    className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-black/30 hover:scale-[1.01] transition-all group text-left"
+                >
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-black text-lg">Ride History</h3>
+                        <p className="text-sm text-gray-500">View past trips</p>
+                    </div>
+                </button>
             </div>
 
             {/* Ongoing Ride Section */}

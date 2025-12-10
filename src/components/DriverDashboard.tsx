@@ -170,27 +170,31 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-black">Driver Dashboard</h2>
             </div>
-            <div className="flex items-center">
-                <div className="w-full grid grid-cols-2 gap-3">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigateTo('ride-history')}
-                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
-                    >
-                        <Clock size={16} />
-                        Ride History
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigateTo('vehicles')}
-                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
-                    >
-                        <Car size={16} />
-                        My Vehicles
-                    </Button>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                    onClick={() => navigateTo('ride-history')}
+                    className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-black/30 hover:scale-[1.01] transition-all group text-left"
+                >
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-black text-lg">Ride History</h3>
+                        <p className="text-sm text-gray-500">View past trips</p>
+                    </div>
+                </button>
+                <button
+                    onClick={() => navigateTo('vehicles')}
+                    className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-black/30 hover:scale-[1.01] transition-all group text-left"
+                >
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                        <Car size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-black text-lg">My Vehicles</h3>
+                        <p className="text-sm text-gray-500">Manage your fleet</p>
+                    </div>
+                </button>
             </div>
 
             {loading ? (

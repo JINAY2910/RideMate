@@ -1,4 +1,4 @@
-import { User, Search, Car, LogOut, Bell } from 'lucide-react';
+import { Search, Car, Bell } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAccessibility } from '../context/AccessibilityContext';
@@ -11,7 +11,7 @@ import { notificationApi } from '../services/notifications';
 import GreenStatsCard from '../components/GreenStatsCard';
 
 export default function Dashboard() {
-  const { navigateTo, userRole, userName, logout, user } = useApp();
+  const { navigateTo, userRole, userName, user } = useApp();
   const { isSeniorMode } = useAccessibility();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -32,10 +32,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigateTo('landing');
-  };
+
 
   return (
     <Layout fullWidth className="bg-white relative overflow-hidden">
@@ -61,17 +58,6 @@ export default function Dashboard() {
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
-            </button>
-            <Button variant="secondary" onClick={() => navigateTo('profile')} className="hidden sm:flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors">
-              <User size={18} />
-              Profile
-            </Button>
-            <button
-              onClick={handleLogout}
-              className="hidden sm:block p-3 rounded-xl border-2 border-black hover:bg-red-50 hover:border-red-500 hover:text-red-600 transition-all"
-              title="Sign Out"
-            >
-              <LogOut size={20} />
             </button>
           </div>
         </div>
