@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, User, CheckCircle, XCircle, Car, Trash2 } from 'lucide-react';
 import Button from './Button';
 import Card from './Card';
 import { useApp } from '../context/AppContext';
 import { rideApi, Ride } from '../services/rides';
 
-interface DriverDashboardProps { }
+// interface DriverDashboardProps { }
 
 const RiderProfileModal = ({ rider, rating, onAccept, onReject, onClose }: {
-    rider: any,
+    rider: { name: string; email?: string; phone?: string },
     rating: number,
     onAccept: () => void,
     onReject: () => void,
@@ -59,19 +59,15 @@ const RiderProfileModal = ({ rider, rating, onAccept, onReject, onClose }: {
     );
 };
 
-export default function DriverDashboard({ }: DriverDashboardProps) {
+export default function DriverDashboard() {
     const { navigateTo, userId, setActiveRideId } = useApp();
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedRider, setSelectedRider] = useState<{ rider: any; rating: number; rideId: string; requestId: string } | null>(null);
+    const [selectedRider, setSelectedRider] = useState<{ rider: { name: string; email?: string; phone?: string }; rating: number; rideId: string; requestId: string } | null>(null);
 
-    useEffect(() => {
-        if (userId) {
-            fetchMyRides();
-        }
-    }, [userId]);
 
-    const fetchMyRides = async () => {
+
+    const fetchMyRides = useCallback(async () => {
         try {
             setLoading(true);
             // Fetch rides where current user is the driver
@@ -82,7 +78,13 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId) {
+            fetchMyRides();
+        }
+    }, [userId, fetchMyRides]);
 
     const handleAcceptRequest = async (rideId: string, requestId: string) => {
         try {
@@ -297,7 +299,7 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
                                                             <div className="flex gap-2 mt-2">
                                                                 <button
                                                                     onClick={() => setSelectedRider({
-                                                                        rider: request.rider,
+                                                                        rider: request.rider as { name: string; email?: string; phone?: string },
                                                                         rating: request.rating || 5.0,
                                                                         rideId: ride._id,
                                                                         requestId: request._id
@@ -417,7 +419,7 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
                                                             </div>
                                                             <button
                                                                 onClick={() => setSelectedRider({
-                                                                    rider: request.rider,
+                                                                    rider: request.rider as { name: string; email?: string; phone?: string },
                                                                     rating: request.rating || 5.0,
                                                                     rideId: ride._id,
                                                                     requestId: request._id

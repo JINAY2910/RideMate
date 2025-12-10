@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, User, LogOut, Home, Search, PlusCircle, Car, History } from 'lucide-react';
+import { Menu, X, User, LogOut, Home, Search, PlusCircle, History, LucideIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from './Button';
 import Logo from './Logo';
@@ -19,7 +19,7 @@ export default function Navbar() {
         setIsMenuOpen(false);
     };
 
-    const NavLink = ({ screen, icon: Icon, label }: { screen: string; icon: any; label: string }) => (
+    const NavLink = ({ screen, icon: Icon, label }: { screen: string; icon: LucideIcon; label: string }) => (
         <button
             onClick={() => handleNavigation(screen)}
             className="flex items-center gap-2 text-gray-600 hover:text-black font-medium transition-colors"
@@ -29,7 +29,7 @@ export default function Navbar() {
         </button>
     );
 
-    const MobileNavLink = ({ screen, icon: Icon, label }: { screen: string; icon: any; label: string }) => (
+    const MobileNavLink = ({ screen, icon: Icon, label }: { screen: string; icon: LucideIcon; label: string }) => (
         <button
             onClick={() => handleNavigation(screen)}
             className="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-gray-100 text-gray-700 hover:text-black font-medium transition-all"

@@ -11,14 +11,14 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     let errorText = '';
     try {
       errorText = await response.text();
-    } catch (e) {
+    } catch {
       errorText = `HTTP ${response.status}: ${response.statusText}`;
     }
     throw new Error(errorText || `Request failed with status ${response.status}`);
   }
   try {
     return await response.json() as Promise<T>;
-  } catch (e) {
+  } catch {
     throw new Error('Invalid JSON response from server');
   }
 };

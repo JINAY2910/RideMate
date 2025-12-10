@@ -1,8 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, Volume2, X } from 'lucide-react';
 // import { useAccessibility } from '../context/AccessibilityContext';
 import { useApp } from '../context/AppContext';
 import { askGemini } from '../utils/geminiChat';
+
+interface SpeechRecognitionEvent {
+    results: {
+        [key: number]: {
+            [key: number]: {
+                transcript: string;
+            };
+        };
+    };
+}
+
+interface SpeechRecognitionErrorEvent {
+    error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onend: () => void;
+    onerror: (event: SpeechRecognitionErrorEvent) => void;
+}
 
 const VoiceAssistant: React.FC = () => {
     // const { isVoiceCommandMode } = useAccessibility();
@@ -13,47 +38,10 @@ const VoiceAssistant: React.FC = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
 
-    const recognitionRef = useRef<any>(null);
+    const recognitionRef = useRef<SpeechRecognition | null>(null);
     const synthRef = useRef<SpeechSynthesis>(window.speechSynthesis);
 
-    useEffect(() => {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'en-US';
 
-            recognitionRef.current.onresult = (event: any) => {
-                const text = event.results[0][0].transcript;
-                setTranscript(text);
-                handleVoiceCommand(text);
-            };
-
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error', event.error);
-                setIsListening(false);
-
-                let errorMessage = "I didn't catch that. Please try again.";
-                if (event.error === 'not-allowed') {
-                    errorMessage = "Microphone access denied. Please enable permissions.";
-                } else if (event.error === 'no-speech') {
-                    errorMessage = "No speech detected. Please speak louder.";
-                } else if (event.error === 'network') {
-                    errorMessage = "Network error. Check your connection.";
-                }
-
-                setResponse(errorMessage);
-                speak(errorMessage);
-            };
-        } else {
-            console.warn('Speech recognition not supported');
-        }
-    }, []);
 
     const startListening = () => {
         if (recognitionRef.current) {
@@ -78,14 +66,14 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
-    const speak = (text: string) => {
+    const speak = useCallback((text: string) => {
         if (synthRef.current) {
             setIsSpeaking(true);
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.onend = () => setIsSpeaking(false);
             synthRef.current.speak(utterance);
         }
-    };
+    }, []);
 
     const normalizeTime = (timeStr?: string): string | undefined => {
         if (!timeStr) return undefined;
@@ -97,7 +85,9 @@ const VoiceAssistant: React.FC = () => {
         if (cleanTime.includes('pm') || cleanTime.includes('am')) {
             const isPM = cleanTime.includes('pm');
             cleanTime = cleanTime.replace(/(am|pm)/, '').trim();
-            let [hours, minutes] = cleanTime.split(':').map(Number);
+            const parts = cleanTime.split(':').map(Number);
+            let hours = parts[0];
+            const minutes = parts[1];
 
             if (isPM && hours < 12) hours += 12;
             if (!isPM && hours === 12) hours = 0;
@@ -114,7 +104,7 @@ const VoiceAssistant: React.FC = () => {
         return timeStr;
     };
 
-    const handleVoiceCommand = async (text: string) => {
+    const handleVoiceCommand = useCallback(async (text: string) => {
         try {
             // 1. Parse command using Gemini
             setResponse("Processing...");
@@ -221,7 +211,49 @@ const VoiceAssistant: React.FC = () => {
             setResponse('Sorry, something went wrong.');
             speak('Sorry, something went wrong.');
         }
-    };
+    }, [navigateTo, speak]);
+
+    useEffect(() => {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            if (recognitionRef.current) {
+                recognitionRef.current.continuous = false;
+                recognitionRef.current.interimResults = false;
+                recognitionRef.current.lang = 'en-US';
+
+                recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
+                    const text = event.results[0][0].transcript;
+                    setTranscript(text);
+                    handleVoiceCommand(text);
+                };
+
+                recognitionRef.current.onend = () => {
+                    setIsListening(false);
+                };
+
+                recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
+                    console.error('Speech recognition error', event.error);
+                    setIsListening(false);
+
+                    let errorMessage = "I didn't catch that. Please try again.";
+                    if (event.error === 'not-allowed') {
+                        errorMessage = "Microphone access denied. Please enable permissions.";
+                    } else if (event.error === 'no-speech') {
+                        errorMessage = "No speech detected. Please speak louder.";
+                    } else if (event.error === 'network') {
+                        errorMessage = "Network error. Check your connection.";
+                    }
+
+                    setResponse(errorMessage);
+                    speak(errorMessage);
+                };
+            }
+        } else {
+            console.warn('Speech recognition not supported');
+        }
+    }, [handleVoiceCommand, speak]);
 
     // if (!isVoiceCommandMode) return null; // Always active now
 

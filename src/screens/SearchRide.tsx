@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ArrowLeft, Star, Users, Car, Sparkles, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -30,7 +30,7 @@ export default function SearchRide() {
   // ... inside component ...
   const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
 
-  const loadRides = async (params?: Parameters<typeof rideApi.list>[0]) => {
+  const loadRides = useCallback(async (params?: Parameters<typeof rideApi.list>[0]) => {
     try {
       setLoading(true);
       setError(null);
@@ -57,9 +57,10 @@ export default function SearchRide() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const checkNavigationState = () => {
+  const checkNavigationState = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const navState = (window as any).__navigationState;
     if (navState) {
       if (navState.startLocation) setStartLocation(navState.startLocation);
@@ -84,9 +85,10 @@ export default function SearchRide() {
       }
 
       // Clear state to prevent re-triggering
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__navigationState = null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadRides();
@@ -94,8 +96,8 @@ export default function SearchRide() {
 
     window.addEventListener('navigation-state-change', checkNavigationState);
     return () => window.removeEventListener('navigation-state-change', checkNavigationState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+  }, [loadRides, checkNavigationState]);
 
   // Effect to auto-search if all required fields are present and we just loaded from voice
   useEffect(() => {
@@ -107,7 +109,7 @@ export default function SearchRide() {
       // For now, I'll leave it as pre-filled so user can verify.
       // To fully automate, I'd need to refactor handleSearch to accept params or use a ref.
     }
-  }, [startLocation, destinationLocation, date, time]);
+  }, [startLocation, destinationLocation, date, time, hasSearched]);
 
 
   const formatDisplayDate = (value: string) => {
@@ -125,7 +127,7 @@ export default function SearchRide() {
 
 
 
-  const executeSearch = async (start: Location, dest: Location, d: string, t: string, seats: number) => {
+  const executeSearch = useCallback(async (start: Location, dest: Location, d: string, t: string, seats: number) => {
     try {
       setLoading(true);
       setError(null);
@@ -162,7 +164,7 @@ export default function SearchRide() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async () => {
     if (!startLocation || !destinationLocation) {
@@ -205,13 +207,15 @@ export default function SearchRide() {
 
   // Auto-search effect
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const navState = (window as any).__navigationState;
     if (navState && navState.autoSearch && startLocation && destinationLocation && date && time) {
       // Clear the flag so we don't loop
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__navigationState.autoSearch = false;
       executeSearch(startLocation, destinationLocation, date, time, 1);
     }
-  }, [startLocation, destinationLocation, date, time]);
+  }, [startLocation, destinationLocation, date, time, executeSearch]);
 
 
 

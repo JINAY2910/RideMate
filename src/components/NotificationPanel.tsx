@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, X, CheckCheck } from 'lucide-react';
 import { notificationApi, Notification } from '../services/notifications';
 import { useApp } from '../context/AppContext';
 import Button from './Button';
@@ -60,10 +60,10 @@ export default function NotificationPanel({ isOpen, onClose, onNotificationClick
 
     if (notification.rideId) {
       // Ensure rideId is a string (handle both string and object cases)
-      const rideIdString = typeof notification.rideId === 'string' 
-        ? notification.rideId 
-        : (notification.rideId as any)?._id?.toString() || (notification.rideId as any)?.toString();
-      
+      const rideIdString = typeof notification.rideId === 'string'
+        ? notification.rideId
+        : (typeof notification.rideId === 'object' && notification.rideId !== null && '_id' in notification.rideId ? String((notification.rideId as { _id: string })._id) : String(notification.rideId));
+
       if (rideIdString) {
         setActiveRideId(rideIdString);
         navigateTo('ride-details');
@@ -159,9 +159,8 @@ export default function NotificationPanel({ isOpen, onClose, onNotificationClick
               {notifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    !notification.isRead ? 'bg-blue-50' : ''
-                  }`}
+                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${!notification.isRead ? 'bg-blue-50' : ''
+                    }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">

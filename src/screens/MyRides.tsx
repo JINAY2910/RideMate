@@ -258,7 +258,7 @@ export default function MyRides() {
               <div className="text-sm">
                 <p className="font-semibold text-black">Vehicle Details</p>
                 <p className="text-gray-600">
-                  {vehicle.registrationNumber} • {'type' in vehicle ? (vehicle as any).type : (vehicle as any).vehicleType}
+                  {vehicle.registrationNumber} • {'type' in vehicle ? (vehicle as { type: string }).type : (vehicle as { vehicleType: string }).vehicleType}
                 </p>
                 {vehicle.make && vehicle.model && (
                   <p className="text-gray-600">

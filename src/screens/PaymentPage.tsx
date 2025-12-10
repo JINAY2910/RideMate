@@ -85,7 +85,7 @@ export default function PaymentPage() {
                         });
                     }
                 }
-            } catch (err) {
+            } catch {
                 setError('Failed to load ride details.');
             } finally {
                 setLoading(false);
@@ -107,8 +107,8 @@ export default function PaymentPage() {
 
             alert('Payment Successful! Your ride is confirmed.');
             navigateTo('ride-details');
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
+        } catch {
+            setError('Payment failed. Please try again.');
             setProcessing(false);
         }
     };

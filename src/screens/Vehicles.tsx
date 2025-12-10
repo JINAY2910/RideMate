@@ -103,7 +103,7 @@ export default function Vehicles() {
 
     try {
       await deleteVehicle(vehicleId);
-    } catch (err) {
+    } catch {
       alert('Failed to delete vehicle');
     }
   };

@@ -31,7 +31,7 @@ const getCache = (key: string) => {
     }
 };
 
-const setCache = (key: string, data: any) => {
+const setCache = <T>(key: string, data: T) => {
     try {
         localStorage.setItem(key, JSON.stringify(data));
     } catch (e) {

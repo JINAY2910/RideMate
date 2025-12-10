@@ -4,7 +4,9 @@ export const parseRideDate = (dateStr: string, timeStr: string): Date => {
         let time = timeStr;
         if (timeStr.includes('AM') || timeStr.includes('PM')) {
             const [timePart, modifier] = timeStr.split(' ');
-            let [hours, minutes] = timePart.split(':').map(Number);
+            const parts = timePart.split(':').map(Number);
+            let hours = parts[0];
+            const minutes = parts[1];
             if (modifier === 'PM' && hours < 12) hours += 12;
             if (modifier === 'AM' && hours === 12) hours = 0;
             time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;

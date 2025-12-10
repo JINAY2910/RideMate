@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { vehicleApi } from '../services/vehicles';
 import { authApi, User } from '../services/auth';
 
@@ -54,7 +54,7 @@ interface AppContextType {
   vehicles: Vehicle[];
   rideVehicles: Record<string, string>; // Maps rideId to vehicleId
   rideSchedules: RideSchedule[]; // Weekly schedules
-  navigateTo: (screen: string, state?: any) => void;
+  navigateTo: (screen: string, state?: unknown) => void;
   goBack: () => void;
   setRole: (role: 'driver' | 'rider') => void;
   setUserId: (id: string | null) => void;
@@ -165,6 +165,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userRole, authToken]);
 
+  const fetchUserProfile = useCallback(async () => {
+    if (!authToken) return;
+
+    try {
+      const response = await authApi.getMe(authToken);
+      if (response.success) {
+        setUser(response.user);
+        // Sync individual state variables for backward compatibility
+        setUserName(response.user.name);
+        setUserEmail(response.user.email);
+        setUserPhone(response.user.phone || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+  }, [authToken]);
+
   // Fetch user profile when token is available
   useEffect(() => {
     if (authToken) {
@@ -172,10 +189,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setUser(null);
     }
-  }, [authToken]);
+  }, [authToken, fetchUserProfile]);
 
-  const navigateTo = (screen: string, state?: any) => {
+  const navigateTo = (screen: string, state?: unknown) => {
     if (state) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__navigationState = state;
       window.dispatchEvent(new Event('navigation-state-change'));
     }
@@ -264,22 +282,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setRideVehicles(prev => ({ ...prev, [rideId]: vehicleId }));
   };
 
-  const fetchUserProfile = async () => {
-    if (!authToken) return;
 
-    try {
-      const response = await authApi.getMe(authToken);
-      if (response.success) {
-        setUser(response.user);
-        // Sync individual state variables for backward compatibility
-        setUserName(response.user.name);
-        setUserEmail(response.user.email);
-        setUserPhone(response.user.phone || '');
-      }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-    }
-  };
 
   const updateProfile = async (updates: {
     name?: string;

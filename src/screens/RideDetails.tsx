@@ -175,7 +175,7 @@ export default function RideDetails() {
       setDriverRatingValue(rating);
       alert('Driver rated successfully!');
       setActionError(null);
-    } catch (err) {
+    } catch {
       setActionError('Failed to rate driver');
     }
   };

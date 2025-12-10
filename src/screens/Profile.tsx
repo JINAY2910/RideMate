@@ -41,7 +41,7 @@ export default function Profile() {
     };
 
     loadProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   // Update form when user data changes
   useEffect(() => {
@@ -73,8 +73,10 @@ export default function Profile() {
       await updateProfile(formData);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to update profile' });
+      setIsEditing(false);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setLoading(false);
     }

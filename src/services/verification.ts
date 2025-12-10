@@ -11,7 +11,7 @@ export type VerificationResponse = {
             name: string;
             licenseNumber: string;
             expiryDate: string;
-            extractedData: any;
+            extractedData: Record<string, unknown>;
         };
     };
 };
