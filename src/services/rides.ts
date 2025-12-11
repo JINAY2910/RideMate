@@ -1,6 +1,8 @@
 import type { WeatherData } from './weather';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = `${API_BASE_URL}/api`;
 
 // Log API base URL in development (helps debug configuration issues)
 if (import.meta.env.DEV) {
@@ -26,14 +28,14 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     let errorText = '';
     try {
       errorText = await response.text();
-    } catch (e) {
+    } catch {
       errorText = `HTTP ${response.status}: ${response.statusText}`;
     }
     throw new Error(errorText || `Request failed with status ${response.status}`);
   }
   try {
     return await response.json() as Promise<T>;
-  } catch (e) {
+  } catch {
     throw new Error('Invalid JSON response from server');
   }
 };

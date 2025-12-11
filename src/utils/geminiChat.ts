@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
+import { API_BASE_URL } from '../config/api';
+
+const API_BASE = `${API_BASE_URL}/api`;
 
 export async function askGemini(message: string): Promise<string> {
   try {
@@ -16,6 +18,10 @@ export async function askGemini(message: string): Promise<string> {
       body: JSON.stringify({ message })
     });
 
+    if (response.status === 429) {
+      return "I'm receiving too many messages right now. Please try again in a moment.";
+    }
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.statusText}`);
     }
@@ -28,7 +34,8 @@ export async function askGemini(message: string): Promise<string> {
   }
 }
 
-export async function classifyDomain(): Promise<"domain" | "external"> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function classifyDomain(_message: string): Promise<"domain" | "external"> {
   // For now, we'll assume all messages are domain-relevant to simplify
   // In a real app, we could have a lightweight classifier or just send everything to backend
   return "domain";

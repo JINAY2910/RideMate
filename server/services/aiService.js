@@ -6,12 +6,26 @@ const { geocode } = require('../utils/geocoding');
 
 class AIService {
     constructor() {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
         if (!apiKey) {
             console.error('GEMINI_API_KEY is not set in environment variables.');
         } else {
             this.genAI = new GoogleGenerativeAI(apiKey);
-            this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+            this.model = this.genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
+        }
+
+        // Safety Controller State
+        this.dailyRequestCount = 0;
+        this.lastResetDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+        this.DAILY_LIMIT = 20;
+    }
+
+    checkAndResetLimit() {
+        const today = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+        if (today !== this.lastResetDate) {
+            console.log('[Safety Controller] New day detected. Resetting quota.');
+            this.dailyRequestCount = 0;
+            this.lastResetDate = today;
         }
     }
 
@@ -79,7 +93,15 @@ class AIService {
             // Ideally, we use the `tools` parameter in `generateContent` if supported by the specific SDK version/model.
             // Here we will use a robust system prompt for stability.
 
-            const systemPrompt = `
+            // Safety Controller Checks
+            this.checkAndResetLimit();
+
+            if (this.dailyRequestCount >= this.DAILY_LIMIT) {
+                console.warn(`[Safety Controller] Daily limit reached (${this.dailyRequestCount}/${this.DAILY_LIMIT}). Blocking request.`);
+                return "⚠️ Daily usage limit reached. Please try again after midnight PT.";
+            }
+
+            let systemPrompt = `
         You are RideMate AI, a helpful assistant for a ride-sharing app.
         
         Current User: ${userContext}
@@ -95,6 +117,18 @@ class AIService {
         Do not output markdown code blocks for the JSON, just the raw JSON string if calling a tool.
       `;
 
+            // Adaptive "Low Gravity" Mode
+            if (this.dailyRequestCount >= this.DAILY_LIMIT - 1) {
+                console.log('[Safety Controller] Near limit. Engaging Low Gravity Mode (Ultra-Brief).');
+                systemPrompt += `
+                 
+                 CRITICAL WARNING: You are approaching the daily rate limit. 
+                 You must switch to ULTRA-LOW-COST MODE.
+                 Provide extremely short, token-efficient answers only. 
+                 Do not perform complex analysis or long explanations.
+                 `;
+            }
+
             const chat = this.model.startChat({
                 history: [
                     { role: "user", parts: [{ text: systemPrompt }] },
@@ -102,8 +136,12 @@ class AIService {
                 ],
             });
 
-            const result = await chat.sendMessage(message);
-            const responseText = result.response.text().trim();
+            // Use retry logic for the initial message
+            const responseText = await this.sendMessageWithRetry(chat, message);
+
+            // Increment count on successful response
+            this.dailyRequestCount++;
+            console.log(`[Safety Controller] Request successful. Count: ${this.dailyRequestCount}/${this.DAILY_LIMIT}`);
 
             // 4. Check for Tool Calls (JSON parsing)
             if (responseText.startsWith('{') && responseText.endsWith('}')) {
@@ -111,9 +149,9 @@ class AIService {
                     const toolCall = JSON.parse(responseText);
                     if (tools[toolCall.tool]) {
                         const toolResult = await tools[toolCall.tool](toolCall.args);
-                        // Feed result back to model
-                        const finalResult = await chat.sendMessage(`Tool Output: ${toolResult}. Now answer the user.`);
-                        return finalResult.response.text();
+                        // Feed result back to model, also with retry
+                        const finalResult = await this.sendMessageWithRetry(chat, `Tool Output: ${toolResult}. Now answer the user.`);
+                        return finalResult;
                     }
                 } catch (e) {
                     console.error("Tool execution failed", e);
@@ -124,7 +162,29 @@ class AIService {
 
         } catch (error) {
             console.error('AI Service Error:', error);
+            if (error.status === 429) {
+                throw error; // Re-throw 429 to be handled by controller
+            }
             return "I'm having trouble connecting to my brain right now. Please try again later.";
+        }
+    }
+
+    async sendMessageWithRetry(chat, message, retries = 3, delay = 1000) {
+        try {
+            const result = await chat.sendMessage(message);
+            return result.response.text().trim();
+        } catch (error) {
+            if (error.status === 429 || error.message.includes('429')) {
+                if (retries > 0) {
+                    console.log(`[AI Service] Rate limited. Retrying in ${delay}ms... (${retries} retries left)`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.sendMessageWithRetry(chat, message, retries - 1, delay * 2);
+                } else {
+                    console.error('[AI Service] Rate limit exceeded after retries.');
+                    throw error;
+                }
+            }
+            throw error;
         }
     }
 }

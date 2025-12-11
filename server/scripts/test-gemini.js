@@ -4,18 +4,15 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 async function testGemini() {
     try {
         console.log('Checking API Key...');
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            console.error('❌ GEMINI_API_KEY is missing in .env file');
+            console.error('❌ API Key missing');
             return;
         }
 
-        console.log('API Key found (starts with):', apiKey.substring(0, 5) + '...');
-
         const genAI = new GoogleGenerativeAI(apiKey);
-
-        const modelName = 'gemini-flash-latest';
+        const modelName = 'gemma-3-27b-it';
 
         console.log(`Testing model: ${modelName}`);
         const model = genAI.getGenerativeModel({ model: modelName });

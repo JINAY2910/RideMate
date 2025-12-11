@@ -1,4 +1,4 @@
-import { ArrowRight, Shield, Globe, Zap, Smartphone, Users, Layers, MapPin, ShieldCheck, Lock, Eye, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Shield, Globe, Zap, Smartphone, Users, Layers, MapPin, ShieldCheck, Lock, Eye, AlertTriangle, Menu, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import CustomCursor from '../components/CustomCursor/CustomCursor';
@@ -9,8 +9,9 @@ import '../styles/landing.css';
 import { useState } from 'react';
 
 export default function Landing() {
-  const { navigateTo, authToken } = useApp();
+  const { navigateTo } = useApp();
   const [activeTab, setActiveTab] = useState<'home' | 'platform' | 'cities' | 'safety' | 'about'>('home');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const cities = [
     { name: 'Mumbai', status: 'Live', rides: '12K+' },
@@ -21,24 +22,29 @@ export default function Landing() {
     { name: 'Chennai', status: 'Coming Soon', rides: '-' },
   ];
 
+  const handleTabChange = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    setIsMenuOpen(false);
+  };
+
   return (
     <div className="landing-page w-full min-h-screen overflow-x-hidden flex flex-col">
       <CustomCursor />
 
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-3 items-center">
+      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-black/5">
+        <div className="max-w-7xl mx-auto flex justify-between items-center md:grid md:grid-cols-3">
           {/* Logo - Left */}
-          <div className="flex items-center gap-3 cursor-hover justify-start" onClick={() => setActiveTab('home')}>
+          <div className="flex items-center gap-3 cursor-hover justify-start" onClick={() => handleTabChange('home')}>
             <img
               src="/ridemate_logo.png"
               alt="RideMate - Mobility, Reimagined"
-              className="h-16 w-auto object-contain rounded-2xl border border-black"
+              className="h-12 w-auto object-contain rounded-xl border border-black md:h-16 md:rounded-2xl"
             />
           </div>
 
-          {/* Tab Navigation in Header - Center */}
-          <div className="flex items-center justify-center gap-2">
+          {/* Desktop Tab Navigation - Center */}
+          <div className="hidden md:flex items-center justify-center gap-2">
             {(['home', 'platform', 'cities', 'safety', 'about'] as const).map((tab) => (
               <button
                 key={tab}
@@ -53,8 +59,8 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Auth Buttons - Right */}
-          <div className="flex items-center gap-3 justify-end">
+          {/* Desktop Auth Buttons - Right */}
+          <div className="hidden md:flex items-center gap-3 justify-end">
             <button onClick={() => navigateTo('login')} className="text-base font-medium hover:text-gray-600 transition-colors cursor-hover px-3 py-2">
               Log in
             </button>
@@ -62,7 +68,61 @@ export default function Landing() {
               Sign up
             </Button>
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 -mr-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-xl animate-in slide-in-from-top-2 duration-200 h-[calc(100vh-80px)] overflow-y-auto">
+            <div className="p-6 space-y-6 flex flex-col">
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2">Navigation</span>
+                {(['home', 'platform', 'cities', 'safety', 'about'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => handleTabChange(tab)}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-lg font-medium transition-all capitalize ${activeTab === tab
+                      ? 'bg-black text-white'
+                      : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                  >
+                    {tab === 'about' ? 'About Us' : tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="h-px bg-gray-100 my-2" />
+
+              <div className="space-y-4">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2">Account</span>
+                <Button
+                  fullWidth
+                  variant="outline"
+                  onClick={() => navigateTo('login')}
+                  className="h-12 text-base"
+                >
+                  Log in
+                </Button>
+                <Button
+                  fullWidth
+                  onClick={() => navigateTo('signup')}
+                  className="bg-black text-white h-12 text-base"
+                >
+                  Sign up
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="w-full flex-grow">

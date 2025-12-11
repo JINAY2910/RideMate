@@ -6,12 +6,22 @@ import Card from '../components/Card';
 import { verificationApi } from '../services/verification';
 import Layout from '../components/Layout';
 
+interface VerificationResult {
+    verificationStatus: string;
+    failReason?: string;
+    details?: {
+        name?: string;
+        licenseNumber?: string;
+        expiryDate?: string;
+    };
+}
+
 export default function IdentityVerification() {
     const { navigateTo, authToken: token, fetchUserProfile, user } = useApp();
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<any | null>(null);
+    const [result, setResult] = useState<VerificationResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 

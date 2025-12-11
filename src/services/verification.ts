@@ -1,14 +1,7 @@
 // Helper to get API base URL (same logic as auth.ts)
-const getApiBase = () => {
-    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
-    const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
-    if (!cleanBase.endsWith('/api')) {
-        return cleanBase.endsWith('/') ? `${cleanBase}api` : `${cleanBase}/api`;
-    }
-    return cleanBase;
-};
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = getApiBase();
+const API_BASE = `${API_BASE_URL}/api`;
 
 export type VerificationResponse = {
     success: boolean;
@@ -18,7 +11,7 @@ export type VerificationResponse = {
             name: string;
             licenseNumber: string;
             expiryDate: string;
-            extractedData: any;
+            extractedData: Record<string, unknown>;
         };
     };
 };

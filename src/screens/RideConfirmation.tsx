@@ -34,7 +34,7 @@ export default function RideConfirmation() {
         if (!cancelled) {
           setEstimates(result);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setError('Unable to calculate distance.');
           setEstimates(null);
@@ -196,8 +196,8 @@ export default function RideConfirmation() {
             <button
               onClick={() => setDemoWeatherMode(!demoWeatherMode)}
               className={`px-6 py-3 rounded-lg font-semibold transition-all ${demoWeatherMode
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-black'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-black'
                 }`}
             >
               {demoWeatherMode ? '🌧️ Demo Active' : 'Enable Demo'}

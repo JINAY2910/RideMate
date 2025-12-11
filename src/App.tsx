@@ -49,14 +49,26 @@ function AppRouter() {
 
 
 
+
 function App() {
   return (
     <AppProvider>
       <AppRouter />
       <ChatbotWrapper />
-      <VoiceAssistant />
+      <VoiceAssistantWrapper />
     </AppProvider>
   );
+}
+
+function VoiceAssistantWrapper() {
+  const { currentScreen } = useApp();
+  const excludedScreens = ['landing', 'login', 'signup'];
+
+  if (excludedScreens.includes(currentScreen)) {
+    return null;
+  }
+
+  return <VoiceAssistant />;
 }
 
 function ChatbotWrapper() {

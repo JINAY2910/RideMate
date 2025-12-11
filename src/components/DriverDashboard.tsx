@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, User, CheckCircle, XCircle, Car, Trash2 } from 'lucide-react';
 import Button from './Button';
 import Card from './Card';
 import { useApp } from '../context/AppContext';
 import { rideApi, Ride } from '../services/rides';
 
-interface DriverDashboardProps { }
+// interface DriverDashboardProps { }
 
 const RiderProfileModal = ({ rider, rating, onAccept, onReject, onClose }: {
-    rider: any,
+    rider: { name: string; email?: string; phone?: string },
     rating: number,
     onAccept: () => void,
     onReject: () => void,
@@ -59,19 +59,15 @@ const RiderProfileModal = ({ rider, rating, onAccept, onReject, onClose }: {
     );
 };
 
-export default function DriverDashboard({ }: DriverDashboardProps) {
+export default function DriverDashboard() {
     const { navigateTo, userId, setActiveRideId } = useApp();
     const [myRides, setMyRides] = useState<Ride[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedRider, setSelectedRider] = useState<{ rider: any; rating: number; rideId: string; requestId: string } | null>(null);
+    const [selectedRider, setSelectedRider] = useState<{ rider: { name: string; email?: string; phone?: string }; rating: number; rideId: string; requestId: string } | null>(null);
 
-    useEffect(() => {
-        if (userId) {
-            fetchMyRides();
-        }
-    }, [userId]);
 
-    const fetchMyRides = async () => {
+
+    const fetchMyRides = useCallback(async () => {
         try {
             setLoading(true);
             // Fetch rides where current user is the driver
@@ -82,7 +78,13 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
+
+    useEffect(() => {
+        if (userId) {
+            fetchMyRides();
+        }
+    }, [userId, fetchMyRides]);
 
     const handleAcceptRequest = async (rideId: string, requestId: string) => {
         try {
@@ -170,27 +172,31 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-black">Driver Dashboard</h2>
             </div>
-            <div className="flex items-center">
-                <div className="w-full grid grid-cols-2 gap-3">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigateTo('ride-history')}
-                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
-                    >
-                        <Clock size={16} />
-                        Ride History
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigateTo('vehicles')}
-                        className="w-full justify-center flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors"
-                    >
-                        <Car size={16} />
-                        My Vehicles
-                    </Button>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                    onClick={() => navigateTo('ride-history')}
+                    className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-black/30 hover:scale-[1.01] transition-all group text-left"
+                >
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-black text-lg">Ride History</h3>
+                        <p className="text-sm text-gray-500">View past trips</p>
+                    </div>
+                </button>
+                <button
+                    onClick={() => navigateTo('vehicles')}
+                    className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-black/30 hover:scale-[1.01] transition-all group text-left"
+                >
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                        <Car size={24} />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-black text-lg">My Vehicles</h3>
+                        <p className="text-sm text-gray-500">Manage your fleet</p>
+                    </div>
+                </button>
             </div>
 
             {loading ? (
@@ -293,7 +299,7 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
                                                             <div className="flex gap-2 mt-2">
                                                                 <button
                                                                     onClick={() => setSelectedRider({
-                                                                        rider: request.rider,
+                                                                        rider: request.rider as { name: string; email?: string; phone?: string },
                                                                         rating: request.rating || 5.0,
                                                                         rideId: ride._id,
                                                                         requestId: request._id
@@ -413,7 +419,7 @@ export default function DriverDashboard({ }: DriverDashboardProps) {
                                                             </div>
                                                             <button
                                                                 onClick={() => setSelectedRider({
-                                                                    rider: request.rider,
+                                                                    rider: request.rider as { name: string; email?: string; phone?: string },
                                                                     rating: request.rating || 5.0,
                                                                     rideId: ride._id,
                                                                     requestId: request._id

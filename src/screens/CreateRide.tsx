@@ -16,7 +16,7 @@ import { calculateRideDetails } from '../utils/rideCalculations';
 const formatTimeLabel = (timeValue: string) => {
   if (!timeValue) return '';
   const [hourStr, minute] = timeValue.split(':');
-  let hour = parseInt(hourStr, 10);
+  const hour = parseInt(hourStr, 10);
   const suffix = hour >= 12 ? 'PM' : 'AM';
   const normalizedHour = hour % 12 === 0 ? 12 : hour % 12;
   return `${normalizedHour}:${minute} ${suffix}`;
@@ -38,6 +38,7 @@ export default function CreateRide() {
   const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
 
   const checkNavigationState = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const navState = (window as any).__navigationState;
     if (navState) {
       if (navState.startLocation) setStartLocation(navState.startLocation);
@@ -47,6 +48,7 @@ export default function CreateRide() {
       if (navState.seats) setSeats(String(navState.seats));
 
       // Clear state after use
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__navigationState = null;
     }
   };

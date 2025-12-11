@@ -17,7 +17,7 @@ export default function RideHistory() {
         if (!userName && !userId) return;
 
         // Fetch completed rides where the user is either the driver or a participant
-        const params: any = {
+        const params: Record<string, string> = {
           isActive: 'false', // Completed rides
         };
 
@@ -37,8 +37,8 @@ export default function RideHistory() {
 
         const data = await rideApi.list(params);
         setRides(data);
-      } catch (err: any) {
-        setError(err.message || 'Error fetching rides');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error fetching rides');
       } finally {
         setLoading(false);
       }
@@ -54,8 +54,8 @@ export default function RideHistory() {
     try {
       await rideApi.delete(rideId);
       setRides((prevRides) => prevRides.filter((r) => r._id !== rideId));
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete ride');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete ride');
     }
   };
 

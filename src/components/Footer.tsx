@@ -1,9 +1,8 @@
-import React from 'react';
 import Logo from './Logo';
 import { useApp } from '../context/AppContext';
 
 export default function Footer() {
-    const { navigateTo } = useApp();
+    useApp();
 
     return (
         <footer className="footer">

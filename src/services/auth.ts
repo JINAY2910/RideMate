@@ -1,16 +1,7 @@
 // Ensure API_BASE always ends with /api and doesn't have trailing slash
-const getApiBase = () => {
-  const base = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
-  // Remove trailing slash if present
-  const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
-  // Ensure it ends with /api
-  if (!cleanBase.endsWith('/api')) {
-    return cleanBase.endsWith('/') ? `${cleanBase}api` : `${cleanBase}/api`;
-  }
-  return cleanBase;
-};
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE = getApiBase();
+const API_BASE = `${API_BASE_URL}/api`;
 
 // Log in development
 if (import.meta.env.DEV) {
@@ -31,14 +22,14 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
       } catch {
         // Keep original errorText if not JSON
       }
-    } catch (e) {
+    } catch {
       errorText = `HTTP ${response.status}: ${response.statusText}`;
     }
     throw new Error(errorText || `Request failed with status ${response.status}`);
   }
   try {
     return await response.json() as Promise<T>;
-  } catch (e) {
+  } catch {
     throw new Error('Invalid JSON response from server');
   }
 };

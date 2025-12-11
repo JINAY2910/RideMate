@@ -80,7 +80,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ isOpen, onClose }) => {
 
             // Determine date/time
             // Default to now
-            let targetDate = new Date();
+            const targetDate = new Date();
             const lowerText = text.toLowerCase();
 
             if (lowerText.includes('tomorrow')) {

@@ -24,7 +24,7 @@ export default function LocationAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -140,7 +140,7 @@ export default function LocationAutocomplete({
           {label}
         </label>
       )}
-      
+
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           {isLoading ? (
@@ -149,7 +149,7 @@ export default function LocationAutocomplete({
             <Search className="w-5 h-5 text-gray-400" />
           )}
         </div>
-        
+
         <input
           ref={inputRef}
           type="text"
