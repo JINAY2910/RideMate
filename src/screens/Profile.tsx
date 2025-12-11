@@ -149,24 +149,26 @@ export default function Profile() {
               </div>
 
               {/* Verification Status */}
-              <div className="mt-4 flex items-center gap-3">
-                {user?.verificationStatus === 'verified' ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                    <ShieldCheck size={14} />
-                    Verified Driver
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => navigateTo('verify-identity')}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <ShieldCheck size={14} />
-                    Verify Identity
-                  </Button>
-                )}
-              </div>
+              {userRole === 'driver' && (
+                <div className="mt-4 flex items-center gap-3">
+                  {user?.verificationStatus === 'verified' ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                      <ShieldCheck size={14} />
+                      Verified Driver
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => navigateTo('verify-identity')}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <ShieldCheck size={14} />
+                      Verify Identity
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
 

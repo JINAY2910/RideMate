@@ -475,7 +475,7 @@ export default function Landing() {
                           <img src="/team/jinay.png" alt="Jinay Shah" className="w-16 h-16 rounded-full object-cover" />
                           <div>
                             <h3 className="text-xl font-bold text-black">Jinay Shah</h3>
-                            <p className="text-gray-600 text-sm">Architecting Scalable Solutions</p>
+                            <p className="text-gray-600 text-sm">Frontend Developer</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -491,12 +491,12 @@ export default function Landing() {
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed mb-4">
-                        A backend wizard who ensures our APIs are robust and our AI models are cutting-edge. Jinay bridges the gap between complex data and seamless user experiences.
+                   Responsible for building the client-side application and user interface. Jinay ensures the website is responsive and functions smoothly for all users.
                       </p>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">API</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">AIML</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Cloud</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Frontend</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">React.js</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Web Development</span>
                       </div>
                     </div>
 
@@ -507,7 +507,7 @@ export default function Landing() {
                           <img src="/team/yug.png" alt="Yug Yadav" className="w-16 h-16 rounded-full object-cover" />
                           <div>
                             <h3 className="text-xl font-bold text-black">Yug Yadav</h3>
-                            <p className="text-gray-600 text-sm">Building the Digital Backbone</p>
+                            <p className="text-gray-600 text-sm">Backend & Database</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -523,12 +523,12 @@ export default function Landing() {
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed mb-4">
-                        The database guru ensuring data integrity and speed. Yug crafts the high-performance engines that power RideMate's real-time capabilities.
+                       Manages the entire server-side infrastructure and database. Yug handles API development, data storage, and system performance.
                       </p>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">DBMS</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">React/Node</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">System Design</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Backend</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Database</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Node.js & Express.js</span>
                       </div>
                     </div>
 
@@ -539,7 +539,7 @@ export default function Landing() {
                           <img src="/team/smit.png" alt="Smit Goyani" className="w-16 h-16 rounded-full object-cover" />
                           <div>
                             <h3 className="text-xl font-bold text-black">Smit Goyani</h3>
-                            <p className="text-gray-600 text-sm">Full-Stack Innovator</p>
+                            <p className="text-gray-600 text-sm">API Integration Specialist</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -555,12 +555,12 @@ export default function Landing() {
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed mb-4">
-                        Mastering the stack from Django to MongoDB, Smit builds resilient systems that handle thousands of concurrent connections with ease.
+                        Researches and implements third-party tools. Smit finds the best APIs for the project and integrates them into the system.
                       </p>
                       <div className="flex gap-2 flex-wrap">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Django</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">MongoDB</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Python</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">API Integration</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Research</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">External Tools</span>
                       </div>
                     </div>
 
@@ -571,7 +571,7 @@ export default function Landing() {
                           <img src="/team/tirth.jpg" alt="Tirth Bhatt" className="w-16 h-16 rounded-full object-cover" />
                           <div>
                             <h3 className="text-xl font-bold text-black">Tirth Bhatt</h3>
-                            <p className="text-gray-600 text-sm">Designing the Future of Mobility</p>
+                            <p className="text-gray-600 text-sm">UI/UX & Logic Developer</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -587,12 +587,12 @@ export default function Landing() {
                         </div>
                       </div>
                       <p className="text-gray-600 leading-relaxed mb-4">
-                        With a keen eye for design and a mind for strategy, Tirth shapes the user journey and steers the product vision towards excellence.
+                       Designs the user interface and user experience flow. Tirth also implements the core business logic and algorithms that drive the application's features.
                       </p>
                       <div className="flex gap-2 flex-wrap">
                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">UI/UX</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Management</span>
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Product Strategy</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Core Logic</span>
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Design</span>
                       </div>
                     </div>
                   </div>
